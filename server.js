@@ -22,7 +22,7 @@ if (!fs.existsSync(outputDir)) {
 
 // 供靜態讀取報告與前端檔案用
 app.use('/output', express.static(outputDir));
-app.use(express.static('public'));
+app.use(express.static(path.join(__dirname, 'public')));
 
 app.post('/api/generate', async (req, res) => {
   try {
