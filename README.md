@@ -165,6 +165,40 @@ FB_API_VERSION=v21.0
 
 ---
 
+## ☁️ 雲端部署與維護 (Render + GitHub)
+
+現在專案已經成功部署在 [Render](https://render.com/)，如果你需要修改網頁外觀或分析邏輯，請遵循以下步驟：
+
+### 1. 修改與更新網頁內容
+在本機電腦進行任何檔案修改（例如：修改 `public/index.html` 或 `src/data-analyzer.js`）後，請在終端機執行：
+
+```bash
+# 進入專案目錄
+cd c:\Users\orc62\Downloads\social
+
+# 步驟一：將變動加入暫存區
+git add .
+
+# 步驟二：提交變動並註明修改原因
+git commit -m "修正網頁標題或更新邏輯"
+
+# 步驟三：推送至 GitHub (這會觸發 Render 自動重新發布)
+git push
+```
+*   執行完 `git push` 後，Render 會在 2-3 分鐘內自動偵測到更新並重新部屬。
+
+### 2. 更新 Facebook 權杖 (Token) 或 Page ID
+**⚠️ 安全提醒：請勿將權杖直接寫在程式碼裡推送到 GitHub！**
+
+如果你的權杖過期或需要更換粉專，請直接到 **Render 管理介面**：
+1. 登入 [Render](https://dashboard.render.com/)。
+2. 點擊你的 Web Service (`social-report-fpg`)。
+3. 點擊左側選單的 **"Environment"**。
+4. 在這裡直接修改 `FB_PAGE_ACCESS_TOKEN` 或 `FB_PAGE_ID` 並點擊 **"Save Changes"**。
+5. 儲存後伺服器會自動重啟並套用新設定。
+
+---
+
 ## ❓ 常見問題
 
 ### Token 過期怎麼辦？
