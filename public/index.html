@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>社群成果報告自動化生成器</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&family=Noto+Sans+TC:wght@300;400;600;800&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --primary: #00A0BB;
+      --secondary: #0057B7;
+      --accent: #FFA000;
+      --bg: #F0F4F8;
+    }
+    
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: 'Outfit', 'Noto Sans TC', sans-serif;
+    }
+
+    body {
+      background: var(--bg);
+      background-image: 
+        radial-gradient(at 0% 0%, rgba(0, 160, 187, 0.2) 0px, transparent 50%),
+        radial-gradient(at 100% 0%, rgba(0, 87, 183, 0.2) 0px, transparent 50%);
+      color: #333;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 40px 20px;
+    }
+
+    .container {
+      background: rgba(255, 255, 255, 0.85);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border-radius: 24px;
+      padding: 48px;
+      width: 100%;
+      max-width: 500px;
+      box-shadow: 0 16px 40px rgba(0, 87, 183, 0.1);
+      border: 1px solid rgba(255, 255, 255, 0.5);
+    }
+
+    h1 {
+      font-size: 28px;
+      margin-bottom: 8px;
+      text-align: center;
+      color: var(--secondary);
+      font-weight: 800;
+      letter-spacing: 0.5px;
+    }
+
+    p.subtitle {
+      text-align: center;
+      color: #666;
+      margin-bottom: 40px;
+      font-weight: 300;
+    }
+
+    .form-group {
+      margin-bottom: 24px;
+    }
+
+    label {
+      display: block;
+      margin-bottom: 8px;
+      font-weight: 600;
+      color: #555;
+      font-size: 14px;
+    }
+
+    input[type="month"] {
+      width: 100%;
+      padding: 16px;
+      border: 2px solid #E2E8F0;
+      border-radius: 12px;
+      font-size: 16px;
+      background: #fff;
+      color: #333;
+      outline: none;
+      transition: all 0.3s ease;
+      cursor: pointer;
+    }
+
+    input[type="month"]:focus {
+      border-color: var(--primary);
+      box-shadow: 0 0 0 4px rgba(0, 160, 187, 0.1);
+    }
+
+    button {
+      width: 100%;
+      background: linear-gradient(135deg, var(--secondary) 0%, var(--primary) 100%);
+      color: #fff;
+      border: none;
+      padding: 18px;
+      font-size: 18px;
+      font-weight: 800;
+      border-radius: 12px;
+      cursor: pointer;
+      transition: transform 0.2s, box-shadow 0.2s;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 10px;
+    }
+
+    button:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 20px rgba(0, 87, 183, 0.3);
+    }
+    
+    button:disabled {
+      background: #cbd5e1;
+      cursor: not-allowed;
+      transform: none;
+      box-shadow: none;
+    }
+
+    .loader {
+      display: none;
+      width: 24px;
+      height: 24px;
+      border: 3px solid rgba(255,255,255,0.3);
+      border-radius: 50%;
+      border-top-color: #fff;
+      animation: spin 1s ease-in-out infinite;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    .status-container {
+      margin-top: 32px;
+      display: none;
+    }
+
+    .success-card {
+      background: #F0FDF4;
+      border: 1px solid #BBF7D0;
+      border-radius: 16px;
+      padding: 24px;
+    }
+
+    .success-card h3 {
+      color: #166534;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 16px;
+    }
+
+    .kpi-row {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 12px;
+      font-size: 14px;
+      color: #374151;
+    }
+
+    .action-buttons {
+      display: flex;
+      gap: 12px;
+      margin-top: 24px;
+    }
+
+    .btn-secondary, .btn-primary {
+      flex: 1;
+      text-decoration: none;
+      text-align: center;
+      padding: 14px;
+      border-radius: 10px;
+      font-weight: 600;
+      font-size: 14px;
+      transition: all 0.2s;
+      display: inline-block;
+    }
+
+    .btn-primary {
+      background: var(--secondary);
+      color: #fff;
+    }
+    .btn-primary:hover {
+      background: #004592;
+    }
+
+    .btn-secondary {
+      background: #fff;
+      color: var(--secondary);
+      border: 1px solid var(--secondary);
+    }
+    .btn-secondary:hover {
+      background: #f1f7ff;
+    }
+
+    .error-msg {
+      display: none;
+      color: #dc2626;
+      background: #fef2f2;
+      border: 1px solid #fecaca;
+      padding: 16px;
+      border-radius: 12px;
+      margin-top: 20px;
+      font-size: 14px;
+      line-height: 1.5;
+    }
+
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <h1>社群數據成果產出</h1>
+    <p class="subtitle">自動抓取 FB 貼文，一鍵產生精美分析報告</p>
+
+    <div class="form-group">
+      <label for="monthPicker">選擇分析月份</label>
+      <input type="month" id="monthPicker" value="">
+    </div>
+
+    <button id="generateBtn">
+      <span id="btnText">產生報告</span>
+      <div class="loader" id="loader"></div>
+    </button>
+
+    <div class="error-msg" id="errorMsg"></div>
+
+    <div class="status-container" id="statusContainer">
+      <div class="success-card">
+        <h3>✨ 報告產生成功！</h3>
+        
+        <div class="kpi-row">
+          <span>貼文篇數</span>
+          <span id="kpiPosts" style="font-weight:bold;">-</span>
+        </div>
+        <div class="kpi-row">
+          <span>累計觸及</span>
+          <span id="kpiReach" style="font-weight:bold;">-</span>
+        </div>
+        <div class="kpi-row">
+          <span>平均互動</span>
+          <span id="kpiEngage" style="font-weight:bold;">-</span>
+        </div>
+
+        <div class="action-buttons">
+          <a href="#" id="linkExcel" class="btn-secondary" download>下載 Excel 數據</a>
+          <a href="#" id="linkHtml" class="btn-primary" target="_blank">線上查看 HTML 報告</a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // 預設填入上個月
+    const date = new Date();
+    date.setMonth(date.getMonth() - 1);
+    const yyyy = date.getFullYear();
+    const mm = String(date.getMonth() + 1).padStart(2, '0');
+    document.getElementById('monthPicker').value = `${yyyy}-${mm}`;
+
+    document.getElementById('generateBtn').addEventListener('click', async () => {
+      const monthValue = document.getElementById('monthPicker').value;
+      if (!monthValue) return alert('請選擇月份');
+
+      const [year, month] = monthValue.split('-');
+
+      // 切換 Loading 狀態
+      const btn = document.getElementById('generateBtn');
+      const btnText = document.getElementById('btnText');
+      const loader = document.getElementById('loader');
+      const errorMsg = document.getElementById('errorMsg');
+      const statusContainer = document.getElementById('statusContainer');
+
+      btn.disabled = true;
+      btnText.textContent = '抓取與分析中... (需時 10-30 秒)';
+      loader.style.display = 'block';
+      errorMsg.style.display = 'none';
+      statusContainer.style.display = 'none';
+
+      try {
+        const response = await fetch('/api/generate', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ year, month })
+        });
+
+        const data = await response.json();
+
+        if (data.success) {
+          // 渲染結果
+          document.getElementById('kpiPosts').textContent = data.kpi.totalPosts + ' 篇';
+          document.getElementById('kpiReach').textContent = data.kpi.totalReach.toLocaleString() + ' 人';
+          document.getElementById('kpiEngage').textContent = data.kpi.avgEngagement + ' 次';
+          
+          document.getElementById('linkHtml').href = data.reportUrl;
+          if (data.excelUrl) {
+            document.getElementById('linkExcel').href = data.excelUrl;
+            document.getElementById('linkExcel').style.display = 'inline-block';
+          } else {
+            document.getElementById('linkExcel').style.display = 'none';
+          }
+
+          statusContainer.style.display = 'block';
+        } else {
+          errorMsg.textContent = '❌ 發生錯誤：' + data.message;
+          errorMsg.style.display = 'block';
+        }
+
+      } catch (err) {
+        errorMsg.textContent = '❌ 網路錯誤或伺服器無回應，請確保伺服器已開啟。';
+        errorMsg.style.display = 'block';
+      } finally {
+        btn.disabled = false;
+        btnText.textContent = '產生報告';
+        loader.style.display = 'none';
+      }
+    });
+  </script>
+</body>
+</html>
