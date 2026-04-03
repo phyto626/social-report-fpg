@@ -102,7 +102,7 @@ class FacebookAPI {
       'full_picture',
       'attachments{media_type,type,title,description,subattachments}',
       'reactions.summary(true)',
-      'comments.summary(true)',
+      'comments.limit(50).summary(true){message,created_time}',
       'shares',
     ].join(',');
 
@@ -239,6 +239,12 @@ class FacebookAPI {
     // 計算互動率
     const engagementRate = reach > 0 ? totalEngagement / reach : 0;
 
+    // 解析留言詳細內容
+    const commentsList = (rawPost.comments?.data || []).map(c => ({
+      message: c.message,
+      createdTime: c.created_time
+    }));
+
     return {
       id: rawPost.id,
       title,
@@ -247,6 +253,7 @@ class FacebookAPI {
       reach,
       reactions,
       comments,
+      commentsList,
       shares,
       totalEngagement,
       engagementRate,

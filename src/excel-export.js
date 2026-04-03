@@ -103,6 +103,36 @@ async function exportToExcel(data, outputDir) {
 
   wsKpi.getColumn('value').numFmt = '#,##0';
 
+  // ===== 工作表 3：用戶留言彙整 =====
+  const wsComments = workbook.addWorksheet('最新留言彙整');
+
+  wsComments.columns = [
+    { header: '貼文發布日', key: 'postDate', width: 20 },
+    { header: '貼文內容(摘要)', key: 'postSummary', width: 40 },
+    { header: '留言時間', key: 'commentDate', width: 20 },
+    { header: '留言內容', key: 'commentMsg', width: 60 },
+  ];
+
+  wsComments.getRow(1).font = { bold: true, color: { argb: 'FFFFFFFF' } };
+  wsComments.getRow(1).fill = {
+    type: 'pattern',
+    pattern: 'solid',
+    fgColor: { argb: 'FF00B757' },
+  };
+
+  sortedPosts.forEach(post => {
+    if (post.commentsList && post.commentsList.length > 0) {
+      post.commentsList.forEach(c => {
+        wsComments.addRow({
+          postDate: new Date(post.createdTime).toLocaleString('zh-TW'),
+          postSummary: (post.message || '').substring(0, 30).replace(/\n/g, ' ') + '...',
+          commentDate: new Date(c.createdTime).toLocaleString('zh-TW'),
+          commentMsg: c.message
+        });
+      });
+    }
+  });
+
   // 儲存檔案
   const fileName = `${data.pageInfo.name || '粉專'}_${data.year}-${String(data.month).padStart(2, '0')}_貼文數據.xlsx`;
   const filePath = path.join(outputDir, fileName);
