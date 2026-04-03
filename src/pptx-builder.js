@@ -19,10 +19,10 @@ class PptxBuilder {
     // 共用頁首/頁尾設定
     pres.defineSlideMaster({
       title: "MASTER_SLIDE",
-      background: { color: "FFFFFF" },
+      background: { fill: "FFFFFF" },
       margin: [0.5, 0.5, 0.5, 0.5],
       objects: [
-        { rect: { x: 0, y: 0, w: '100%', h: 0.15, fill: { color: COLOR_PRIMARY } } },
+        { rect: { x: 0, y: 0, w: '100%', h: 0.15, fill: COLOR_PRIMARY } },
         { text: { text: "Report Engine | Social Data Analysis", options: { x: 0.5, y: 5.2, w: 4, h: 0.3, fontSize: 10, color: "888888" } } },
       ]
     });
@@ -38,18 +38,18 @@ class PptxBuilder {
     // Slide 1: 封面 (深藍漸層＋裝飾圓形，含品牌名、月份、製作人欄位)
     // ----------------------------------------------------------------------
     let slide1 = pres.addSlide();
-    slide1.background = { fill: { type: 'solid', color: COLOR_PRIMARY } };
+    slide1.background = { fill: COLOR_PRIMARY };
     
     // 裝飾圓形
-    slide1.addShape(pres.ShapeType.ellipse, { x: -1, y: 2.5, w: 5, h: 5, fill: { color: "FFFFFF", transparency: 90 } });
-    slide1.addShape(pres.ShapeType.ellipse, { x: 6, y: -2, w: 6, h: 6, fill: { color: "FFFFFF", transparency: 90 } });
+    slide1.addShape(pres.ShapeType.ellipse, { x: -1, y: 2.5, w: 5, h: 5, fill: "FFFFFF", transparency: 90 });
+    slide1.addShape(pres.ShapeType.ellipse, { x: 6, y: -2, w: 6, h: 6, fill: "FFFFFF", transparency: 90 });
     
     slide1.addText(`${brandName} 社群數據回顧`, { x: 1, y: 1.8, w: 8, h: 1, fontSize: 44, bold: true, color: "FFFFFF" });
     slide1.addText(`${startDate} ~ ${endDate}`, { x: 1, y: 2.8, w: 8, h: 0.5, fontSize: 24, fontFace: "Arial", color: "FFEB3B" });
     
     const today = new Date().toLocaleDateString('zh-TW');
-    slide1.addText(`製作部門 / 製作人：________________    製作日期：${today}`, { x: 1, y: 4.5, w: 8, h: 0.5, fontSize: 14, color: "FFFFFF", transparency: 20 });
-    slide1.addShape(pres.ShapeType.line, { x: 1, y: 4.3, w: 8, h: 0, line: { color: "FFFFFF", width: 1, transparency: 50 } });
+    slide1.addText(`製作部門 / 製作人：________________    製作日期：${today}`, { x: 1, y: 4.5, w: 8, h: 0.5, fontSize: 14, color: "FFFFFF" });
+    slide1.addShape(pres.ShapeType.line, { x: 1, y: 4.3, w: 8, h: 0, line: { color: "FFFFFF", width: 1 } });
 
     // ----------------------------------------------------------------------
     // Slide 2: 整體數據概覽 (4 格 KPI 卡片＋本期最高互動貼文 Highlight)
@@ -66,7 +66,7 @@ class PptxBuilder {
     ];
     kpiData.forEach((item, idx) => {
       const cx = 0.5 + (idx * 2.2);
-      slide2.addShape(pres.ShapeType.roundRect, { x: cx, y: 1.2, w: 2, h: 1.2, fill: { color: COLOR_BG_LIGHT }, rectRadius: 0.1 });
+      slide2.addShape(pres.ShapeType.roundRect, { x: cx, y: 1.2, w: 2, h: 1.2, fill: COLOR_BG_LIGHT, rectRadius: 0.1 });
       slide2.addText(item.label, { x: cx, y: 1.3, w: 2, h: 0.3, fontSize: 14, color: "666666", align: 'center' });
       slide2.addText(item.val, { x: cx, y: 1.7, w: 2, h: 0.5, fontSize: 22, bold: true, color: COLOR_PRIMARY, align: 'center' });
     });
@@ -74,7 +74,7 @@ class PptxBuilder {
     // Top Post
     slide2.addText("🏆 本期最高互動貼文Highlight", { x: 0.5, y: 2.8, w: 9, h: 0.5, fontSize: 18, bold: true, color: COLOR_SECONDARY });
     let topPostMsg = topPost.message ? topPost.message.substring(0, 150) + "..." : "無文字內容";
-    slide2.addShape(pres.ShapeType.roundRect, { x: 0.5, y: 3.4, w: 9, h: 1.4, fill: { color: "FFF5EB" }, line: { color: COLOR_SECONDARY, width: 1 }, rectRadius: 0.1 });
+    slide2.addShape(pres.ShapeType.roundRect, { x: 0.5, y: 3.4, w: 9, h: 1.4, fill: "FFF5EB", line: { color: COLOR_SECONDARY, width: 1 }, rectRadius: 0.1 });
     slide2.addText(`貼文內容：${topPostMsg}`, { x: 0.7, y: 3.5, w: 8.6, h: 0.6, fontSize: 13, color: COLOR_TEXT, valign: 'top' });
     
     let rate = topPost.reach && topPost.reach > 0 ? ((topPost.totalEngagement / topPost.reach) * 100).toFixed(2) : '0';
@@ -135,7 +135,7 @@ class PptxBuilder {
     }
 
     // Right Insight
-    slide4.addShape(pres.ShapeType.roundRect, { x: 5.5, y: 1.3, w: 4, h: 3, fill: { color: "F8F9FA" }, line: { color: "E2E8F0" }, rectRadius: 0.1 });
+    slide4.addShape(pres.ShapeType.roundRect, { x: 5.5, y: 1.3, w: 4, h: 3, fill: "F8F9FA", line: { color: "E2E8F0", width: 1 }, rectRadius: 0.1 });
     slide4.addText("📌 分析洞察", { x: 5.7, y: 1.5, w: 3.6, h: 0.4, fontSize: 18, bold: true, color: COLOR_SECONDARY });
     slide4.addText("不同型式的素材會吸引不同受眾。\n- 相片（Photos）通常能帶來較廣泛的觸及。\n- 短影音（Videos）目前在社群上擁有最佳演算法紅利。\n- 請依據這月份最高互動的型式做為下個月的核心推廣型式。", { x: 5.7, y: 2.0, w: 3.6, h: 2, fontSize: 14, color: COLOR_TEXT, valign: 'top' });
 
@@ -181,16 +181,16 @@ class PptxBuilder {
     let slide6 = pres.addSlide({ masterName: "MASTER_SLIDE" });
     slide6.addText("未來優化方向建議", { x: 0.5, y: 0.4, w: 9, h: 0.6, fontSize: 28, bold: true, color: COLOR_PRIMARY });
 
-    let insights = data.insights || {};
-    const insightCards = [
-      { num: "01", title: "內容結構與切入", text: insights.structure || '持續測試不同長短文案比例' },
-      { num: "02", title: "敘事與共鳴設計", text: insights.narrative || '多從受眾痛點出發' },
-      { num: "03", title: "互動誘導設計", text: insights.cta || '加入更明確的CTA(如:留言+1)' }
-    ];
+    let rawInsights = data.insights || [];
+    const insightCards = rawInsights.slice(0, 3).map((item, idx) => ({
+        num: `0${idx + 1}`,
+        title: item.label || item.title,
+        text: item.description
+    }));
 
     insightCards.forEach((c, idx) => {
       let cx = 0.5 + (idx * 3.1);
-      slide6.addShape(pres.ShapeType.roundRect, { x: cx, y: 1.5, w: 2.8, h: 3, fill: { color: "F8F9FA" }, line: { color: "060E9F", width: 2 }, rectRadius: 0.1 });
+      slide6.addShape(pres.ShapeType.roundRect, { x: cx, y: 1.5, w: 2.8, h: 3, fill: "F8F9FA", line: { color: COLOR_PRIMARY, width: 2 }, rectRadius: 0.1 });
       slide6.addText(c.num, { x: cx, y: 1.6, w: 2.8, h: 0.6, fontSize: 36, bold: true, fontFace: "Impact", color: "E2E8F0", align: 'right' });
       slide6.addText(c.title, { x: cx + 0.2, y: 1.9, w: 2.4, h: 0.4, fontSize: 18, bold: true, color: COLOR_PRIMARY });
       slide6.addText(c.text, { x: cx + 0.2, y: 2.4, w: 2.4, h: 1.8, fontSize: 13, color: "444444", valign: 'top' });
