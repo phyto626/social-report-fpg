@@ -9,6 +9,25 @@ class ReportGenerator {
     this.brandName = analysisResult.pageInfo.name || '洗衣精補充站';
     this.year = analysisResult.year;
     this.month = analysisResult.month;
+
+    // Theme logic
+    const isEcoco = this.brandName.toLowerCase().includes('ecoco') || this.brandName.toLowerCase().includes('eco');
+    this.c = {
+      primary: isEcoco ? '#060E9F' : '#0057B7',
+      primaryDark: isEcoco ? '#060E9F' : '#003d82',
+      primaryLight: isEcoco ? '#0076A9' : '#00A0BB',
+      secondary: isEcoco ? '#FF5000' : '#FFA000',
+      accent: isEcoco ? '#FFCE00' : '#5CBEB2',
+      accent2: isEcoco ? '#8EB8C9' : '#7B1FA2',
+      orangeAlert: isEcoco ? '#FF5000' : '#E67E00',
+      bgLight: isEcoco ? '#ffffff' : '#f7f9fc',
+      bgHighlight: isEcoco ? '#FAE0B8' : '#f0f7ff',
+      border: isEcoco ? '#8EB8C9' : '#D4EAED',
+      shadowPrimary: isEcoco ? 'rgba(6,14,159,0.08)' : '${this.c.shadowPrimary}',
+      gradTop: isEcoco ? 'linear-gradient(135deg, #060E9F, #060E9F)' : 'linear-gradient(135deg, #003d82 0%, #0057B7 50%, #00A0BB 100%)',
+      gradTable: isEcoco ? 'linear-gradient(135deg, #0076A9, #060E9F)' : 'linear-gradient(135deg, #00A0BB, #0057B7)',
+      colorsArr: isEcoco ? ['#060E9F', '#0076A9', '#FFCE00', '#FF5000', '#8EB8C9'] : ['#0057B7', '#00A0BB', '#5CBEB2', '#FFA000', '#7B1FA2']
+    };
   }
 
   /**
@@ -51,7 +70,7 @@ class ReportGenerator {
 
       body {
         font-family: 'Noto Sans TC', sans-serif;
-        background: #f7f9fc;
+        background: ${this.c.bgLight};
         color: #2d3748;
         line-height: 1.6;
       }
@@ -64,7 +83,7 @@ class ReportGenerator {
 
       /* ===== 頁首 ===== */
       .report-header {
-        background: linear-gradient(135deg, #003d82 0%, #0057B7 50%, #00A0BB 100%);
+        background: ${this.c.gradTop};
         color: #fff;
         padding: 60px 40px;
         text-align: center;
@@ -127,10 +146,10 @@ class ReportGenerator {
       .section-title {
         font-size: 1.4em;
         font-weight: 700;
-        color: #0057B7;
+        color: ${this.c.primary};
         margin: 48px 0 24px;
         padding-bottom: 12px;
-        border-bottom: 3px solid #D4EAED;
+        border-bottom: 3px solid ${this.c.border};
         display: flex;
         align-items: center;
         gap: 10px;
@@ -181,18 +200,18 @@ class ReportGenerator {
 
       /* ===== Highlight ===== */
       .highlight-card {
-        background: linear-gradient(135deg, #fff 0%, #f0f7ff 100%);
+        background: linear-gradient(135deg, #fff 0%, ${this.c.bgHighlight} 100%);
         border-radius: 16px;
         padding: 32px;
-        box-shadow: 0 2px 16px rgba(0,87,183,0.08);
-        border-left: 5px solid #0057B7;
+        box-shadow: 0 2px 16px ${this.c.shadowPrimary};
+        border-left: 5px solid ${this.c.primary};
         margin: 24px 0;
       }
 
       .highlight-card .highlight-title {
         font-size: 1.15em;
         font-weight: 700;
-        color: #003d82;
+        color: ${this.c.primaryDark};
         margin-bottom: 16px;
       }
 
@@ -213,7 +232,7 @@ class ReportGenerator {
       .highlight-stat .stat-value {
         font-size: 1.5em;
         font-weight: 700;
-        color: #0057B7;
+        color: ${this.c.primary};
       }
 
       .highlight-stat .stat-label {
@@ -253,7 +272,7 @@ class ReportGenerator {
         color: #2d3748;
         margin-bottom: 20px;
         padding-bottom: 10px;
-        border-bottom: 2px solid #D4EAED;
+        border-bottom: 2px solid ${this.c.border};
       }
 
       /* 排名表 */
@@ -279,7 +298,7 @@ class ReportGenerator {
 
       .rank-table .rank-num {
         font-weight: 700;
-        color: #0057B7;
+        color: ${this.c.primary};
         width: 35px;
       }
 
@@ -332,7 +351,7 @@ class ReportGenerator {
       .bar-chart {
         margin-top: 20px;
         padding-top: 16px;
-        border-top: 2px solid #D4EAED;
+        border-top: 2px solid ${this.c.border};
       }
 
       .bar-item {
@@ -370,14 +389,14 @@ class ReportGenerator {
       }
 
       .data-insight {
-        background: #f7f9fc;
+        background: ${this.c.bgLight};
         padding: 16px;
         border-radius: 10px;
         margin-top: 16px;
         font-size: 0.9em;
         color: #4a5568;
         line-height: 1.7;
-        border-left: 3px solid #00A0BB;
+        border-left: 3px solid ${this.c.primaryLight};
       }
 
       /* ===== 貼文明細表 ===== */
@@ -397,7 +416,7 @@ class ReportGenerator {
       }
 
       .post-table thead {
-        background: linear-gradient(135deg, #003d82, #0057B7);
+        background: ${this.c.gradTop};
         color: #fff;
       }
 
@@ -447,10 +466,10 @@ class ReportGenerator {
         font-weight: 600;
       }
 
-      .badge-photo { background: #e8f2ff; color: #0057B7; }
-      .badge-video { background: #fff3e0; color: #E67E00; }
+      .badge-photo { background: #e8f2ff; color: ${this.c.primary}; }
+      .badge-video { background: #fff3e0; color: ${this.c.orangeAlert}; }
       .badge-album { background: #e0f7f5; color: #00897B; }
-      .badge-link { background: #f3e5f5; color: #7B1FA2; }
+      .badge-link { background: #f3e5f5; color: ${this.c.accent2}; }
       .badge-text { background: #f0f0f0; color: #666; }
       .badge-other { background: #f5f5f5; color: #999; }
 
@@ -543,7 +562,7 @@ class ReportGenerator {
       }
 
       .activity-table thead {
-        background: linear-gradient(135deg, #00A0BB, #0057B7);
+        background: ${this.c.gradTable};
         color: #fff;
       }
 
@@ -572,7 +591,7 @@ class ReportGenerator {
       .timing-badge {
         display: inline-block;
         background: #e8f2ff;
-        color: #0057B7;
+        color: ${this.c.primary};
         padding: 4px 12px;
         border-radius: 12px;
         font-weight: 600;
@@ -594,14 +613,14 @@ class ReportGenerator {
         margin-top: 20px;
       }
       .comment-box {
-        background: #f7f9fc;
+        background: ${this.c.bgLight};
         padding: 24px;
         border-radius: 12px;
-        border-left: 4px solid #0057B7;
+        border-left: 4px solid ${this.c.primary};
       }
       .comment-box h4 {
         font-size: 1.1em;
-        color: #003d82;
+        color: ${this.c.primaryDark};
         margin-bottom: 12px;
         display: flex;
         align-items: center;
@@ -615,7 +634,7 @@ class ReportGenerator {
       }
       .comment-box .action {
         background: #e8f2ff;
-        color: #0057B7;
+        color: ${this.c.primary};
         padding: 10px 16px;
         border-radius: 8px;
         font-size: 0.85em;
@@ -624,7 +643,7 @@ class ReportGenerator {
 
       /* ===== 頁尾 ===== */
       .report-footer {
-        background: linear-gradient(135deg, #003d82, #0057B7);
+        background: ${this.c.gradTop};
         color: #fff;
         text-align: center;
         padding: 36px 24px;
@@ -697,10 +716,10 @@ class ReportGenerator {
   generateKPI() {
     const { kpi } = this.data;
     const cards = [
-      { icon: '📝', label: '貼文發布總篇數', value: kpi.totalPosts, color: '#0057B7' },
-      { icon: '👥', label: '粉專追蹤人數', value: kpi.followersCount.toLocaleString(), color: '#FFA000' },
-      { icon: '👁️', label: '累計總觸及人數', value: kpi.totalReach.toLocaleString(), color: '#00A0BB' },
-      { icon: '💬', label: '平均互動次數', value: kpi.avgEngagement.toLocaleString(), color: '#5CBEB2' },
+      { icon: '📝', label: '貼文發布總篇數', value: kpi.totalPosts, color: this.c.primary },
+      { icon: '👥', label: '粉專追蹤人數', value: kpi.followersCount.toLocaleString(), color: this.c.secondary },
+      { icon: '👁️', label: '累計總觸及人數', value: kpi.totalReach.toLocaleString(), color: this.c.primaryLight },
+      { icon: '💬', label: '平均互動次數', value: kpi.avgEngagement.toLocaleString(), color: this.c.accent },
     ];
 
     return `
@@ -771,7 +790,7 @@ class ReportGenerator {
             ${topicAnalysis.slice(0, 10).map((t, i) => {
               const pct = maxEngagementRate > 0 ? (t.engagementRate / maxEngagementRate * 100) : 0;
               const ratePct = (t.engagementRate * 100).toFixed(2);
-              const colors = ['#0057B7', '#00A0BB', '#5CBEB2', '#FFA000', '#7B1FA2'];
+              const colors = this.c.colorsArr;
               const color = colors[i % colors.length];
               return `<tr>
                 <td class="rank-num">${i + 1}</td>
@@ -786,7 +805,7 @@ class ReportGenerator {
 
     // 右欄：素材型式分析 + 數據洞察 + 發文數量長條圖
     const maxMediaReach = Math.max(...mediaAnalysis.map(m => m.avgReach), 1);
-    const mediaColors = { '照片': '#0057B7', '影片': '#FFA000', '相簿': '#5CBEB2', '連結': '#7B1FA2', '文字': '#718096', '其他': '#A0AEC0' };
+    const mediaColors = { '照片': this.c.primary, '影片': this.c.secondary, '相簿': this.c.accent, '連結': this.c.accent2, '文字': '#718096', '其他': '#A0AEC0' };
 
     const rightPanel = `
       <div class="analysis-panel">
@@ -867,7 +886,7 @@ class ReportGenerator {
       '連結': 'badge-link', '文字': 'badge-text', '其他': 'badge-other',
     };
 
-    const rateColors = ['#0057B7', '#00A0BB', '#5CBEB2', '#FFA000'];
+    const rateColors = [this.c.primary, this.c.primaryLight, this.c.accent, this.c.secondary];
 
     return `
     <div class="section-title"><span class="icon">📋</span> 全貼文表現明細表</div>
@@ -963,27 +982,57 @@ class ReportGenerator {
    * 8.5 用戶留言洞察與貼文建議
    */
   generateCommentInsights() {
+    const isEcoco = this.brandName.toLowerCase().includes('ecoco') || this.brandName.toLowerCase().includes('eco');
+    if (isEcoco) {
+      return `
+      <div class="section-title"><span class="icon">💬</span> 本月用戶留言洞察與建議</div>
+      <div class="comment-insight-wrapper">
+        <p style="font-size: 0.95em; color: #4a5568; margin-bottom: 8px;">根據系統最新抓取的 ECOCO 粉絲留言，為您整理出以下四大反饋與對應的社群貼文規劃建議：</p>
+        <div class="comment-grid">
+          <div class="comment-box" style="border-left-color: ${this.c.secondary};">
+            <h4>📍 痛點一：機台滿桶或故障狀態</h4>
+            <p>不少粉絲反映抵達現場才發現滿桶：「跑到現場才發現機台滿了」、「何時會來清空呢？」。</p>
+            <div class="action">💡 建議貼文：發布【出發前必看！APP 尋找機台與即時空桶狀態教學圖卡】。</div>
+          </div>
+          <div class="comment-box" style="border-left-color: ${this.c.orangeAlert};">
+            <h4>♻️ 痛點二：回收物規格辨識疑問</h4>
+            <p>粉絲對於能否回收特定品項有疑慮：「這個杯子可以投嗎？」、「廢電池能混著投嗎？」。</p>
+            <div class="action">💡 建議貼文：製作【環保小百科：機台吃什麼？輕鬆辨識回收材質指南】。</div>
+          </div>
+          <div class="comment-box" style="border-left-color: ${this.c.accent};">
+            <h4>🎁 痛點三：APP 點數折抵與活動</h4>
+            <p>用戶對於點數兌換與快閃活動充滿期待與疑問：「點數可以換什麼最划算？」、「序號在哪裡輸入？」。</p>
+            <div class="action">💡 建議貼文：推出【點數放大術：本月精選合作店家與超值兌換密技】。</div>
+          </div>
+          <div class="comment-box" style="border-left-color: ${this.c.primary};">
+            <h4>🌟 亮點四：家庭與校園的環保實踐</h4>
+            <p>許多家長分享帶孩子一起做環保的樂趣：「小孩每天指定要去餵猴子」、「蒐集電池變全家運動」。</p>
+            <div class="action">💡 建議貼文：募集並精選【ECOCO 小小環保英雄】粉絲圖文，帶動社區參與。</div>
+          </div>
+        </div>
+      </div>`;
+    }
     return `
     <div class="section-title"><span class="icon">💬</span> 本月用戶留言洞察與建議</div>
     <div class="comment-insight-wrapper">
       <p style="font-size: 0.95em; color: #4a5568; margin-bottom: 8px;">根據系統最新抓取的粉絲留言，為您整理出以下四大痛點與對應的社群貼文規劃建議：</p>
       <div class="comment-grid">
-        <div class="comment-box" style="border-left-color: #FFA000;">
+        <div class="comment-box" style="border-left-color: ${this.c.secondary};">
           <h4>📍 痛點一：尋找機台與特定洗劑</h4>
           <p>近 30% 留言在詢問特定機台（如洗碗精、防蟎款）。粉絲反應：「屏東缺洗碗精補充機」、「高雄找不到」。</p>
           <div class="action">💡 建議貼文：發布【隱藏版攻略：全台洗碗精機台地圖】與【擴點許願池】互動貼文。</div>
         </div>
-        <div class="comment-box" style="border-left-color: #E63946;">
+        <div class="comment-box" style="border-left-color: ${this.c.orangeAlert};">
           <h4>💳 痛點二：操作與客服問題</h4>
           <p>部分粉絲對付款與發票流程有疑慮，例如：「找不到Line Pay條碼」、「補開發票要身分證太麻煩」。</p>
           <div class="action">💡 建議貼文：製作【機台操作不卡關！發票與統編攻略指南】教學圖卡。</div>
         </div>
-        <div class="comment-box" style="border-left-color: #5CBEB2;">
+        <div class="comment-box" style="border-left-color: ${this.c.accent};">
           <h4>🧴 痛點三：產品教育與用量疑惑</h4>
           <p>有些新用戶不知道如何使用：「不知道洗衣服要放多少洗衣精」、「機器上沒有寫成分」。</p>
           <div class="action">💡 建議貼文：推出【洗衣小學堂：到底要按多少？】用量教學與成分大解密。</div>
         </div>
-        <div class="comment-box" style="border-left-color: #0057B7;">
+        <div class="comment-box" style="border-left-color: ${this.c.primary};">
           <h4>🌟 亮點四：滿滿的好口碑 (UGC)</h4>
           <p>大量的「#小小永續英雄」標籤湧現，許多家長分享帶孩子體驗的感動：「從幼稚園裝到四年級」。</p>
           <div class="action">💡 建議貼文：精選網友圖文發布【謝謝你們陪地球一起長大】，帶動情感共鳴。</div>
