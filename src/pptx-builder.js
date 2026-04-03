@@ -55,31 +55,54 @@ class PptxBuilder {
     // Slide 2: 整體數據概覽 (4 格 KPI 卡片＋本期最高互動貼文 Highlight)
     // ----------------------------------------------------------------------
     let slide2 = pres.addSlide({ masterName: "MASTER_SLIDE" });
-    slide2.addText("整體數據概覽", { x: 0.5, y: 0.4, w: 9, h: 0.6, fontSize: 28, bold: true, color: COLOR_PRIMARY });
+    slide2.addText("整體數據概覽 Overall Performance", { x: 0.5, y: 0.3, w: 9, h: 0.6, fontSize: 28, bold: true, color: COLOR_PRIMARY });
     
-    // 4 KPI Cards
+    // 4 KPI Cards (Better alignment: total width 9 centered on 10 = margin 0.5 each side)
     const kpiData = [
       { label: "總貼文篇數", val: `${kpi.totalPosts || 0} 篇` },
-      { label: "總觸及人數", val: `${(kpi.totalReach || 0).toLocaleString()}` },
-      { label: "總互動次數", val: `${(kpi.totalEngagement || 0).toLocaleString()}` },
-      { label: "平均互動次數", val: `${(kpi.avgEngagement || 0).toLocaleString()} / 篇` }
+      { label: "總觸及人數", val: (kpi.totalReach || 0).toLocaleString() },
+      { label: "總互動次數", val: (kpi.totalEngagement || 0).toLocaleString() },
+      { label: "平均互動次數", val: (kpi.avgEngagement || 0).toLocaleString() + " / 篇" }
     ];
+    
+    const cardW = 2.1;
+    const cardGap = 0.2;
+    const startX = 0.5;
+
     kpiData.forEach((item, idx) => {
-      const cx = 0.5 + (idx * 2.2);
-      slide2.addShape(pres.ShapeType.roundRect, { x: cx, y: 1.2, w: 2, h: 1.2, fill: COLOR_BG_LIGHT, rectRadius: 0.1 });
-      slide2.addText(item.label, { x: cx, y: 1.3, w: 2, h: 0.3, fontSize: 14, color: "666666", align: 'center' });
-      slide2.addText(item.val, { x: cx, y: 1.7, w: 2, h: 0.5, fontSize: 22, bold: true, color: COLOR_PRIMARY, align: 'center' });
+      const cx = startX + (idx * (cardW + cardGap));
+      // Card Background
+      slide2.addShape(pres.ShapeType.roundRect, { x: cx, y: 1.1, w: cardW, h: 1.3, fill: COLOR_BG_LIGHT, rectRadius: 0.1 });
+      // Label
+      slide2.addText(item.label, { x: cx, y: 1.25, w: cardW, h: 0.3, fontSize: 13, color: "666666", align: 'center', fontFace: 'Arial' });
+      // Value
+      slide2.addText(item.val, { x: cx, y: 1.6, w: cardW, h: 0.6, fontSize: 20, bold: true, color: COLOR_PRIMARY, align: 'center', fontFace: 'Arial' });
     });
 
-    // Top Post
-    slide2.addText("🏆 本期最高互動貼文Highlight", { x: 0.5, y: 2.8, w: 9, h: 0.5, fontSize: 18, bold: true, color: COLOR_SECONDARY });
-    let topPostMsg = topPost.message ? topPost.message.substring(0, 150) + "..." : "無文字內容";
-    slide2.addShape(pres.ShapeType.roundRect, { x: 0.5, y: 3.4, w: 9, h: 1.4, fill: "FFF5EB", line: { color: COLOR_SECONDARY, width: 1 }, rectRadius: 0.1 });
-    slide2.addText(`貼文內容：${topPostMsg}`, { x: 0.7, y: 3.5, w: 8.6, h: 0.6, fontSize: 13, color: COLOR_TEXT, valign: 'top' });
+    // Top Post Highlight
+    slide2.addText("🏆 本期最高互動貼文 Highlight", { x: 0.5, y: 2.7, w: 9, h: 0.5, fontSize: 18, bold: true, color: COLOR_SECONDARY });
     
+    // Highlight Container
+    slide2.addShape(pres.ShapeType.roundRect, { x: 0.5, y: 3.3, w: 9, h: 1.6, fill: "FFF5EB", line: { color: COLOR_SECONDARY, width: 1.5 }, rectRadius: 0.1 });
+    
+    // Top Post Content (Left side of box)
+    let topPostMsg = topPost.message ? topPost.message.substring(0, 180) + "..." : "尚無文字內容";
+    slide2.addText(topPostMsg, { x: 0.8, y: 3.4, w: 8.4, h: 0.9, fontSize: 13, color: "444444", valign: 'top', fontFace: 'Arial' });
+    
+    // Stats Bar (Bottom of box)
     let rate = topPost.reach && topPost.reach > 0 ? ((topPost.totalEngagement / topPost.reach) * 100).toFixed(2) : '0';
-    let statTxt = `🔹 類型：${topPost.mediaType || '照片'}    🔹 觸及：${(topPost.reach || 0).toLocaleString()}    🔹 互動：${(topPost.totalEngagement || 0).toLocaleString()}    🔹 互動率：${rate}%`;
-    slide2.addText(statTxt, { x: 0.7, y: 4.3, w: 8.6, h: 0.3, fontSize: 14, bold: true, color: COLOR_PRIMARY });
+    let statTxt = [
+        { text: "類型：", options: { color: "666666" } },
+        { text: (topPost.mediaType || "照片") + "   ", options: { bold: true, color: COLOR_PRIMARY } },
+        { text: "觸及：", options: { color: "666666" } },
+        { text: (topPost.reach || 0).toLocaleString() + "   ", options: { bold: true, color: COLOR_PRIMARY } },
+        { text: "互動：", options: { color: "666666" } },
+        { text: (topPost.totalEngagement || 0).toLocaleString() + "   ", options: { bold: true, color: COLOR_PRIMARY } },
+        { text: "互動率：", options: { color: "666666" } },
+        { text: rate + "%", options: { bold: true, color: COLOR_SECONDARY } }
+    ];
+    
+    slide2.addText(statTxt, { x: 0.8, y: 4.4, w: 8.4, h: 0.4, fontSize: 13, align: 'left', fontFace: 'Arial' });
 
     // ----------------------------------------------------------------------
     // Slide 3: 各主題互動率排名 (進度條排名表)
