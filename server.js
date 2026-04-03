@@ -50,10 +50,10 @@ app.get('/api/brands', (req, res) => {
 
 app.post('/api/generate', async (req, res) => {
   try {
-    const { year, month, brand } = req.body;
+    const { startDate, endDate, brand } = req.body;
     
-    if (!year || !month) {
-      return res.status(400).json({ success: false, message: '請提供年份與月份' });
+    if (!startDate || !endDate) {
+      return res.status(400).json({ success: false, message: '請提供起始與結束日期' });
     }
 
     // 取得品牌設定
@@ -63,10 +63,7 @@ app.post('/api/generate', async (req, res) => {
       return res.status(400).json({ success: false, message: `品牌 "${brand}" 設定不完整或不存在。請檢查 .env 設定。` });
     }
 
-    const nYear = parseInt(year);
-    const nMonth = parseInt(month);
-
-    console.log(`[Web API] 品牌：${brandConfig.name} | 開始抓取 ${nYear}年${nMonth}月 數據...`);
+    console.log(`[Web API] 品牌：${brandConfig.name} | 開始抓取 ${startDate} ~ ${endDate} 數據...`);
 
     const fbApi = new FacebookAPI({
       pageId: brandConfig.pageId,
@@ -74,10 +71,10 @@ app.post('/api/generate', async (req, res) => {
       apiVersion: process.env.FB_API_VERSION || 'v21.0',
     });
 
-    const rawData = await fbApi.fetchAllData(nYear, nMonth);
+    const rawData = await fbApi.fetchAllData(startDate, endDate);
 
     if (rawData.posts.length === 0) {
-      return res.json({ success: false, message: '該月份沒有貼文數據，無法生成報告。' });
+      return res.json({ success: false, message: '該期間沒有貼文數據，無法生成報告。' });
     }
 
     // 匯出 Excel
@@ -95,7 +92,7 @@ app.post('/api/generate', async (req, res) => {
     const html = reportGenerator.generate();
 
     const brandName = brandConfig.name;
-    const reportFileName = `${brandName}_${nYear}-${String(nMonth).padStart(2, '0')}_社群成果分析報告.html`;
+    const reportFileName = `${brandName}_${startDate}_to_${endDate}_社群成果分析報告.html`;
     const reportPath = path.join(outputDir, reportFileName);
 
     fs.writeFileSync(reportPath, html, 'utf-8');

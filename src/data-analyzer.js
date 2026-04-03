@@ -7,8 +7,17 @@ class DataAnalyzer {
   constructor(data) {
     this.pageInfo = data.pageInfo;
     this.posts = data.posts;
-    this.year = data.year;
-    this.month = data.month;
+    this.startDate = data.startDate;
+    this.endDate = data.endDate;
+    
+    // 從 startDate 推導出約略的年份與月份，供後續節慶與活動企劃判斷使用
+    if (this.startDate) {
+      this.year = parseInt(this.startDate.split('-')[0], 10);
+      this.month = parseInt(this.startDate.split('-')[1], 10);
+    } else {
+      this.year = data.year || new Date().getFullYear();
+      this.month = data.month || new Date().getMonth() + 1;
+    }
   }
 
   /**
@@ -26,6 +35,8 @@ class DataAnalyzer {
       pageInfo: this.pageInfo,
       year: this.year,
       month: this.month,
+      startDate: this.startDate,
+      endDate: this.endDate,
       kpi,
       topPost,
       topicAnalysis,

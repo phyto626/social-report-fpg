@@ -195,7 +195,7 @@
       text-transform: uppercase;
     }
 
-    input[type="month"] {
+    input[type="month"], input[type="date"] {
       width: 100%;
       padding: 16px;
       border: 1px solid var(--border);
@@ -208,7 +208,7 @@
       cursor: pointer;
       font-family: inherit;
     }
-    input[type="month"]:focus {
+    input[type="month"]:focus, input[type="date"]:focus {
       border-color: var(--brand-from);
       box-shadow: 0 0 0 3px var(--brand-glow);
     }
@@ -409,10 +409,16 @@
       <span id="brandDesc">選擇品牌後自動切換對應粉專數據源</span>
     </div>
 
-    <!-- Month Picker -->
-    <div class="form-group">
-      <label for="monthPicker">選擇分析月份</label>
-      <input type="month" id="monthPicker" value="">
+    <!-- Date Range Picker -->
+    <div class="form-group" style="display: flex; gap: 12px;">
+      <div style="flex: 1;">
+        <label for="startDate">起始日期</label>
+        <input type="date" id="startDate" value="">
+      </div>
+      <div style="flex: 1;">
+        <label for="endDate">結束日期</label>
+        <input type="date" id="endDate" value="">
+      </div>
     </div>
 
     <!-- Generate -->
@@ -506,21 +512,21 @@
       document.getElementById('errorMsg').style.display = 'none';
     }
 
-    // ===== Init month picker (default = last month) =====
-    const d = new Date();
-    d.setMonth(d.getMonth() - 1);
-    document.getElementById('monthPicker').value =
-      `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+    // ===== Init date range picker (default = last 30 days) =====
+    const dEnd = new Date();
+    document.getElementById('endDate').value = dEnd.toISOString().split('T')[0];
+    const dStart = new Date();
+    dStart.setDate(dStart.getDate() - 30);
+    document.getElementById('startDate').value = dStart.toISOString().split('T')[0];
 
     // Init brand palette
     selectBrand('fpg');
 
     // ===== Generate =====
     document.getElementById('generateBtn').addEventListener('click', async () => {
-      const monthValue = document.getElementById('monthPicker').value;
-      if (!monthValue) return alert('請選擇月份');
-
-      const [year, month] = monthValue.split('-');
+      const startDate = document.getElementById('startDate').value;
+      const endDate = document.getElementById('endDate').value;
+      if (!startDate || !endDate) return alert('請選擇完整日期範圍');
       const btn = document.getElementById('generateBtn');
       const btnText = document.getElementById('btnText');
       const loader = document.getElementById('loader');
@@ -537,7 +543,7 @@
         const response = await fetch('/api/generate', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ year, month, brand: currentBrand }),
+          body: JSON.stringify({ startDate, endDate, brand: currentBrand }),
         });
 
         const data = await response.json();

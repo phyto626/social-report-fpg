@@ -13,7 +13,7 @@ class FacebookAPI {
 
     this.client = axios.create({
       baseURL: this.baseUrl,
-      timeout: 30000,
+      timeout: 120000,
       params: { access_token: this.accessToken },
     });
 
@@ -82,14 +82,14 @@ class FacebookAPI {
   }
 
   /**
-   * 取得指定月份的所有貼文
-   * @param {number} year - 年份
-   * @param {number} month - 月份 (1-12)
+   * 取得指定期間的所有貼文
+   * @param {string} startStr - 起始日期 (YYYY-MM-DD，選項)
+   * @param {string} endStr - 結束日期 (YYYY-MM-DD，選項)
    */
-  async getMonthlyPosts(year, month) {
-    // 計算月份的起始與結束 Unix 時間戳
-    const startDate = new Date(year, month - 1, 1, 0, 0, 0);
-    const endDate = new Date(year, month, 0, 23, 59, 59); // 該月最後一天
+  async getPostsByDateRange(startStr, endStr) {
+    // 計算起始與結束 Unix 時間戳
+    const startDate = new Date(startStr + "T00:00:00");
+    const endDate = new Date(endStr + "T23:59:59");
     const since = Math.floor(startDate.getTime() / 1000);
     const until = Math.floor(endDate.getTime() / 1000);
 
@@ -119,7 +119,7 @@ class FacebookAPI {
         data = await this.request(url, params);
       } else {
         // 後續頁面使用完整的 paging URL
-        const response = await axios.get(url, { timeout: 30000 });
+        const response = await axios.get(url, { timeout: 120000 });
         data = response.data;
       }
 
@@ -168,7 +168,7 @@ class FacebookAPI {
   /**
    * 完整抓取流程：粉專資訊 + 所有貼文 + 各貼文觸及數據
    */
-  async fetchAllData(year, month) {
+  async fetchAllData(startStr, endStr) {
     console.log('\n🚀 開始抓取 Facebook 粉專數據...\n');
     console.log('='.repeat(50));
 
@@ -178,12 +178,12 @@ class FacebookAPI {
     console.log(`  追蹤人數: ${pageInfo.followersCount.toLocaleString()}`);
     console.log('');
 
-    // 2. 取得月份貼文
-    const rawPosts = await this.getMonthlyPosts(year, month);
+    // 2. 取得期間貼文
+    const rawPosts = await this.getPostsByDateRange(startStr, endStr);
 
     if (rawPosts.length === 0) {
-      console.log('\n⚠️ 該月份沒有找到任何貼文！');
-      return { pageInfo, posts: [], year, month };
+      console.log('\n⚠️ 該期間沒有找到任何貼文！');
+      return { pageInfo, posts: [], startDate: startStr, endDate: endStr };
     }
 
     // 3. 逐篇取得觸及數據
@@ -216,7 +216,7 @@ class FacebookAPI {
     console.log(`✅ 數據抓取完成！共 ${posts.length} 篇貼文`);
     console.log(`   API 總請求數: ${this.requestCount}`);
 
-    return { pageInfo, posts, year, month };
+    return { pageInfo, posts, startDate: startStr, endDate: endStr };
   }
 
   /**

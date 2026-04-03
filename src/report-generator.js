@@ -7,8 +7,10 @@ class ReportGenerator {
   constructor(analysisResult) {
     this.data = analysisResult;
     this.brandName = analysisResult.pageInfo.name || '洗衣精補充站';
-    this.year = analysisResult.year;
-    this.month = analysisResult.month;
+    this.startDate = analysisResult.startDate;
+    this.endDate = analysisResult.endDate;
+    this.year = analysisResult.startDate ? analysisResult.startDate.substring(0, 4) : '2026';
+    this.month = analysisResult.startDate ? analysisResult.startDate.substring(5, 7) : '01';
 
     // Theme logic
     const isEcoco = this.brandName.toLowerCase().includes('ecoco') || this.brandName.toLowerCase().includes('eco');
@@ -39,7 +41,7 @@ class ReportGenerator {
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>${this.brandName} ${this.year}年${this.month}月 社群成果分析報告</title>
+  <title>${this.brandName} ${this.startDate} ~ ${this.endDate} 社群成果分析報告</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;700;900&display=swap" rel="stylesheet">
@@ -703,7 +705,7 @@ class ReportGenerator {
       <h1>${this.brandName}</h1>
       <div class="subtitle">社群成果分析報告 Social Media Performance Report</div>
       <div class="header-meta">
-        <span>📅 ${this.year}年${this.month}月</span>
+        <span>📅 ${this.startDate} ~ ${this.endDate}</span>
         <span>📊 分析 ${kpi.totalPosts} 篇貼文</span>
         <span>📈 報告年度 ${this.year}</span>
       </div>
