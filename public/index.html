@@ -3,274 +3,524 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>社群成果報告自動化生成器</title>
+  <title>社群成果報告產生器 — 多品牌整合平台</title>
+  <meta name="description" content="一站式自動抓取 FB 粉專數據，支援台塑便利家與 ECOCO 雙品牌，一鍵產生精美社群分析報告。">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&family=Noto+Sans+TC:wght@300;400;600;800&display=swap" rel="stylesheet">
   <style>
     :root {
-      --primary: #00A0BB;
-      --secondary: #0057B7;
-      --accent: #FFA000;
-      --bg: #F0F4F8;
-    }
-    
-    * {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-      font-family: 'Outfit', 'Noto Sans TC', sans-serif;
+      --primary: #6366f1;
+      --primary-dark: #4f46e5;
+      --accent: #f59e0b;
+      --bg: #0f172a;
+      --bg-card: rgba(30, 41, 59, 0.7);
+      --bg-glass: rgba(255,255,255,0.06);
+      --border: rgba(255,255,255,0.08);
+      --text: #e2e8f0;
+      --text-muted: #94a3b8;
+      --radius: 20px;
+      --shadow: 0 20px 60px rgba(0,0,0,0.5);
+
+      /* brand palette — dynamically swapped */
+      --brand-from: #6366f1;
+      --brand-to: #a78bfa;
+      --brand-glow: rgba(99,102,241,0.25);
     }
 
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
     body {
+      font-family: 'Outfit', 'Noto Sans TC', sans-serif;
       background: var(--bg);
-      background-image: 
-        radial-gradient(at 0% 0%, rgba(0, 160, 187, 0.2) 0px, transparent 50%),
-        radial-gradient(at 100% 0%, rgba(0, 87, 183, 0.2) 0px, transparent 50%);
-      color: #333;
+      color: var(--text);
       min-height: 100vh;
       display: flex;
       flex-direction: column;
       align-items: center;
       justify-content: center;
       padding: 40px 20px;
+      overflow-x: hidden;
     }
 
+    /* === Animated BG orbs === */
+    body::before, body::after {
+      content: '';
+      position: fixed;
+      border-radius: 50%;
+      filter: blur(120px);
+      opacity: 0.35;
+      z-index: 0;
+      pointer-events: none;
+      transition: background 0.8s ease;
+    }
+    body::before {
+      width: 600px; height: 600px;
+      top: -180px; left: -120px;
+      background: var(--brand-from);
+    }
+    body::after {
+      width: 500px; height: 500px;
+      bottom: -120px; right: -80px;
+      background: var(--brand-to);
+    }
+
+    /* === Main Container === */
     .container {
-      background: rgba(255, 255, 255, 0.85);
-      backdrop-filter: blur(12px);
-      -webkit-backdrop-filter: blur(12px);
-      border-radius: 24px;
-      padding: 48px;
+      position: relative;
+      z-index: 1;
+      background: var(--bg-card);
+      backdrop-filter: blur(24px);
+      -webkit-backdrop-filter: blur(24px);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 48px 44px;
       width: 100%;
-      max-width: 500px;
-      box-shadow: 0 16px 40px rgba(0, 87, 183, 0.1);
-      border: 1px solid rgba(255, 255, 255, 0.5);
+      max-width: 540px;
+      box-shadow: var(--shadow);
     }
 
-    h1 {
-      font-size: 28px;
+    /* === Header === */
+    .header {
+      text-align: center;
+      margin-bottom: 36px;
+    }
+    .header .logo-icon {
+      font-size: 40px;
       margin-bottom: 8px;
-      text-align: center;
-      color: var(--secondary);
+      display: block;
+    }
+    .header h1 {
+      font-size: 26px;
       font-weight: 800;
+      background: linear-gradient(135deg, var(--brand-from), var(--brand-to));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
       letter-spacing: 0.5px;
+      transition: background 0.6s;
     }
-
-    p.subtitle {
-      text-align: center;
-      color: #666;
-      margin-bottom: 40px;
+    .header p {
+      color: var(--text-muted);
+      font-size: 14px;
       font-weight: 300;
+      margin-top: 6px;
     }
 
-    .form-group {
+    /* === Brand Picker (toggle pills) === */
+    .brand-picker {
+      display: flex;
+      gap: 0;
+      background: var(--bg-glass);
+      border-radius: 14px;
+      padding: 4px;
+      margin-bottom: 28px;
+      border: 1px solid var(--border);
+      position: relative;
+    }
+    .brand-picker .slider {
+      position: absolute;
+      top: 4px; left: 4px;
+      height: calc(100% - 8px);
+      width: calc(50% - 4px);
+      border-radius: 11px;
+      background: linear-gradient(135deg, var(--brand-from), var(--brand-to));
+      transition: transform 0.4s cubic-bezier(.4,0,.2,1), background 0.6s;
+      z-index: 0;
+      box-shadow: 0 4px 16px var(--brand-glow);
+    }
+    .brand-picker .slider.right {
+      transform: translateX(100%);
+    }
+    .brand-picker label {
+      flex: 1;
+      text-align: center;
+      padding: 14px 0;
+      font-size: 15px;
+      font-weight: 600;
+      cursor: pointer;
+      position: relative;
+      z-index: 1;
+      transition: color 0.3s;
+      border-radius: 11px;
+      user-select: none;
+    }
+    .brand-picker label.active {
+      color: #fff;
+    }
+    .brand-picker label:not(.active) {
+      color: var(--text-muted);
+    }
+    .brand-picker label:not(.active):hover {
+      color: var(--text);
+    }
+    .brand-picker input { display: none; }
+
+    /* Brand detail bar */
+    .brand-detail {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 14px 18px;
+      background: var(--bg-glass);
+      border: 1px solid var(--border);
+      border-radius: 12px;
       margin-bottom: 24px;
+      font-size: 13px;
+      color: var(--text-muted);
+      transition: opacity 0.3s;
+    }
+    .brand-detail .brand-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 12px;
+      border-radius: 8px;
+      font-weight: 700;
+      font-size: 13px;
+      background: linear-gradient(135deg, var(--brand-from), var(--brand-to));
+      color: #fff;
+      transition: background 0.5s;
     }
 
-    label {
+    /* === Form === */
+    .form-group { margin-bottom: 24px; }
+
+    .form-group label {
       display: block;
       margin-bottom: 8px;
       font-weight: 600;
-      color: #555;
-      font-size: 14px;
+      color: var(--text-muted);
+      font-size: 13px;
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
     }
 
     input[type="month"] {
       width: 100%;
       padding: 16px;
-      border: 2px solid #E2E8F0;
+      border: 1px solid var(--border);
       border-radius: 12px;
       font-size: 16px;
-      background: #fff;
-      color: #333;
+      background: var(--bg-glass);
+      color: var(--text);
       outline: none;
       transition: all 0.3s ease;
       cursor: pointer;
+      font-family: inherit;
     }
-
     input[type="month"]:focus {
-      border-color: var(--primary);
-      box-shadow: 0 0 0 4px rgba(0, 160, 187, 0.1);
+      border-color: var(--brand-from);
+      box-shadow: 0 0 0 3px var(--brand-glow);
     }
 
-    button {
+    /* === Generate Button === */
+    .generate-btn {
       width: 100%;
-      background: linear-gradient(135deg, var(--secondary) 0%, var(--primary) 100%);
+      background: linear-gradient(135deg, var(--brand-from), var(--brand-to));
       color: #fff;
       border: none;
       padding: 18px;
-      font-size: 18px;
+      font-size: 17px;
       font-weight: 800;
-      border-radius: 12px;
+      border-radius: 14px;
       cursor: pointer;
-      transition: transform 0.2s, box-shadow 0.2s;
+      transition: transform 0.2s, box-shadow 0.3s, opacity 0.3s;
       display: flex;
       justify-content: center;
       align-items: center;
       gap: 10px;
+      letter-spacing: 0.5px;
+      position: relative;
+      overflow: hidden;
     }
-
-    button:hover {
+    .generate-btn::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(135deg, rgba(255,255,255,0.15), transparent 60%);
+      pointer-events: none;
+    }
+    .generate-btn:hover:not(:disabled) {
       transform: translateY(-2px);
-      box-shadow: 0 8px 20px rgba(0, 87, 183, 0.3);
+      box-shadow: 0 12px 32px var(--brand-glow);
     }
-    
-    button:disabled {
-      background: #cbd5e1;
+    .generate-btn:active:not(:disabled) {
+      transform: translateY(0);
+    }
+    .generate-btn:disabled {
+      opacity: 0.5;
       cursor: not-allowed;
       transform: none;
-      box-shadow: none;
     }
 
+    /* Loader */
     .loader {
       display: none;
-      width: 24px;
-      height: 24px;
+      width: 22px; height: 22px;
       border: 3px solid rgba(255,255,255,0.3);
       border-radius: 50%;
       border-top-color: #fff;
-      animation: spin 1s ease-in-out infinite;
+      animation: spin 0.8s linear infinite;
     }
+    @keyframes spin { to { transform: rotate(360deg); } }
 
-    @keyframes spin {
-      to { transform: rotate(360deg); }
-    }
-
+    /* === Status / Result === */
     .status-container {
-      margin-top: 32px;
+      margin-top: 28px;
       display: none;
+      animation: fadeUp 0.5s ease;
+    }
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(12px); }
+      to   { opacity: 1; transform: translateY(0); }
     }
 
     .success-card {
-      background: #F0FDF4;
-      border: 1px solid #BBF7D0;
+      background: rgba(16,185,129,0.08);
+      border: 1px solid rgba(16,185,129,0.25);
       border-radius: 16px;
-      padding: 24px;
+      padding: 28px;
     }
-
     .success-card h3 {
-      color: #166534;
+      color: #34d399;
       display: flex;
       align-items: center;
       gap: 8px;
-      margin-bottom: 16px;
+      margin-bottom: 20px;
+      font-size: 17px;
     }
 
-    .kpi-row {
-      display: flex;
-      justify-content: space-between;
-      margin-bottom: 12px;
-      font-size: 14px;
-      color: #374151;
+    .kpi-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+      margin-bottom: 24px;
+    }
+    .kpi-item {
+      text-align: center;
+      padding: 14px 8px;
+      background: rgba(255,255,255,0.04);
+      border-radius: 12px;
+      border: 1px solid rgba(255,255,255,0.06);
+    }
+    .kpi-item .kpi-val {
+      font-size: 20px;
+      font-weight: 800;
+      color: #fff;
+      margin-bottom: 2px;
+    }
+    .kpi-item .kpi-lbl {
+      font-size: 11px;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
     }
 
     .action-buttons {
       display: flex;
       gap: 12px;
-      margin-top: 24px;
     }
-
-    .btn-secondary, .btn-primary {
+    .btn-dl, .btn-view {
       flex: 1;
       text-decoration: none;
       text-align: center;
       padding: 14px;
-      border-radius: 10px;
-      font-weight: 600;
+      border-radius: 12px;
+      font-weight: 700;
       font-size: 14px;
       transition: all 0.2s;
-      display: inline-block;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
     }
-
-    .btn-primary {
-      background: var(--secondary);
+    .btn-view {
+      background: linear-gradient(135deg, var(--brand-from), var(--brand-to));
       color: #fff;
     }
-    .btn-primary:hover {
-      background: #004592;
+    .btn-view:hover {
+      box-shadow: 0 8px 24px var(--brand-glow);
+      transform: translateY(-1px);
+    }
+    .btn-dl {
+      background: rgba(255,255,255,0.06);
+      color: var(--text);
+      border: 1px solid var(--border);
+    }
+    .btn-dl:hover {
+      background: rgba(255,255,255,0.1);
     }
 
-    .btn-secondary {
-      background: #fff;
-      color: var(--secondary);
-      border: 1px solid var(--secondary);
-    }
-    .btn-secondary:hover {
-      background: #f1f7ff;
-    }
-
+    /* Error */
     .error-msg {
       display: none;
-      color: #dc2626;
-      background: #fef2f2;
-      border: 1px solid #fecaca;
-      padding: 16px;
+      color: #fca5a5;
+      background: rgba(239,68,68,0.1);
+      border: 1px solid rgba(239,68,68,0.25);
+      padding: 16px 20px;
       border-radius: 12px;
       margin-top: 20px;
       font-size: 14px;
-      line-height: 1.5;
+      line-height: 1.6;
+      animation: fadeUp 0.4s;
     }
 
+    /* Footer */
+    .footer {
+      margin-top: 24px;
+      text-align: center;
+      font-size: 12px;
+      color: rgba(148,163,184,0.5);
+    }
+
+    /* === Responsive === */
+    @media (max-width: 480px) {
+      .container { padding: 32px 24px; }
+      .header h1 { font-size: 22px; }
+      .kpi-grid { grid-template-columns: 1fr; }
+      .action-buttons { flex-direction: column; }
+    }
   </style>
 </head>
 <body>
 
   <div class="container">
-    <h1>社群數據成果產出</h1>
-    <p class="subtitle">自動抓取 FB 貼文，一鍵產生精美分析報告</p>
+    <!-- Header -->
+    <div class="header">
+      <span class="logo-icon">📊</span>
+      <h1 id="mainTitle">社群數據成果產出</h1>
+      <p>自動抓取 FB 貼文，一鍵產生精美分析報告</p>
+    </div>
 
+    <!-- Brand Picker -->
+    <div class="brand-picker" id="brandPicker">
+      <div class="slider" id="brandSlider"></div>
+      <label class="active" id="labelFpg" data-brand="fpg" onclick="selectBrand('fpg')">
+        🏭 台塑便利家
+      </label>
+      <label id="labelEcoco" data-brand="ecoco" onclick="selectBrand('ecoco')">
+        ♻️ ECOCO
+      </label>
+    </div>
+
+    <!-- Brand Detail -->
+    <div class="brand-detail" id="brandDetail">
+      <span class="brand-badge" id="brandBadge">台塑便利家</span>
+      <span id="brandDesc">選擇品牌後自動切換對應粉專數據源</span>
+    </div>
+
+    <!-- Month Picker -->
     <div class="form-group">
       <label for="monthPicker">選擇分析月份</label>
       <input type="month" id="monthPicker" value="">
     </div>
 
-    <button id="generateBtn">
+    <!-- Generate -->
+    <button class="generate-btn" id="generateBtn">
       <span id="btnText">產生報告</span>
       <div class="loader" id="loader"></div>
     </button>
 
+    <!-- Error -->
     <div class="error-msg" id="errorMsg"></div>
 
+    <!-- Result -->
     <div class="status-container" id="statusContainer">
       <div class="success-card">
         <h3>✨ 報告產生成功！</h3>
-        
-        <div class="kpi-row">
-          <span>貼文篇數</span>
-          <span id="kpiPosts" style="font-weight:bold;">-</span>
+        <div class="kpi-grid">
+          <div class="kpi-item">
+            <div class="kpi-val" id="kpiPosts">-</div>
+            <div class="kpi-lbl">貼文篇數</div>
+          </div>
+          <div class="kpi-item">
+            <div class="kpi-val" id="kpiReach">-</div>
+            <div class="kpi-lbl">累計觸及</div>
+          </div>
+          <div class="kpi-item">
+            <div class="kpi-val" id="kpiEngage">-</div>
+            <div class="kpi-lbl">平均互動</div>
+          </div>
         </div>
-        <div class="kpi-row">
-          <span>累計觸及</span>
-          <span id="kpiReach" style="font-weight:bold;">-</span>
-        </div>
-        <div class="kpi-row">
-          <span>平均互動</span>
-          <span id="kpiEngage" style="font-weight:bold;">-</span>
-        </div>
-
         <div class="action-buttons">
-          <a href="#" id="linkExcel" class="btn-secondary" download>下載 Excel 數據</a>
-          <a href="#" id="linkHtml" class="btn-primary" target="_blank">線上查看 HTML 報告</a>
+          <a href="#" id="linkExcel" class="btn-dl" download>📥 下載 Excel</a>
+          <a href="#" id="linkHtml" class="btn-view" target="_blank">🔗 查看報告</a>
         </div>
       </div>
     </div>
+
+    <div class="footer">Powered by FB Social Report Tool · Multi-Brand</div>
   </div>
 
   <script>
-    // 預設填入上個月
-    const date = new Date();
-    date.setMonth(date.getMonth() - 1);
-    const yyyy = date.getFullYear();
-    const mm = String(date.getMonth() + 1).padStart(2, '0');
-    document.getElementById('monthPicker').value = `${yyyy}-${mm}`;
+    // ===== Brand Palette Config =====
+    const brandPalettes = {
+      fpg: {
+        from: '#0057B7',
+        to: '#00A0BB',
+        glow: 'rgba(0,87,183,0.3)',
+        name: '台塑便利家',
+        desc: '台塑生醫「便利家」洗劑補充站粉專',
+        emoji: '🏭',
+      },
+      ecoco: {
+        from: '#060E9F',
+        to: '#0076A9',
+        glow: 'rgba(6,14,159,0.3)',
+        name: 'ECOCO',
+        desc: 'ECOCO 智慧回收機粉專',
+        emoji: '♻️',
+      },
+    };
 
+    let currentBrand = 'fpg';
+
+    function selectBrand(brand) {
+      currentBrand = brand;
+      const p = brandPalettes[brand];
+
+      // Update CSS vars
+      const root = document.documentElement;
+      root.style.setProperty('--brand-from', p.from);
+      root.style.setProperty('--brand-to', p.to);
+      root.style.setProperty('--brand-glow', p.glow);
+
+      // Slider position
+      const slider = document.getElementById('brandSlider');
+      if (brand === 'ecoco') {
+        slider.classList.add('right');
+      } else {
+        slider.classList.remove('right');
+      }
+
+      // Labels
+      document.getElementById('labelFpg').classList.toggle('active', brand === 'fpg');
+      document.getElementById('labelEcoco').classList.toggle('active', brand === 'ecoco');
+
+      // Detail bar
+      document.getElementById('brandBadge').textContent = p.name;
+      document.getElementById('brandDesc').textContent = p.desc;
+
+      // Hide previous results when switching
+      document.getElementById('statusContainer').style.display = 'none';
+      document.getElementById('errorMsg').style.display = 'none';
+    }
+
+    // ===== Init month picker (default = last month) =====
+    const d = new Date();
+    d.setMonth(d.getMonth() - 1);
+    document.getElementById('monthPicker').value =
+      `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+
+    // Init brand palette
+    selectBrand('fpg');
+
+    // ===== Generate =====
     document.getElementById('generateBtn').addEventListener('click', async () => {
       const monthValue = document.getElementById('monthPicker').value;
       if (!monthValue) return alert('請選擇月份');
 
       const [year, month] = monthValue.split('-');
-
-      // 切換 Loading 狀態
       const btn = document.getElementById('generateBtn');
       const btnText = document.getElementById('btnText');
       const loader = document.getElementById('loader');
@@ -278,7 +528,7 @@
       const statusContainer = document.getElementById('statusContainer');
 
       btn.disabled = true;
-      btnText.textContent = '抓取與分析中... (需時 10-30 秒)';
+      btnText.textContent = '抓取與分析中… (需時 10-30 秒)';
       loader.style.display = 'block';
       errorMsg.style.display = 'none';
       statusContainer.style.display = 'none';
@@ -287,31 +537,29 @@
         const response = await fetch('/api/generate', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ year, month })
+          body: JSON.stringify({ year, month, brand: currentBrand }),
         });
 
         const data = await response.json();
 
         if (data.success) {
-          // 渲染結果
           document.getElementById('kpiPosts').textContent = data.kpi.totalPosts + ' 篇';
-          document.getElementById('kpiReach').textContent = data.kpi.totalReach.toLocaleString() + ' 人';
-          document.getElementById('kpiEngage').textContent = data.kpi.avgEngagement + ' 次';
-          
+          document.getElementById('kpiReach').textContent = data.kpi.totalReach.toLocaleString();
+          document.getElementById('kpiEngage').textContent = data.kpi.avgEngagement;
+
           document.getElementById('linkHtml').href = data.reportUrl;
           if (data.excelUrl) {
             document.getElementById('linkExcel').href = data.excelUrl;
-            document.getElementById('linkExcel').style.display = 'inline-block';
+            document.getElementById('linkExcel').style.display = 'flex';
           } else {
             document.getElementById('linkExcel').style.display = 'none';
           }
 
           statusContainer.style.display = 'block';
         } else {
-          errorMsg.textContent = '❌ 發生錯誤：' + data.message;
+          errorMsg.textContent = '❌ ' + data.message;
           errorMsg.style.display = 'block';
         }
-
       } catch (err) {
         errorMsg.textContent = '❌ 網路錯誤或伺服器無回應，請確保伺服器已開啟。';
         errorMsg.style.display = 'block';

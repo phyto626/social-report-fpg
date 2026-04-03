@@ -24,22 +24,53 @@ if (!fs.existsSync(outputDir)) {
 app.use('/output', express.static(outputDir));
 app.use(express.static(path.join(__dirname, 'public')));
 
+// ===== 品牌設定對照 =====
+const BRANDS = {
+  fpg: {
+    key: 'fpg',
+    name: '台塑便利家',
+    pageId: process.env.FPG_PAGE_ID || process.env.FB_PAGE_ID,
+    accessToken: process.env.FPG_ACCESS_TOKEN || process.env.FB_PAGE_ACCESS_TOKEN,
+  },
+  ecoco: {
+    key: 'ecoco',
+    name: 'ECOCO',
+    pageId: process.env.ECOCO_PAGE_ID || process.env.FB_PAGE_ID,
+    accessToken: process.env.ECOCO_ACCESS_TOKEN || process.env.FB_PAGE_ACCESS_TOKEN,
+  },
+};
+
+// 取得可用品牌清單 API
+app.get('/api/brands', (req, res) => {
+  const available = Object.values(BRANDS)
+    .filter(b => b.pageId && b.accessToken)
+    .map(b => ({ key: b.key, name: b.name }));
+  res.json({ brands: available });
+});
+
 app.post('/api/generate', async (req, res) => {
   try {
-    const { year, month } = req.body;
+    const { year, month, brand } = req.body;
     
     if (!year || !month) {
       return res.status(400).json({ success: false, message: '請提供年份與月份' });
     }
 
+    // 取得品牌設定
+    const brandKey = (brand || 'fpg').toLowerCase();
+    const brandConfig = BRANDS[brandKey];
+    if (!brandConfig || !brandConfig.pageId || !brandConfig.accessToken) {
+      return res.status(400).json({ success: false, message: `品牌 "${brand}" 設定不完整或不存在。請檢查 .env 設定。` });
+    }
+
     const nYear = parseInt(year);
     const nMonth = parseInt(month);
 
-    console.log(`[Web API] 開始抓取 ${nYear}年${nMonth}月 數據...`);
+    console.log(`[Web API] 品牌：${brandConfig.name} | 開始抓取 ${nYear}年${nMonth}月 數據...`);
 
     const fbApi = new FacebookAPI({
-      pageId: process.env.FB_PAGE_ID,
-      accessToken: process.env.FB_PAGE_ACCESS_TOKEN,
+      pageId: brandConfig.pageId,
+      accessToken: brandConfig.accessToken,
       apiVersion: process.env.FB_API_VERSION || 'v21.0',
     });
 
@@ -63,7 +94,7 @@ app.post('/api/generate', async (req, res) => {
     const reportGenerator = new ReportGenerator(analysisResult);
     const html = reportGenerator.generate();
 
-    const brandName = process.env.BRAND_NAME || '洗衣精補充站';
+    const brandName = brandConfig.name;
     const reportFileName = `${brandName}_${nYear}-${String(nMonth).padStart(2, '0')}_社群成果分析報告.html`;
     const reportPath = path.join(outputDir, reportFileName);
 
@@ -76,6 +107,7 @@ app.post('/api/generate', async (req, res) => {
       reportUrl: `/output/${encodeURIComponent(reportFileName)}`,
       excelUrl: excelName ? `/output/${encodeURIComponent(excelName)}` : null,
       kpi: analysisResult.kpi,
+      brandName,
     });
     
   } catch (err) {
@@ -92,5 +124,11 @@ app.listen(PORT, () => {
   console.log('='.repeat(50));
   console.log(`🌐 Web Server 啟動成功！`);
   console.log(`🚀 請在瀏覽器開啟: http://localhost:${PORT}`);
+  console.log('='.repeat(50));
+  // 顯示已偵測到的品牌
+  Object.values(BRANDS).forEach(b => {
+    const status = (b.pageId && b.accessToken) ? '✅ 已設定' : '❌ 未設定';
+    console.log(`  ${status} ${b.name}`);
+  });
   console.log('='.repeat(50));
 });
