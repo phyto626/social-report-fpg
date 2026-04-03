@@ -195,9 +195,9 @@
 
                         <!-- Quick-Select Presets -->
                         <div class="flex flex-wrap gap-2 mt-4">
-                            <button type="button" onclick="setPreset('last30')" class="px-4 py-2 rounded-lg bg-surface-container text-xs font-bold text-on-surface-variant hover:bg-[#FF5000] hover:text-white transition-all active:scale-95">LAST 30 DAYS</button>
-                            <button type="button" onclick="setPreset('lastQuarter')" class="px-4 py-2 rounded-lg bg-surface-container text-xs font-bold text-on-surface-variant hover:bg-[#FF5000] hover:text-white transition-all active:scale-95">LAST QUARTER</button>
-                            <button type="button" onclick="setPreset('ytd')" class="px-4 py-2 rounded-lg bg-surface-container text-xs font-bold text-on-surface-variant hover:bg-[#FF5000] hover:text-white transition-all active:scale-95">YEAR TO DATE</button>
+                            <button id="btnLast30" type="button" onclick="setPreset('last30', event)" class="px-4 py-2 rounded-lg bg-surface-container text-xs font-bold text-on-surface-variant hover:bg-[#FF5000] hover:text-white transition-all active:scale-95">LAST 30 DAYS</button>
+                            <button id="btnLastQuarter" type="button" onclick="setPreset('lastQuarter', event)" class="px-4 py-2 rounded-lg bg-surface-container text-xs font-bold text-on-surface-variant hover:bg-[#FF5000] hover:text-white transition-all active:scale-95">LAST QUARTER</button>
+                            <button id="btnYtd" type="button" onclick="setPreset('ytd', event)" class="px-4 py-2 rounded-lg bg-surface-container text-xs font-bold text-on-surface-variant hover:bg-[#FF5000] hover:text-white transition-all active:scale-95">YEAR TO DATE</button>
                         </div>
                     </section>
 
@@ -295,7 +295,7 @@
             document.getElementById('errorMsg').style.display = 'none';
         }
 
-        function setPreset(type) {
+        function setPreset(type, evt) {
             const dEnd = new Date();
             const dStart = new Date();
             
@@ -315,14 +315,16 @@
             document.querySelectorAll('button[onclick^="setPreset"]').forEach(btn => {
                 btn.className = "px-4 py-2 rounded-lg bg-surface-container text-xs font-bold text-on-surface-variant hover:bg-[#FF5000] hover:text-white transition-all active:scale-95";
             });
-            event.target.className = "px-4 py-2 rounded-lg bg-[#FF5000] text-white text-xs font-bold shadow-md active:scale-95 transition-all";
+            if (evt && evt.currentTarget) {
+                evt.currentTarget.className = "px-4 py-2 rounded-lg bg-[#FF5000] text-white text-xs font-bold shadow-md active:scale-95 transition-all";
+            }
         }
 
         // Init date range picker (default = last 30 days)
         setPreset('last30');
         // Visually set the first button as active
-        if(document.querySelector('button[onclick="setPreset(\\'last30\\')"]')) {
-            document.querySelector('button[onclick="setPreset(\\'last30\\')"]').className = "px-4 py-2 rounded-lg bg-[#FF5000] text-white text-xs font-bold shadow-md active:scale-95 transition-all";
+        if(document.getElementById('btnLast30')) {
+            document.getElementById('btnLast30').className = "px-4 py-2 rounded-lg bg-[#FF5000] text-white text-xs font-bold shadow-md active:scale-95 transition-all";
         }
 
         // Generate Report Trigger
