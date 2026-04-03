@@ -34,7 +34,6 @@ class ReportGenerator {
     ${this.generateContentAnalysis()}
     ${this.generatePostTable()}
     ${this.generateInsightCards()}
-    ${this.generateStrategyCards()}
     ${this.generateCommentInsights()}
     ${this.generateActivityPlan()}
   </div>
@@ -500,7 +499,18 @@ class ReportGenerator {
 
       .insight-card .insight-emoji {
         font-size: 2em;
-        margin-bottom: 10px;
+        margin-bottom: 5px;
+      }
+
+      .insight-card .insight-label {
+        font-size: 0.8em;
+        font-weight: 600;
+        color: #718096;
+        background: #f0f4f8;
+        padding: 4px 10px;
+        border-radius: 12px;
+        display: inline-block;
+        margin-bottom: 12px;
       }
 
       .insight-card .insight-title {
@@ -514,68 +524,6 @@ class ReportGenerator {
         font-size: 0.9em;
         color: #718096;
         line-height: 1.7;
-      }
-
-      /* ===== Strategy Cards (3 欄) ===== */
-      .strategy-grid {
-        display: grid;
-        grid-template-columns: repeat(3, 1fr);
-        gap: 20px;
-        margin: 24px 0;
-      }
-
-      .strategy-card {
-        background: #fff;
-        border-radius: 16px;
-        overflow: hidden;
-        box-shadow: 0 2px 12px rgba(0,0,0,0.06);
-        transition: transform 0.2s;
-      }
-
-      .strategy-card:hover {
-        transform: translateY(-4px);
-        box-shadow: 0 8px 24px rgba(0,0,0,0.1);
-      }
-
-      .strategy-card .strategy-header {
-        padding: 20px 24px;
-        color: #fff;
-        display: flex;
-        align-items: center;
-        gap: 12px;
-      }
-
-      .strategy-card .strategy-number {
-        font-size: 2em;
-        font-weight: 900;
-        opacity: 0.6;
-      }
-
-      .strategy-card .strategy-title {
-        font-size: 1.1em;
-        font-weight: 700;
-      }
-
-      .strategy-card .strategy-body {
-        padding: 20px 24px;
-      }
-
-      .strategy-card .strategy-body li {
-        font-size: 0.88em;
-        color: #4a5568;
-        margin-bottom: 10px;
-        line-height: 1.6;
-        list-style: none;
-        position: relative;
-        padding-left: 20px;
-      }
-
-      .strategy-card .strategy-body li::before {
-        content: '▸';
-        position: absolute;
-        left: 0;
-        color: #0057B7;
-        font-weight: 700;
       }
 
       /* ===== 活動策略表 ===== */
@@ -707,7 +655,6 @@ class ReportGenerator {
       @media (max-width: 900px) {
         .kpi-grid { grid-template-columns: repeat(2, 1fr); }
         .analysis-grid { grid-template-columns: 1fr; }
-        .strategy-grid { grid-template-columns: 1fr; }
         .highlight-stats { grid-template-columns: repeat(2, 1fr); }
       }
 
@@ -721,7 +668,7 @@ class ReportGenerator {
       /* 列印最佳化 */
       @media print {
         body { background: #fff; }
-        .kpi-card:hover, .insight-card:hover, .strategy-card:hover { transform: none; }
+        .kpi-card:hover, .insight-card:hover { transform: none; }
         .report-header::before { display: none; }
       }
     `;
@@ -972,33 +919,9 @@ class ReportGenerator {
       ${insights.map(card => `
         <div class="insight-card" style="border-color: ${card.borderColor};">
           <div class="insight-emoji">${card.emoji}</div>
+          <div class="insight-label">${card.label}</div>
           <div class="insight-title">${card.title}</div>
           <div class="insight-desc">${card.description}</div>
-        </div>
-      `).join('')}
-    </div>`;
-  }
-
-  /**
-   * 7. 優化方向建議（3 欄 Strategy Cards）
-   */
-  generateStrategyCards() {
-    const { suggestions } = this.data;
-
-    return `
-    <div class="section-title"><span class="icon">🎯</span> 優化方向建議</div>
-    <div class="strategy-grid">
-      ${suggestions.map(s => `
-        <div class="strategy-card">
-          <div class="strategy-header" style="background: ${s.gradient};">
-            <span class="strategy-number">${s.number}</span>
-            <span class="strategy-title">${s.title}</span>
-          </div>
-          <div class="strategy-body">
-            <ul>
-              ${s.suggestions.map(item => `<li>${item}</li>`).join('')}
-            </ul>
-          </div>
         </div>
       `).join('')}
     </div>`;

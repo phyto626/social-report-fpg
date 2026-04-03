@@ -20,7 +20,6 @@ class DataAnalyzer {
     const topicAnalysis = this.analyzeByTopic();
     const mediaAnalysis = this.analyzeByMediaType();
     const insights = this.generateInsights(topicAnalysis, mediaAnalysis);
-    const suggestions = this.generateSuggestions(topicAnalysis, mediaAnalysis);
     const activityPlan = this.generateActivityPlan(topicAnalysis, mediaAnalysis);
 
     return {
@@ -32,7 +31,6 @@ class DataAnalyzer {
       topicAnalysis,
       mediaAnalysis,
       insights,
-      suggestions,
       activityPlan,
       posts: this.posts,
     };
@@ -152,11 +150,11 @@ class DataAnalyzer {
   generateInsights(topicAnalysis, mediaAnalysis) {
     const topPosts = [...this.posts]
       .sort((a, b) => b.engagementRate - a.engagementRate)
-      .slice(0, Math.ceil(this.posts.length * 0.3)); // 取前 30%
+      .slice(0, Math.max(1, Math.ceil(this.posts.length * 0.3))); // 取前 30%
 
     // 分析高表現貼文的共同特徵
     const topMediaTypes = this.countField(topPosts, 'mediaType');
-    const avgMessageLength = topPosts.reduce((sum, p) => sum + (p.message?.length || 0), 0) / topPosts.length;
+    const avgMessageLength = topPosts.length > 0 ? (topPosts.reduce((sum, p) => sum + (p.message?.length || 0), 0) / topPosts.length) : 0;
 
     // 分析發布時間
     const topHours = topPosts.map(p => new Date(p.createdTime).getHours());
@@ -167,83 +165,37 @@ class DataAnalyzer {
     const totalComments = topPosts.reduce((sum, p) => sum + p.comments, 0);
     const totalShares = topPosts.reduce((sum, p) => sum + p.shares, 0);
 
-    const bestMediaType = topMediaTypes.length > 0 ? topMediaTypes[0].value : '照片';
-    const bestMediaPct = topMediaTypes.length > 0
-      ? Math.round((topMediaTypes[0].count / topPosts.length) * 100)
-      : 0;
+    const bestMediaCount = topMediaTypes.length > 0 ? topMediaTypes[0].count : 0;
+    const isSampleEnough = topPosts.length >= 3;
 
     return [
       {
         emoji: '📸',
-        title: `${bestMediaType}型素材最受歡迎`,
-        description: `高互動貼文中，${bestMediaPct}% 使用${bestMediaType}格式。${bestMediaType}型內容能更有效吸引粉絲停留與互動。`,
+        label: '素材表現',
+        title: isSampleEnough ? `${topMediaTypes[0].value}型素材最受歡迎` : '觀察中',
+        description: isSampleEnough ? `高互動貼文中，${Math.round((bestMediaCount / topPosts.length) * 100)}% 使用${topMediaTypes[0].value}格式。此型態內容能更有效吸引粉絲停留與視線。` : '本期有效發文樣本過少，暫時無法分析出具代表性的素材特徵，建議增加發文頻率。',
         borderColor: '#FFA000',
       },
       {
         emoji: '⏰',
-        title: `${peakHour}:00 時段互動最佳`,
-        description: `高表現貼文多集中在 ${peakHour}:00 前後發布。建議將重要內容安排在此時段，以最大化觸及與互動率。`,
+        label: '發布時段',
+        title: isSampleEnough ? `${peakHour}:00 時段互動最佳` : '觀察中',
+        description: isSampleEnough ? `高表現貼文多集中在 ${peakHour}:00 前後發布。建議將重要內容安排在此時段，以最大化觸及與互動率。` : '本期有效發文樣本過少，暫時無法分析出最具指標性的黃金發文時段。',
         borderColor: '#00A0BB',
       },
       {
         emoji: '📝',
-        title: `${avgMessageLength > 200 ? '長文' : '精簡'}文案效果佳`,
-        description: `高互動貼文平均文字長度約 ${Math.round(avgMessageLength)} 字。${avgMessageLength > 200 ? '詳細的內容說明能引發更多共鳴與討論' : '簡潔有力的文案更能快速抓住粉絲注意力'}。`,
+        label: '文案結構',
+        title: isSampleEnough ? `${avgMessageLength > 200 ? '長文' : '精簡'}文案效果佳` : '觀察中',
+        description: isSampleEnough ? `高互動文案平均字數約 ${Math.round(avgMessageLength)} 字。${avgMessageLength > 200 ? '詳細的情境鋪陳與說明更能引發共鳴。' : '精簡扼要的痛點溝通更能快速抓住注意力。'}` : '本期有效發文樣本較少，持續收集文案與點擊數據中。',
         borderColor: '#0057B7',
       },
       {
         emoji: '💬',
-        title: `${totalComments > totalShares ? '留言' : '分享'}驅動互動成長`,
-        description: `高互動貼文的互動構成：心情 ${totalReactions}、留言 ${totalComments}、分享 ${totalShares}。${totalComments > totalShares ? '引導式問句與互動機制有效提升留言數' : '實用、有價值的內容促進粉絲主動分享'}。`,
+        label: '互動機制',
+        title: isSampleEnough ? `${totalComments > totalShares ? '留言' : '分享'}驅動互動成長` : '觀察中',
+        description: isSampleEnough ? `互動指標分佈：心情 ${totalReactions}、留言 ${totalComments}、分享 ${totalShares}。${totalComments > totalShares ? '引導式提問或誘因有效帶動了大量粉絲留言。' : '實用的乾貨內容促進了受眾主動分享。'}` : '本期有效互動行為數量過少，將持續追蹤各項互動轉化表現。',
         borderColor: '#5CBEB2',
-      },
-    ];
-  }
-
-  /**
-   * 生成優化方向建議（3 張策略卡片）
-   */
-  generateSuggestions(topicAnalysis, mediaAnalysis) {
-    const bestMedia = mediaAnalysis[0];
-    const worstMedia = mediaAnalysis[mediaAnalysis.length - 1];
-    const bestTopic = topicAnalysis.length > 0 ? topicAnalysis[0] : null;
-
-    const avgReach = this.posts.reduce((sum, p) => sum + p.reach, 0) / this.posts.length;
-    const lowReachPosts = this.posts.filter(p => p.reach < avgReach * 0.5);
-
-    return [
-      {
-        number: '01',
-        title: '內容策略優化',
-        gradient: 'linear-gradient(135deg, #0057B7, #00A0BB)',
-        suggestions: [
-          `增加${bestMedia ? bestMedia.type : '照片'}型素材的發布比例，此類型互動率最高達 ${bestMedia ? (bestMedia.engagementRate * 100).toFixed(1) : 0}%`,
-          `${bestTopic ? `參考「${bestTopic.topic.substring(0, 15)}」主題的成功模式` : '持續優化高互動主題內容'}，延伸類似主題的系列內容`,
-          `針對觸及低於平均的 ${lowReachPosts.length} 篇貼文，重新檢視發布時間與內容結構`,
-          '加入更多互動式內容（投票、問答、限時優惠），提高粉絲參與度',
-        ],
-      },
-      {
-        number: '02',
-        title: '互動提升方案',
-        gradient: 'linear-gradient(135deg, #FFA000, #E67E00)',
-        suggestions: [
-          '在貼文中加入明確的行動呼籲（CTA），如「留言分享你的使用心得」',
-          '善用限時優惠或抽獎機制，創造緊迫感帶動互動',
-          `${worstMedia ? `嘗試將${worstMedia.type}型內容結合其他素材型式，提升整體表現` : '持續測試不同素材組合'}`,
-          '回覆粉絲留言以維持對話熱度，提高演算法推送機率',
-        ],
-      },
-      {
-        number: '03',
-        title: '觸及擴展計畫',
-        gradient: 'linear-gradient(135deg, #5CBEB2, #00A0BB)',
-        suggestions: [
-          '建立固定發文節奏，每週至少發布 3-4 篇內容維持粉絲黏著度',
-          '跨平台推廣策略：將高互動貼文改編至 IG Reels / LINE 社群同步曝光',
-          '與在地商家或 KOL 合作，透過聯合行銷拓展新受眾',
-          `目前追蹤數 ${this.pageInfo.followersCount.toLocaleString()} 人，設定下月成長 5% 的目標並追蹤進展`,
-        ],
       },
     ];
   }
@@ -252,48 +204,75 @@ class DataAnalyzer {
    * 生成未來活動策略規劃
    */
   generateActivityPlan(topicAnalysis, mediaAnalysis) {
-    const currentMonth = this.month;
-    const nextMonths = [
-      this.getMonthName((currentMonth % 12) + 1),
-      this.getMonthName(((currentMonth + 1) % 12) + 1),
-      this.getMonthName(((currentMonth + 2) % 12) + 1),
+    const m = this.month;
+    const monthsArray = [
+      m,
+      (m === 12 ? 1 : m + 1),
+      (m >= 11 ? (m + 2) % 12 || 12 : m + 2)
     ];
 
-    const bestMedia = mediaAnalysis[0];
-    const bestMediaType = bestMedia ? bestMedia.type : '照片';
+    const holidays = {
+      1: { name: '元旦 / 尾牙', concept: '過年大掃除準備', seasonId: '冬' },
+      2: { name: '春節 / 情人節 / 元宵', concept: '感冒交叉感染防護', seasonId: '冬' },
+      3: { name: '婦女節 / 春分', concept: '換季衣物整理 / 花粉過敏', seasonId: '春' },
+      4: { name: '兒童節(4/4) / 地球日(4/22)', concept: '小兒肌膚保護 / 梅雨防霉', seasonId: '春' },
+      5: { name: '母親節 / 世界候鳥日', concept: '換季除蟎防霉', seasonId: '春' },
+      6: { name: '世界環境日(6/5) / 夏至', concept: '換季出汗 / 洗衣頻率增加', seasonId: '夏' },
+      7: { name: '暑假開始 / 地球日延伸', concept: '防蟎抗菌需求上升 / 缺水節水', seasonId: '夏' },
+      8: { name: '父親節(8/8) / 七夕', concept: '運動汗味 / 衣物異味殘留', seasonId: '夏' },
+      9: { name: '中秋節 / 世界清潔日', concept: '烤肉異味去除', seasonId: '秋' },
+      10: { name: '國慶日 / 萬聖節', concept: '換季棉被清洗 / 乾燥靜電', seasonId: '秋' },
+      11: { name: '光棍節 / 感恩節', concept: '灰塵塵蟎 / 冬衣整理', seasonId: '秋' },
+      12: { name: '聖誕節 / 跨年', concept: '冷水洗衣效果 / 冬衣除蟎', seasonId: '冬' }
+    };
 
-    return [
-      {
-        timing: `${nextMonths[0]}上旬`,
-        direction: '季節性主題行銷',
-        material: `${bestMediaType} + 限時動態`,
-        benefit: '結合當季議題提升觸及，預估觸及成長 10-15%',
-      },
-      {
-        timing: `${nextMonths[0]}中旬`,
-        direction: '粉絲互動活動（留言抽獎）',
-        material: '精美圖片 + 互動貼文',
-        benefit: '透過獎勵機制提升互動率，目標留言數成長 30%',
-      },
-      {
-        timing: `${nextMonths[1]}`,
-        direction: '品牌故事系列',
-        material: '影片 + 圖文卡片',
-        benefit: '深化品牌形象，建立粉絲情感連結',
-      },
-      {
-        timing: `${nextMonths[1]}下旬`,
-        direction: '在地合作推廣',
-        material: `${bestMediaType} + 聯名素材`,
-        benefit: '透過合作夥伴觸及新受眾，預估粉絲成長 5-8%',
-      },
-      {
-        timing: `${nextMonths[2]}`,
-        direction: 'UGC 徵集活動',
-        material: '用戶原創內容 + 精選分享',
-        benefit: '降低內容產製成本，同時提升社群歸屬感與分享率',
-      },
-    ];
+    const painPointsMap = {
+      '春': '春天氣候多變，常遇到【換季過敏】與【梅雨悶臭】困擾',
+      '夏': '炎熱夏季容易有【流汗異味殘留】及【頻繁洗滌、防蟎】需求',
+      '秋': '秋天面臨【換季被毯清洗】與乾燥引起的【靜電與塵蟎】問題',
+      '冬': '冬季水溫低【冷水洗衣溶解度】受限，且需提防家人【感冒交叉感染】'
+    };
+
+    let plan = [];
+    
+    // 近期月份 1
+    let m1 = monthsArray[0];
+    let h1 = holidays[m1];
+    plan.push({
+      timing: `${m1}月 (${h1.name})`,
+      direction: `節慶行銷與痛點解答`,
+      material: '情境短影音 / 步驟圖卡',
+      benefit: `以${painPointsMap[h1.seasonId]}為切入點，自然點出台塑環保洗劑（或補充站）的便利與無殘留特性，產生生活共鳴。`
+    });
+
+    // 近期月份 2
+    let m2 = monthsArray[1];
+    let h2 = holidays[m2];
+    plan.push({
+      timing: `${m2}月 (${h2.name})`,
+      direction: `互動式主題徵文 (品牌理念)`,
+      material: '趣味抽獎圖文',
+      benefit: `結合「${h2.name}」與環保理念，以「你的${h2.concept}抗戰法寶」邀請粉絲留言，推升活躍度。`
+    });
+
+    // 近期月份 3
+    let m3 = monthsArray[2];
+    let h3 = holidays[m3];
+    plan.push({
+      timing: `${m3}月 (${h3.name})`,
+      direction: `深度科普小學堂`,
+      material: '知識懶人包 (相簿型)',
+      benefit: `針對${painPointsMap[h3.seasonId]}，深度解析洗劑成分與地球永續的關聯性，強化「選對洗劑也能保護環境與家人」的品牌信任。`
+    });
+
+    plan.push({
+      timing: '常態性推廣規劃',
+      direction: '新戶無痛入坑指南 / 補充站尋寶',
+      material: '滿版強勢單圖 + 留言區連結',
+      benefit: '持續引流欲找尋機台的散戶，定期提供最新實體與數位機台使用教學，化解潛在猶豫客群的疑慮。'
+    });
+
+    return plan;
   }
 
   // ========== 工具方法 ==========
