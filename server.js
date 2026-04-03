@@ -48,6 +48,30 @@ app.get('/api/brands', (req, res) => {
   res.json({ brands: available });
 });
 
+// 取得歷史報告清單 API
+app.get('/api/reports', (req, res) => {
+  try {
+    if (!fs.existsSync(outputDir)) {
+      return res.json({ reports: [] });
+    }
+    const files = fs.readdirSync(outputDir);
+    const reports = files.filter(f => f.endsWith('.html') || f.endsWith('.xlsx'))
+      .map(f => {
+        const stats = fs.statSync(path.join(outputDir, f));
+        return { 
+          name: f, 
+          url: `/output/${encodeURIComponent(f)}`, 
+          time: stats.mtimeMs, 
+          type: f.endsWith('.html') ? 'html' : 'excel' 
+        };
+      })
+      .sort((a, b) => b.time - a.time);
+    res.json({ reports });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 app.post('/api/generate', async (req, res) => {
   try {
     const { startDate, endDate, brand } = req.body;

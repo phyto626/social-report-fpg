@@ -111,9 +111,8 @@
         <div class="flex justify-between items-center px-8 py-4 max-w-screen-2xl mx-auto">
             <div class="font-headline font-bold text-2xl text-[#FF5000] tracking-tight">Report Engine.</div>
             <div class="hidden md:flex items-center space-x-8 font-headline font-semibold">
-                <a class="border-b-2 pb-1 text-[#FF5000] border-[#FF5000]" href="#">Dashboard</a>
-                <a class="text-slate-600 hover:text-orange-600 transition-colors" href="#">Analytics</a>
-                <a class="text-slate-600 hover:text-orange-600 transition-colors" href="#">Reports</a>
+                <a id="navDashboard" class="border-b-2 pb-1 text-[#FF5000] border-[#FF5000] cursor-pointer" onclick="switchTab('dashboard')">Dashboard</a>
+                <a id="navReports" class="text-slate-600 hover:text-orange-600 transition-colors cursor-pointer" onclick="switchTab('reports')">Reports Archive</a>
             </div>
             <div class="flex items-center space-x-4">
                 <button class="p-2 text-slate-600 hover:bg-orange-50 rounded-lg transition-all active:scale-90">
@@ -123,7 +122,8 @@
         </div>
     </nav>
     <main class="flex-grow flex items-center justify-center px-4 py-8 md:py-12">
-        <div class="max-w-4xl w-full flex flex-col">
+        <!-- Dashboard Tab -->
+        <div id="tabDashboard" class="max-w-4xl w-full flex flex-col">
             <!-- Hero Header Section -->
             <div class="mb-10 text-center md:text-left">
                 <h1 class="text-4xl md:text-5xl font-black font-headline text-on-surface mb-3 tracking-tight">
@@ -272,6 +272,28 @@
             </div>
 
         </div>
+
+        <!-- Reports Archive Tab -->
+        <div id="tabReports" class="max-w-4xl w-full flex flex-col" style="display: none;">
+            <div class="mb-10 text-center md:text-left">
+                <h1 class="text-4xl md:text-5xl font-black font-headline text-on-surface mb-3 tracking-tight">
+                    Historical <span class="text-[#FF5000]">Archive</span>
+                </h1>
+                <p class="text-base md:text-lg text-on-surface-variant font-body max-w-2xl leading-relaxed mx-auto md:mx-0">
+                    存取所有過去產生的社群分析報告與試算表數據。
+                </p>
+            </div>
+            
+            <div class="bg-surface-container-lowest rounded-xl p-6 md:p-10 shadow-[0_12px_40px_rgba(38,25,2,0.06)] border border-orange-50 relative overflow-hidden min-h-[400px]">
+                <div class="absolute -top-24 -right-24 w-64 h-64 bg-surface-container rounded-full opacity-30 pointer-events-none"></div>
+                <div class="relative z-10">
+                    <div id="reportsLoader" class="loader !border-orange-500 !border-t-[#FF5000] mx-auto my-10" style="display: block;"></div>
+                    <div id="reportsList" class="flex flex-col gap-3">
+                        <!-- Dynamic reports go here -->
+                    </div>
+                </div>
+            </div>
+        </div>
     </main>
     
     <!-- Footer -->
@@ -286,6 +308,66 @@
 
     <script>
         let currentBrand = 'fpg';
+
+        function switchTab(tab) {
+            // Update nav active states
+            const activeClass = "border-b-2 pb-1 text-[#FF5000] border-[#FF5000] cursor-pointer";
+            const inactiveClass = "text-slate-600 hover:text-orange-600 transition-colors cursor-pointer";
+            
+            if (tab === 'dashboard') {
+                document.getElementById('navDashboard').className = activeClass;
+                document.getElementById('navReports').className = inactiveClass;
+                document.getElementById('tabDashboard').style.display = 'flex';
+                document.getElementById('tabReports').style.display = 'none';
+            } else if (tab === 'reports') {
+                document.getElementById('navDashboard').className = inactiveClass;
+                document.getElementById('navReports').className = activeClass;
+                document.getElementById('tabDashboard').style.display = 'none';
+                document.getElementById('tabReports').style.display = 'flex';
+                loadReports();
+            }
+        }
+
+        async function loadReports() {
+            const list = document.getElementById('reportsList');
+            const loader = document.getElementById('reportsLoader');
+            list.innerHTML = '';
+            loader.style.display = 'block';
+            
+            try {
+                const res = await fetch('/api/reports');
+                const data = await res.json();
+                loader.style.display = 'none';
+                
+                if (data.reports && data.reports.length > 0) {
+                    data.reports.forEach(report => {
+                        const dateStr = new Date(report.time).toLocaleString('zh-TW');
+                        const icon = report.type === 'html' ? 'description' : 'table_view';
+                        const color = report.type === 'html' ? 'text-blue-600' : 'text-green-600';
+                        
+                        list.innerHTML += `
+                            <a href="${report.url}" ${report.type === 'html' ? 'target="_blank"' : 'download'} class="group p-4 bg-white border border-slate-200 rounded-lg shadow-sm hover:shadow-md transition-all flex items-center justify-between hover:border-orange-300">
+                                <div class="flex items-center gap-4 overflow-hidden">
+                                    <div class="h-10 w-10 bg-slate-50 flex items-center justify-center rounded-full flex-shrink-0 group-hover:bg-orange-50 transition-colors">
+                                        <span class="material-symbols-outlined ${color}">${icon}</span>
+                                    </div>
+                                    <div class="truncate">
+                                        <div class="font-bold text-sm text-slate-800 truncate">${report.name}</div>
+                                        <div class="text-xs text-slate-500 mt-0.5">最後修改：${dateStr}</div>
+                                    </div>
+                                </div>
+                                <span class="material-symbols-outlined text-slate-300 group-hover:text-[#FF5000] ml-4 transition-colors">download</span>
+                            </a>
+                        `;
+                    });
+                } else {
+                    list.innerHTML = `<div class="text-center py-10 text-slate-500 font-bold">目前尚無歷史報告，請先至 Dashboard 產生。</div>`;
+                }
+            } catch (e) {
+                loader.style.display = 'none';
+                list.innerHTML = `<div class="text-center py-10 text-red-500 font-bold">無法載入歷史報告，請稍後再試。</div>`;
+            }
+        }
 
         function selectBrand(brand) {
             currentBrand = brand;
