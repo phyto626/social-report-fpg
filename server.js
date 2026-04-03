@@ -7,6 +7,7 @@ const FacebookAPI = require('./src/fb-api');
 const DataAnalyzer = require('./src/data-analyzer');
 const ReportGenerator = require('./src/report-generator');
 const { exportToExcel } = require('./src/excel-export');
+const PptxBuilder = require('./src/pptx-builder');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -138,6 +139,46 @@ app.post('/api/generate', async (req, res) => {
       errorMessage = 'Token 無效或已過期，請至 Meta Developer 重新產生。';
     }
     res.status(500).json({ success: false, message: errorMessage });
+  }
+});
+
+app.post('/api/generate-pptx', async (req, res) => {
+  try {
+    const { startDate, endDate, brand, kpi } = req.body;
+    if (!startDate || !endDate || !brand) {
+      return res.status(400).json({ success: false, message: '參數不齊全' });
+    }
+
+    const brandConfig = BRANDS[brand.toLowerCase()];
+    if (!brandConfig) {
+      return res.status(400).json({ success: false, message: '無效的品牌' });
+    }
+
+    // 假定傳來的數據為報告生成所需資料
+    const pptxData = {
+      pageInfo: { name: brandConfig.name },
+      startDate,
+      endDate,
+      kpi
+    };
+
+    // 準備輸出路徑
+    const templatePath = path.resolve(__dirname, 'template.pptx');
+    
+    const pptxName = `${brandConfig.name}_${startDate}_to_${endDate}_簡報報告.pptx`;
+    const outputPath = path.join(outputDir, pptxName);
+
+    const builder = new PptxBuilder(templatePath);
+    builder.generate(pptxData, outputPath);
+
+    res.json({
+      success: true,
+      pptxUrl: `/output/${encodeURIComponent(pptxName)}`
+    });
+
+  } catch (err) {
+    console.error('[PPTX API] 發生錯誤:', err.message);
+    res.status(500).json({ success: false, message: err.message });
   }
 });
 
