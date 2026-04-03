@@ -1,580 +1,390 @@
 <!DOCTYPE html>
-<html lang="zh-TW">
+<html class="light" lang="zh-TW">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>社群成果報告產生器 — 多品牌整合平台</title>
-  <meta name="description" content="一站式自動抓取 FB 粉專數據，支援台塑便利家與 ECOCO 雙品牌，一鍵產生精美社群分析報告。">
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&family=Noto+Sans+TC:wght@300;400;600;800&display=swap" rel="stylesheet">
-  <style>
-    :root {
-      --primary: #6366f1;
-      --primary-dark: #4f46e5;
-      --accent: #f59e0b;
-      --bg: #0f172a;
-      --bg-card: rgba(30, 41, 59, 0.7);
-      --bg-glass: rgba(255,255,255,0.06);
-      --border: rgba(255,255,255,0.08);
-      --text: #e2e8f0;
-      --text-muted: #94a3b8;
-      --radius: 20px;
-      --shadow: 0 20px 60px rgba(0,0,0,0.5);
-
-      /* brand palette — dynamically swapped */
-      --brand-from: #6366f1;
-      --brand-to: #a78bfa;
-      --brand-glow: rgba(99,102,241,0.25);
-    }
-
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-
-    body {
-      font-family: 'Outfit', 'Noto Sans TC', sans-serif;
-      background: var(--bg);
-      color: var(--text);
-      min-height: 100vh;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      padding: 40px 20px;
-      overflow-x: hidden;
-    }
-
-    /* === Animated BG orbs === */
-    body::before, body::after {
-      content: '';
-      position: fixed;
-      border-radius: 50%;
-      filter: blur(120px);
-      opacity: 0.35;
-      z-index: 0;
-      pointer-events: none;
-      transition: background 0.8s ease;
-    }
-    body::before {
-      width: 600px; height: 600px;
-      top: -180px; left: -120px;
-      background: var(--brand-from);
-    }
-    body::after {
-      width: 500px; height: 500px;
-      bottom: -120px; right: -80px;
-      background: var(--brand-to);
-    }
-
-    /* === Main Container === */
-    .container {
-      position: relative;
-      z-index: 1;
-      background: var(--bg-card);
-      backdrop-filter: blur(24px);
-      -webkit-backdrop-filter: blur(24px);
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
-      padding: 48px 44px;
-      width: 100%;
-      max-width: 540px;
-      box-shadow: var(--shadow);
-    }
-
-    /* === Header === */
-    .header {
-      text-align: center;
-      margin-bottom: 36px;
-    }
-    .header .logo-icon {
-      font-size: 40px;
-      margin-bottom: 8px;
-      display: block;
-    }
-    .header h1 {
-      font-size: 26px;
-      font-weight: 800;
-      background: linear-gradient(135deg, var(--brand-from), var(--brand-to));
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      background-clip: text;
-      letter-spacing: 0.5px;
-      transition: background 0.6s;
-    }
-    .header p {
-      color: var(--text-muted);
-      font-size: 14px;
-      font-weight: 300;
-      margin-top: 6px;
-    }
-
-    /* === Brand Picker (toggle pills) === */
-    .brand-picker {
-      display: flex;
-      gap: 0;
-      background: var(--bg-glass);
-      border-radius: 14px;
-      padding: 4px;
-      margin-bottom: 28px;
-      border: 1px solid var(--border);
-      position: relative;
-    }
-    .brand-picker .slider {
-      position: absolute;
-      top: 4px; left: 4px;
-      height: calc(100% - 8px);
-      width: calc(50% - 4px);
-      border-radius: 11px;
-      background: linear-gradient(135deg, var(--brand-from), var(--brand-to));
-      transition: transform 0.4s cubic-bezier(.4,0,.2,1), background 0.6s;
-      z-index: 0;
-      box-shadow: 0 4px 16px var(--brand-glow);
-    }
-    .brand-picker .slider.right {
-      transform: translateX(100%);
-    }
-    .brand-picker label {
-      flex: 1;
-      text-align: center;
-      padding: 14px 0;
-      font-size: 15px;
-      font-weight: 600;
-      cursor: pointer;
-      position: relative;
-      z-index: 1;
-      transition: color 0.3s;
-      border-radius: 11px;
-      user-select: none;
-    }
-    .brand-picker label.active {
-      color: #fff;
-    }
-    .brand-picker label:not(.active) {
-      color: var(--text-muted);
-    }
-    .brand-picker label:not(.active):hover {
-      color: var(--text);
-    }
-    .brand-picker input { display: none; }
-
-    /* Brand detail bar */
-    .brand-detail {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      padding: 14px 18px;
-      background: var(--bg-glass);
-      border: 1px solid var(--border);
-      border-radius: 12px;
-      margin-bottom: 24px;
-      font-size: 13px;
-      color: var(--text-muted);
-      transition: opacity 0.3s;
-    }
-    .brand-detail .brand-badge {
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-      padding: 4px 12px;
-      border-radius: 8px;
-      font-weight: 700;
-      font-size: 13px;
-      background: linear-gradient(135deg, var(--brand-from), var(--brand-to));
-      color: #fff;
-      transition: background 0.5s;
-    }
-
-    /* === Form === */
-    .form-group { margin-bottom: 24px; }
-
-    .form-group label {
-      display: block;
-      margin-bottom: 8px;
-      font-weight: 600;
-      color: var(--text-muted);
-      font-size: 13px;
-      letter-spacing: 0.5px;
-      text-transform: uppercase;
-    }
-
-    input[type="month"], input[type="date"] {
-      width: 100%;
-      padding: 16px;
-      border: 1px solid var(--border);
-      border-radius: 12px;
-      font-size: 16px;
-      background: var(--bg-glass);
-      color: var(--text);
-      outline: none;
-      transition: all 0.3s ease;
-      cursor: pointer;
-      font-family: inherit;
-    }
-    input[type="month"]:focus, input[type="date"]:focus {
-      border-color: var(--brand-from);
-      box-shadow: 0 0 0 3px var(--brand-glow);
-    }
-
-    /* === Generate Button === */
-    .generate-btn {
-      width: 100%;
-      background: linear-gradient(135deg, var(--brand-from), var(--brand-to));
-      color: #fff;
-      border: none;
-      padding: 18px;
-      font-size: 17px;
-      font-weight: 800;
-      border-radius: 14px;
-      cursor: pointer;
-      transition: transform 0.2s, box-shadow 0.3s, opacity 0.3s;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      gap: 10px;
-      letter-spacing: 0.5px;
-      position: relative;
-      overflow: hidden;
-    }
-    .generate-btn::after {
-      content: '';
-      position: absolute;
-      inset: 0;
-      background: linear-gradient(135deg, rgba(255,255,255,0.15), transparent 60%);
-      pointer-events: none;
-    }
-    .generate-btn:hover:not(:disabled) {
-      transform: translateY(-2px);
-      box-shadow: 0 12px 32px var(--brand-glow);
-    }
-    .generate-btn:active:not(:disabled) {
-      transform: translateY(0);
-    }
-    .generate-btn:disabled {
-      opacity: 0.5;
-      cursor: not-allowed;
-      transform: none;
-    }
-
-    /* Loader */
-    .loader {
-      display: none;
-      width: 22px; height: 22px;
-      border: 3px solid rgba(255,255,255,0.3);
-      border-radius: 50%;
-      border-top-color: #fff;
-      animation: spin 0.8s linear infinite;
-    }
-    @keyframes spin { to { transform: rotate(360deg); } }
-
-    /* === Status / Result === */
-    .status-container {
-      margin-top: 28px;
-      display: none;
-      animation: fadeUp 0.5s ease;
-    }
-    @keyframes fadeUp {
-      from { opacity: 0; transform: translateY(12px); }
-      to   { opacity: 1; transform: translateY(0); }
-    }
-
-    .success-card {
-      background: rgba(16,185,129,0.08);
-      border: 1px solid rgba(16,185,129,0.25);
-      border-radius: 16px;
-      padding: 28px;
-    }
-    .success-card h3 {
-      color: #34d399;
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      margin-bottom: 20px;
-      font-size: 17px;
-    }
-
-    .kpi-grid {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 12px;
-      margin-bottom: 24px;
-    }
-    .kpi-item {
-      text-align: center;
-      padding: 14px 8px;
-      background: rgba(255,255,255,0.04);
-      border-radius: 12px;
-      border: 1px solid rgba(255,255,255,0.06);
-    }
-    .kpi-item .kpi-val {
-      font-size: 20px;
-      font-weight: 800;
-      color: #fff;
-      margin-bottom: 2px;
-    }
-    .kpi-item .kpi-lbl {
-      font-size: 11px;
-      color: var(--text-muted);
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-    }
-
-    .action-buttons {
-      display: flex;
-      gap: 12px;
-    }
-    .btn-dl, .btn-view {
-      flex: 1;
-      text-decoration: none;
-      text-align: center;
-      padding: 14px;
-      border-radius: 12px;
-      font-weight: 700;
-      font-size: 14px;
-      transition: all 0.2s;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 6px;
-    }
-    .btn-view {
-      background: linear-gradient(135deg, var(--brand-from), var(--brand-to));
-      color: #fff;
-    }
-    .btn-view:hover {
-      box-shadow: 0 8px 24px var(--brand-glow);
-      transform: translateY(-1px);
-    }
-    .btn-dl {
-      background: rgba(255,255,255,0.06);
-      color: var(--text);
-      border: 1px solid var(--border);
-    }
-    .btn-dl:hover {
-      background: rgba(255,255,255,0.1);
-    }
-
-    /* Error */
-    .error-msg {
-      display: none;
-      color: #fca5a5;
-      background: rgba(239,68,68,0.1);
-      border: 1px solid rgba(239,68,68,0.25);
-      padding: 16px 20px;
-      border-radius: 12px;
-      margin-top: 20px;
-      font-size: 14px;
-      line-height: 1.6;
-      animation: fadeUp 0.4s;
-    }
-
-    /* Footer */
-    .footer {
-      margin-top: 24px;
-      text-align: center;
-      font-size: 12px;
-      color: rgba(148,163,184,0.5);
-    }
-
-    /* === Responsive === */
-    @media (max-width: 480px) {
-      .container { padding: 32px 24px; }
-      .header h1 { font-size: 22px; }
-      .kpi-grid { grid-template-columns: 1fr; }
-      .action-buttons { flex-direction: column; }
-    }
-  </style>
-</head>
-<body>
-
-  <div class="container">
-    <!-- Header -->
-    <div class="header">
-      <span class="logo-icon">📊</span>
-      <h1 id="mainTitle">社群數據成果產出</h1>
-      <p>自動抓取 FB 貼文，一鍵產生精美分析報告</p>
-    </div>
-
-    <!-- Brand Picker -->
-    <div class="brand-picker" id="brandPicker">
-      <div class="slider" id="brandSlider"></div>
-      <label class="active" id="labelFpg" data-brand="fpg" onclick="selectBrand('fpg')">
-        🏭 台塑便利家
-      </label>
-      <label id="labelEcoco" data-brand="ecoco" onclick="selectBrand('ecoco')">
-        ♻️ ECOCO
-      </label>
-    </div>
-
-    <!-- Brand Detail -->
-    <div class="brand-detail" id="brandDetail">
-      <span class="brand-badge" id="brandBadge">台塑便利家</span>
-      <span id="brandDesc">選擇品牌後自動切換對應粉專數據源</span>
-    </div>
-
-    <!-- Date Range Picker -->
-    <div class="form-group" style="display: flex; gap: 12px;">
-      <div style="flex: 1;">
-        <label for="startDate">起始日期</label>
-        <input type="date" id="startDate" value="">
-      </div>
-      <div style="flex: 1;">
-        <label for="endDate">結束日期</label>
-        <input type="date" id="endDate" value="">
-      </div>
-    </div>
-
-    <!-- Generate -->
-    <button class="generate-btn" id="generateBtn">
-      <span id="btnText">產生報告</span>
-      <div class="loader" id="loader"></div>
-    </button>
-
-    <!-- Error -->
-    <div class="error-msg" id="errorMsg"></div>
-
-    <!-- Result -->
-    <div class="status-container" id="statusContainer">
-      <div class="success-card">
-        <h3>✨ 報告產生成功！</h3>
-        <div class="kpi-grid">
-          <div class="kpi-item">
-            <div class="kpi-val" id="kpiPosts">-</div>
-            <div class="kpi-lbl">貼文篇數</div>
-          </div>
-          <div class="kpi-item">
-            <div class="kpi-val" id="kpiReach">-</div>
-            <div class="kpi-lbl">累計觸及</div>
-          </div>
-          <div class="kpi-item">
-            <div class="kpi-val" id="kpiEngage">-</div>
-            <div class="kpi-lbl">平均互動</div>
-          </div>
-        </div>
-        <div class="action-buttons">
-          <a href="#" id="linkExcel" class="btn-dl" download>📥 下載 Excel</a>
-          <a href="#" id="linkHtml" class="btn-view" target="_blank">🔗 查看報告</a>
-        </div>
-      </div>
-    </div>
-
-    <div class="footer">Powered by FB Social Report Tool · Multi-Brand</div>
-  </div>
-
-  <script>
-    // ===== Brand Palette Config =====
-    const brandPalettes = {
-      fpg: {
-        from: '#0057B7',
-        to: '#00A0BB',
-        glow: 'rgba(0,87,183,0.3)',
-        name: '台塑便利家',
-        desc: '台塑生醫「便利家」洗劑補充站粉專',
-        emoji: '🏭',
-      },
-      ecoco: {
-        from: '#060E9F',
-        to: '#0076A9',
-        glow: 'rgba(6,14,159,0.3)',
-        name: 'ECOCO',
-        desc: 'ECOCO 智慧回收機粉專',
-        emoji: '♻️',
-      },
-    };
-
-    let currentBrand = 'fpg';
-
-    function selectBrand(brand) {
-      currentBrand = brand;
-      const p = brandPalettes[brand];
-
-      // Update CSS vars
-      const root = document.documentElement;
-      root.style.setProperty('--brand-from', p.from);
-      root.style.setProperty('--brand-to', p.to);
-      root.style.setProperty('--brand-glow', p.glow);
-
-      // Slider position
-      const slider = document.getElementById('brandSlider');
-      if (brand === 'ecoco') {
-        slider.classList.add('right');
-      } else {
-        slider.classList.remove('right');
-      }
-
-      // Labels
-      document.getElementById('labelFpg').classList.toggle('active', brand === 'fpg');
-      document.getElementById('labelEcoco').classList.toggle('active', brand === 'ecoco');
-
-      // Detail bar
-      document.getElementById('brandBadge').textContent = p.name;
-      document.getElementById('brandDesc').textContent = p.desc;
-
-      // Hide previous results when switching
-      document.getElementById('statusContainer').style.display = 'none';
-      document.getElementById('errorMsg').style.display = 'none';
-    }
-
-    // ===== Init date range picker (default = last 30 days) =====
-    const dEnd = new Date();
-    document.getElementById('endDate').value = dEnd.toISOString().split('T')[0];
-    const dStart = new Date();
-    dStart.setDate(dStart.getDate() - 30);
-    document.getElementById('startDate').value = dStart.toISOString().split('T')[0];
-
-    // Init brand palette
-    selectBrand('fpg');
-
-    // ===== Generate =====
-    document.getElementById('generateBtn').addEventListener('click', async () => {
-      const startDate = document.getElementById('startDate').value;
-      const endDate = document.getElementById('endDate').value;
-      if (!startDate || !endDate) return alert('請選擇完整日期範圍');
-      const btn = document.getElementById('generateBtn');
-      const btnText = document.getElementById('btnText');
-      const loader = document.getElementById('loader');
-      const errorMsg = document.getElementById('errorMsg');
-      const statusContainer = document.getElementById('statusContainer');
-
-      btn.disabled = true;
-      btnText.textContent = '抓取與分析中… (需時 10-30 秒)';
-      loader.style.display = 'block';
-      errorMsg.style.display = 'none';
-      statusContainer.style.display = 'none';
-
-      try {
-        const response = await fetch('/api/generate', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ startDate, endDate, brand: currentBrand }),
-        });
-
-        const data = await response.json();
-
-        if (data.success) {
-          document.getElementById('kpiPosts').textContent = data.kpi.totalPosts + ' 篇';
-          document.getElementById('kpiReach').textContent = data.kpi.totalReach.toLocaleString();
-          document.getElementById('kpiEngage').textContent = data.kpi.avgEngagement;
-
-          document.getElementById('linkHtml').href = data.reportUrl;
-          if (data.excelUrl) {
-            document.getElementById('linkExcel').href = data.excelUrl;
-            document.getElementById('linkExcel').style.display = 'flex';
-          } else {
-            document.getElementById('linkExcel').style.display = 'none';
-          }
-
-          statusContainer.style.display = 'block';
-        } else {
-          errorMsg.textContent = '❌ ' + data.message;
-          errorMsg.style.display = 'block';
+    <meta charset="utf-8"/>
+    <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+    <title>社群成果報告產生器 — 多品牌整合平台</title>
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Work+Sans:wght@400;600;700;900&amp;family=Inter:wght@400;500;600&amp;family=Noto+Sans+TC:wght@400;500;700&amp;display=swap" rel="stylesheet"/>
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+    <script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "surface-tint": "#FF5000",
+                        "surface": "#ffffff",
+                        "surface-dim": "#f0d7af",
+                        "background": "#ffffff",
+                        "primary-container": "#FF5000",
+                        "surface-container-lowest": "#ffffff",
+                        "on-secondary": "#ffffff",
+                        "surface-container-low": "#ffffff",
+                        "on-primary-container": "#fffbff",
+                        "surface-bright": "#ffffff",
+                        "inverse-on-surface": "#ffeed8",
+                        "outline-variant": "#e5beb2",
+                        "on-tertiary-fixed-variant": "#574500",
+                        "surface-container": "#ffebcf",
+                        "on-tertiary-fixed": "#231a00",
+                        "surface-container-high": "#ffe5bc",
+                        "on-background": "#261902",
+                        "secondary-fixed": "#e0e0ff",
+                        "on-surface": "#261902",
+                        "tertiary": "#735c00",
+                        "tertiary-fixed": "#ffe086",
+                        "on-primary": "#ffffff",
+                        "tertiary-container": "#cfa600",
+                        "surface-variant": "#f9dfb7",
+                        "on-secondary-container": "#fffbff",
+                        "error": "#ba1a1a",
+                        "on-surface-variant": "#5c4037",
+                        "inverse-surface": "#3d2e13",
+                        "secondary-fixed-dim": "#bec2ff",
+                        "on-secondary-fixed": "#00036b",
+                        "surface-container-highest": "#f9dfb7",
+                        "error-container": "#ffdad6",
+                        "secondary-container": "#5d67e5",
+                        "secondary": "#434cca",
+                        "outline": "#917065",
+                        "on-primary-fixed": "#390b00",
+                        "inverse-primary": "#ffb59e",
+                        "on-error": "#ffffff",
+                        "on-tertiary": "#ffffff",
+                        "on-error-container": "#93000a",
+                        "primary-fixed-dim": "#ffb59e",
+                        "tertiary-fixed-dim": "#efc100",
+                        "on-tertiary-container": "#4e3d00",
+                        "primary": "#FF5000",
+                        "primary-fixed": "#ffdbd0",
+                        "on-secondary-fixed-variant": "#2b34b5",
+                        "on-primary-fixed-variant": "#842500"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "fontFamily": {
+                        "headline": ["Work Sans", "Noto Sans TC"],
+                        "body": ["Inter", "Noto Sans TC"],
+                        "label": ["Inter", "Noto Sans TC"]
+                    }
+                },
+            },
         }
-      } catch (err) {
-        errorMsg.textContent = '❌ 網路錯誤或伺服器無回應，請確保伺服器已開啟。';
-        errorMsg.style.display = 'block';
-      } finally {
-        btn.disabled = false;
-        btnText.textContent = '產生報告';
-        loader.style.display = 'none';
-      }
-    });
-  </script>
+    </script>
+    <style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+            vertical-align: middle;
+        }
+        body {
+            font-family: 'Inter', 'Noto Sans TC', sans-serif;
+            background-color: #ffffff;
+        }
+        .glass-nav {
+            background: rgba(255, 255, 255, 0.8);
+            backdrop-filter: blur(20px);
+        }
+        /* Spinner */
+        .loader {
+            display: none;
+            width: 22px; height: 22px;
+            border: 3px solid rgba(255,255,255,0.3);
+            border-radius: 50%;
+            border-top-color: #fff;
+            animation: spin 0.8s linear infinite;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        
+        #errorMsg, #statusContainer {
+            display: none;
+        }
+    </style>
+</head>
+<body class="bg-surface text-on-surface min-h-screen flex flex-col">
+    <!-- TopNavBar -->
+    <nav class="w-full top-0 sticky z-50 glass-nav border-b border-orange-100/20 shadow-sm shadow-orange-900/5">
+        <div class="flex justify-between items-center px-8 py-4 max-w-screen-2xl mx-auto">
+            <div class="font-headline font-bold text-2xl text-[#FF5000] tracking-tight">Report Engine.</div>
+            <div class="hidden md:flex items-center space-x-8 font-headline font-semibold">
+                <a class="border-b-2 pb-1 text-[#FF5000] border-[#FF5000]" href="#">Dashboard</a>
+                <a class="text-slate-600 hover:text-orange-600 transition-colors" href="#">Analytics</a>
+                <a class="text-slate-600 hover:text-orange-600 transition-colors" href="#">Reports</a>
+            </div>
+            <div class="flex items-center space-x-4">
+                <button class="p-2 text-slate-600 hover:bg-orange-50 rounded-lg transition-all active:scale-90">
+                    <span class="material-symbols-outlined" data-icon="account_circle">account_circle</span>
+                </button>
+            </div>
+        </div>
+    </nav>
+    <main class="flex-grow flex items-center justify-center px-4 py-8 md:py-12">
+        <div class="max-w-4xl w-full flex flex-col">
+            <!-- Hero Header Section -->
+            <div class="mb-10 text-center md:text-left">
+                <h1 class="text-4xl md:text-5xl font-black font-headline text-on-surface mb-3 tracking-tight">
+                    Social Data Achievement <span class="text-[#FF5000]">Generation</span>
+                </h1>
+                <p class="text-base md:text-lg text-on-surface-variant font-body max-w-2xl leading-relaxed mx-auto md:mx-0">
+                    自動抓取 FB 貼文，一鍵產生精美分析報告與 Excel 統計。支援多品牌無縫切換。
+                </p>
+            </div>
+            
+            <!-- Centralized Selection Card -->
+            <div class="bg-surface-container-lowest rounded-xl p-6 md:p-10 shadow-[0_12px_40px_rgba(38,25,2,0.06)] relative overflow-hidden border border-orange-50">
+                <!-- Abstract Brand Pattern Bleed -->
+                <div class="absolute -top-24 -right-24 w-64 h-64 bg-surface-container rounded-full opacity-30 pointer-events-none"></div>
+                <div class="relative z-10 space-y-10">
+                    <!-- Brand Selection Zone -->
+                    <section>
+                        <h2 class="font-headline text-[13px] font-bold tracking-widest uppercase mb-4 text-[#FF5000]">Step 1: Select Brand Identity</h2>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <!-- Tai-Plast Brand Option -->
+                            <label class="group cursor-pointer relative" onclick="selectBrand('fpg')">
+                                <input id="radioFpg" checked class="peer sr-only" name="brand" type="radio" value="fpg"/>
+                                <div class="p-5 rounded-lg bg-surface-container-low border peer-checked:border-primary peer-checked:bg-primary/5 transition-all group-hover:scale-[1.02] duration-200 border-orange-50">
+                                    <div class="flex items-center justify-between">
+                                        <div>
+                                            <p class="font-headline font-bold text-lg text-on-surface">台塑便利家</p>
+                                            <p class="text-xs text-on-surface-variant mt-1">洗劑補充站粉專分析</p>
+                                        </div>
+                                        <div class="w-6 h-6 rounded-full border-2 border-outline-variant peer-checked:border-primary peer-checked:bg-primary flex items-center justify-center transition-colors">
+                                            <div class="w-2.5 h-2.5 bg-white rounded-full opacity-0 peer-checked:opacity-100 transition-opacity"></div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </label>
+
+                            <!-- ECOCO Brand Option -->
+                            <label class="group cursor-pointer relative" onclick="selectBrand('ecoco')">
+                                <input id="radioEcoco" class="peer sr-only" name="brand" type="radio" value="ecoco"/>
+                                <div class="p-5 rounded-lg bg-surface-container-low border peer-checked:border-primary peer-checked:bg-primary/5 transition-all group-hover:scale-[1.02] duration-200 border-orange-50">
+                                    <div class="flex items-center justify-between">
+                                        <div>
+                                            <p class="font-headline font-bold text-lg text-on-surface">ECOCO</p>
+                                            <p class="text-xs text-on-surface-variant mt-1">智慧回收機綠色生態</p>
+                                        </div>
+                                        <div class="w-6 h-6 rounded-full border-2 border-outline-variant peer-checked:border-primary peer-checked:bg-primary flex items-center justify-center transition-colors">
+                                            <div class="w-2.5 h-2.5 bg-white rounded-full opacity-0 peer-checked:opacity-100 transition-opacity"></div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </label>
+                        </div>
+                    </section>
+
+                    <!-- Date Selection Section -->
+                    <section>
+                        <h2 class="font-headline text-[13px] font-bold tracking-widest uppercase mb-4 text-[#FF5000]">Step 2: Define Report Scope</h2>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <!-- Start Date -->
+                            <div>
+                                <label class="block text-xs font-bold text-on-surface-variant mb-2 uppercase tracking-wider">Start Date</label>
+                                <input type="date" id="startDate" class="w-full bg-surface-container-low border border-surface-container-high rounded-xl py-3 px-4 focus:ring-2 focus:ring-[#FF5000] focus:border-[#FF5000] transition-all font-body text-sm text-on-surface cursor-pointer shadow-sm">
+                            </div>
+                            <!-- End Date -->
+                            <div>
+                                <label class="block text-xs font-bold text-on-surface-variant mb-2 uppercase tracking-wider">End Date</label>
+                                <input type="date" id="endDate" class="w-full bg-surface-container-low border border-surface-container-high rounded-xl py-3 px-4 focus:ring-2 focus:ring-[#FF5000] focus:border-[#FF5000] transition-all font-body text-sm text-on-surface cursor-pointer shadow-sm">
+                            </div>
+                        </div>
+
+                        <!-- Quick-Select Presets -->
+                        <div class="flex flex-wrap gap-2 mt-4">
+                            <button type="button" onclick="setPreset('last30')" class="px-4 py-2 rounded-lg bg-surface-container text-xs font-bold text-on-surface-variant hover:bg-[#FF5000] hover:text-white transition-all active:scale-95">LAST 30 DAYS</button>
+                            <button type="button" onclick="setPreset('lastQuarter')" class="px-4 py-2 rounded-lg bg-surface-container text-xs font-bold text-on-surface-variant hover:bg-[#FF5000] hover:text-white transition-all active:scale-95">LAST QUARTER</button>
+                            <button type="button" onclick="setPreset('ytd')" class="px-4 py-2 rounded-lg bg-surface-container text-xs font-bold text-on-surface-variant hover:bg-[#FF5000] hover:text-white transition-all active:scale-95">YEAR TO DATE</button>
+                        </div>
+                    </section>
+
+                    <!-- Feedback Containers -->
+                    <!-- Error Message -->
+                    <div id="errorMsg" class="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-lg text-sm font-medium mt-4">
+                        <span class="material-symbols-outlined align-middle mr-1 text-base">error</span>
+                        <span id="errorMsgText"></span>
+                    </div>
+
+                    <!-- Success Result Container -->
+                    <div id="statusContainer" class="bg-green-50 border border-green-200 rounded-xl p-6 mt-4">
+                        <h3 class="text-green-700 font-headline font-bold text-lg mb-4 flex items-center">
+                            <span class="material-symbols-outlined mr-2">check_circle</span> Report Generated Successfully!
+                        </h3>
+                        <div class="grid grid-cols-3 gap-4 mb-6">
+                            <div class="bg-white p-3 rounded-lg border border-green-100 text-center">
+                                <div id="kpiPosts" class="text-xl font-bold text-green-800">-</div>
+                                <div class="text-[11px] font-bold text-green-600 tracking-wider uppercase mt-1">Posts Analyzed</div>
+                            </div>
+                            <div class="bg-white p-3 rounded-lg border border-green-100 text-center">
+                                <div id="kpiReach" class="text-xl font-bold text-green-800">-</div>
+                                <div class="text-[11px] font-bold text-green-600 tracking-wider uppercase mt-1">Total Reach</div>
+                            </div>
+                            <div class="bg-white p-3 rounded-lg border border-green-100 text-center">
+                                <div id="kpiEngage" class="text-xl font-bold text-green-800">-</div>
+                                <div class="text-[11px] font-bold text-green-600 tracking-wider uppercase mt-1">Avg Engagement</div>
+                            </div>
+                        </div>
+                        <div class="flex flex-col sm:flex-row gap-3">
+                            <a href="#" id="linkHtml" target="_blank" class="flex-1 flex justify-center items-center gap-2 bg-[#060E9F] text-white py-3 rounded-lg font-bold text-sm hover:bg-[#04097a] hover:scale-[1.02] transition-all">
+                                <span class="material-symbols-outlined text-[18px]">visibility</span> View HTML Report
+                            </a>
+                            <a href="#" id="linkExcel" download class="flex-1 flex justify-center items-center gap-2 bg-white border border-slate-200 text-slate-700 py-3 rounded-lg font-bold text-sm hover:bg-slate-50 hover:border-slate-300 transition-all">
+                                <span class="material-symbols-outlined text-[18px]">download</span> Download Excel
+                            </a>
+                        </div>
+                    </div>
+
+                    <!-- Primary Action -->
+                    <div class="pt-6 flex flex-col md:flex-row items-center justify-between gap-6 border-t border-surface-container-high">
+                        <div class="flex items-center text-on-surface-variant gap-3">
+                            <span class="material-symbols-outlined text-[#FF5000]" data-icon="auto_awesome">auto_awesome</span>
+                            <p class="text-[13px] font-body italic">Processing multi-point data via Graph API.</p>
+                        </div>
+                        <button id="generateBtn" class="w-full md:w-auto px-10 py-4 bg-[#060E9F] hover:bg-[#04097a] text-white font-headline font-bold text-lg rounded-xl shadow-lg hover:scale-[1.03] active:scale-95 transition-all duration-300 flex items-center justify-center gap-3 disabled:opacity-50 disabled:pointer-events-none">
+                            <span id="btnText">Generate Report</span>
+                            <span id="btnIcon" class="material-symbols-outlined" data-icon="rocket_launch">rocket_launch</span>
+                            <div class="loader" id="loader"></div>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Supporting Features Bento -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mt-10">
+                <div class="p-6 bg-surface-container-lowest rounded-xl border border-orange-50 shadow-sm">
+                    <span class="material-symbols-outlined text-[#FF5000] mb-3 text-3xl" data-icon="insights">insights</span>
+                    <h3 class="font-headline font-bold text-[17px] mb-2 text-on-surface">Deep Insights</h3>
+                    <p class="text-[13px] text-on-surface-variant leading-relaxed">Granular sentiment analysis and engagement tracking automatically calculated.</p>
+                </div>
+                <div class="p-6 bg-surface-container-lowest rounded-xl border border-orange-50 shadow-sm">
+                    <span class="material-symbols-outlined text-[#FF5000] mb-3 text-3xl" data-icon="history">history</span>
+                    <h3 class="font-headline font-bold text-[17px] mb-2 text-on-surface">Audit History</h3>
+                    <p class="text-[13px] text-on-surface-variant leading-relaxed">Save HTML files directly and build your knowledge base easily over time.</p>
+                </div>
+                <div class="p-6 bg-surface-container-lowest rounded-xl border border-orange-50 shadow-sm">
+                    <span class="material-symbols-outlined text-[#FF5000] mb-3 text-3xl" data-icon="share">share</span>
+                    <h3 class="font-headline font-bold text-[17px] mb-2 text-on-surface">One-Click Export</h3>
+                    <p class="text-[13px] text-on-surface-variant leading-relaxed">Generate board-ready HTML and presentation Excel spreadsheets in a click.</p>
+                </div>
+            </div>
+
+        </div>
+    </main>
+    
+    <!-- Footer -->
+    <footer class="w-full py-10 mt-auto border-t border-orange-100/30 font-['Inter'] text-[13px] tracking-wide bg-white">
+        <div class="flex flex-col md:flex-row justify-between items-center px-8 max-w-screen-2xl mx-auto space-y-4 md:space-y-0">
+            <div class="flex items-center space-x-4">
+                <span class="font-bold text-[#FF5000] text-base">Radiant.</span>
+                <span class="text-slate-500">© 2026 Powered by Radiant Report Engine.</span>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        let currentBrand = 'fpg';
+
+        function selectBrand(brand) {
+            currentBrand = brand;
+            
+            // hide results when brand changes
+            document.getElementById('statusContainer').style.display = 'none';
+            document.getElementById('errorMsg').style.display = 'none';
+        }
+
+        function setPreset(type) {
+            const dEnd = new Date();
+            const dStart = new Date();
+            
+            if (type === 'last30') {
+                dStart.setDate(dStart.getDate() - 30);
+            } else if (type === 'lastQuarter') {
+                dStart.setMonth(dStart.getMonth() - 3);
+            } else if (type === 'ytd') {
+                dStart.setMonth(0);
+                dStart.setDate(1);
+            }
+            
+            document.getElementById('endDate').value = dEnd.toISOString().split('T')[0];
+            document.getElementById('startDate').value = dStart.toISOString().split('T')[0];
+            
+            // Visual feedback on buttons
+            document.querySelectorAll('button[onclick^="setPreset"]').forEach(btn => {
+                btn.className = "px-4 py-2 rounded-lg bg-surface-container text-xs font-bold text-on-surface-variant hover:bg-[#FF5000] hover:text-white transition-all active:scale-95";
+            });
+            event.target.className = "px-4 py-2 rounded-lg bg-[#FF5000] text-white text-xs font-bold shadow-md active:scale-95 transition-all";
+        }
+
+        // Init date range picker (default = last 30 days)
+        setPreset('last30');
+        // Visually set the first button as active
+        if(document.querySelector('button[onclick="setPreset(\\'last30\\')"]')) {
+            document.querySelector('button[onclick="setPreset(\\'last30\\')"]').className = "px-4 py-2 rounded-lg bg-[#FF5000] text-white text-xs font-bold shadow-md active:scale-95 transition-all";
+        }
+
+        // Generate Report Trigger
+        document.getElementById('generateBtn').addEventListener('click', async () => {
+            const startDate = document.getElementById('startDate').value;
+            const endDate = document.getElementById('endDate').value;
+            
+            if (!startDate || !endDate) return alert('Please select a complete date range.');
+            if (new Date(startDate) > new Date(endDate)) return alert('Start date cannot be after end date.');
+            
+            const btn = document.getElementById('generateBtn');
+            const btnText = document.getElementById('btnText');
+            const loader = document.getElementById('loader');
+            const icon = document.getElementById('btnIcon');
+            const errorMsg = document.getElementById('errorMsg');
+            const errorMsgText = document.getElementById('errorMsgText');
+            const statusContainer = document.getElementById('statusContainer');
+
+            btn.disabled = true;
+            btnText.textContent = 'Analyzing...';
+            icon.style.display = 'none';
+            loader.style.display = 'block';
+            errorMsg.style.display = 'none';
+            statusContainer.style.display = 'none';
+
+            try {
+                const response = await fetch('/api/generate', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ startDate, endDate, brand: currentBrand }),
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    document.getElementById('kpiPosts').textContent = data.kpi.totalPosts;
+                    document.getElementById('kpiReach').textContent = data.kpi.totalReach.toLocaleString();
+                    document.getElementById('kpiEngage').textContent = data.kpi.avgEngagement;
+
+                    document.getElementById('linkHtml').href = data.reportUrl;
+                    if (data.excelUrl) {
+                        document.getElementById('linkExcel').href = data.excelUrl;
+                        document.getElementById('linkExcel').style.display = 'flex';
+                    } else {
+                        document.getElementById('linkExcel').style.display = 'none';
+                    }
+
+                    statusContainer.style.display = 'block';
+                } else {
+                    errorMsgText.textContent = data.message;
+                    errorMsg.style.display = 'block';
+                }
+            } catch (err) {
+                errorMsgText.textContent = ' Network connection error. Please ensure the server is running.';
+                errorMsg.style.display = 'block';
+            } finally {
+                btn.disabled = false;
+                btnText.textContent = 'Generate Report';
+                icon.style.display = 'inline-block';
+                loader.style.display = 'none';
+            }
+        });
+    </script>
 </body>
 </html>
