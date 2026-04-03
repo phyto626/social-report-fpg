@@ -1057,7 +1057,7 @@ class ReportGenerator {
         <span>👥 追蹤 ${kpi.followersCount.toLocaleString()} 人</span>
       </div>
       <div class="footer-note">
-        報告生成時間：${new Date().toLocaleString('zh-TW')} | Powered by FB Social Report Tool
+        報告生成時間：${new Date().toLocaleString('zh-TW')}
       </div>
     </div>`;
   }

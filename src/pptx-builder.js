@@ -23,7 +23,7 @@ class PptxBuilder {
       margin: [0.5, 0.5, 0.5, 0.5],
       objects: [
         { rect: { x: 0, y: 0, w: '100%', h: 0.15, fill: COLOR_PRIMARY } },
-        { text: { text: "Report Engine | Social Data Analysis", options: { x: 0.5, y: 5.2, w: 4, h: 0.3, fontSize: 10, color: "888888" } } },
+        { text: { text: "Social Analytics Report", options: { x: 0.5, y: 5.2, w: 4, h: 0.3, fontSize: 10, color: "888888" } } },
       ]
     });
 
