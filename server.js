@@ -73,6 +73,9 @@ app.get('/api/reports', (req, res) => {
   }
 });
 
+// Cache for generated reports data so PPTX can access full data without re-fetching
+const reportDataCache = {};
+
 app.post('/api/generate', async (req, res) => {
   try {
     const { startDate, endDate, brand } = req.body;
@@ -113,6 +116,11 @@ app.post('/api/generate', async (req, res) => {
     // 數據分析與 HTML 生成
     const analyzer = new DataAnalyzer(rawData);
     const analysisResult = analyzer.analyze();
+    
+    // 將完整分析結果存入對應 Key，以便後續產出簡報
+    const cacheKey = `${brandKey}_${startDate}_${endDate}`;
+    reportDataCache[cacheKey] = analysisResult;
+
     const reportGenerator = new ReportGenerator(analysisResult);
     const html = reportGenerator.generate();
 
@@ -144,23 +152,23 @@ app.post('/api/generate', async (req, res) => {
 
 app.post('/api/generate-pptx', async (req, res) => {
   try {
-    const { startDate, endDate, brand, kpi } = req.body;
+    const { startDate, endDate, brand } = req.body;
     if (!startDate || !endDate || !brand) {
       return res.status(400).json({ success: false, message: '參數不齊全' });
     }
 
-    const brandConfig = BRANDS[brand.toLowerCase()];
+    const brandKey = brand.toLowerCase();
+    const brandConfig = BRANDS[brandKey];
     if (!brandConfig) {
       return res.status(400).json({ success: false, message: '無效的品牌' });
     }
 
-    // 假定傳來的數據為報告生成所需資料
-    const pptxData = {
-      pageInfo: { name: brandConfig.name },
-      startDate,
-      endDate,
-      kpi
-    };
+    // 從記憶體中抓出剛產生的完整分析數據
+    const cacheKey = `${brandKey}_${startDate}_${endDate}`;
+    const analysisResult = reportDataCache[cacheKey];
+    if (!analysisResult) {
+      return res.status(400).json({ success: false, message: '系統查無分析數據，請重新點擊 Generate Report 抓取最新數據！' });
+    }
 
     // 準備輸出路徑
     const templatePath = path.resolve(__dirname, 'template.pptx');
@@ -168,8 +176,8 @@ app.post('/api/generate-pptx', async (req, res) => {
     const pptxName = `${brandConfig.name}_${startDate}_to_${endDate}_簡報報告.pptx`;
     const outputPath = path.join(outputDir, pptxName);
 
-    const builder = new PptxBuilder(templatePath);
-    builder.generate(pptxData, outputPath);
+    const builder = new PptxBuilder();
+    await builder.generate(analysisResult, outputPath);
 
     res.json({
       success: true,

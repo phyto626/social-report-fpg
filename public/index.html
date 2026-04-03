@@ -229,10 +229,13 @@
                         </div>
                         <div class="flex flex-col sm:flex-row gap-3">
                             <a href="#" id="linkHtml" target="_blank" class="flex-1 flex justify-center items-center gap-2 bg-[#060E9F] text-white py-3 rounded-lg font-bold text-sm hover:bg-[#04097a] hover:scale-[1.02] transition-all">
-                                <span class="material-symbols-outlined text-[18px]">visibility</span> View HTML Report
+                                <span class="material-symbols-outlined text-[18px]">visibility</span> View HTML
                             </a>
                             <a href="#" id="linkExcel" download class="flex-1 flex justify-center items-center gap-2 bg-white border border-slate-200 text-slate-700 py-3 rounded-lg font-bold text-sm hover:bg-slate-50 hover:border-slate-300 transition-all">
                                 <span class="material-symbols-outlined text-[18px]">download</span> Download Excel
+                            </a>
+                            <a href="#" id="linkPptx" class="flex-1 flex justify-center items-center gap-2 bg-[#FFEB3B] border border-[#FBC02D] text-yellow-900 py-3 rounded-lg font-bold text-sm hover:bg-[#FFF59D] transition-all cursor-pointer">
+                                <span class="material-symbols-outlined text-[18px]">slideshow</span> Download PPTX
                             </a>
                         </div>
                     </div>
@@ -409,6 +412,11 @@
             document.getElementById('btnLast30').className = "px-4 py-2 rounded-lg bg-[#FF5000] text-white text-xs font-bold shadow-md active:scale-95 transition-all";
         }
 
+        // Global current session variables
+        let currentKpi = null;
+        let currentStartDate = null;
+        let currentEndDate = null;
+
         // Generate Report Trigger
         document.getElementById('generateBtn').addEventListener('click', async () => {
             const startDate = document.getElementById('startDate').value;
@@ -442,6 +450,10 @@
                 const data = await response.json();
 
                 if (data.success) {
+                    currentKpi = data.kpi;
+                    currentStartDate = startDate;
+                    currentEndDate = endDate;
+
                     document.getElementById('kpiPosts').textContent = data.kpi.totalPosts;
                     document.getElementById('kpiReach').textContent = data.kpi.totalReach.toLocaleString();
                     document.getElementById('kpiEngage').textContent = data.kpi.avgEngagement;
@@ -467,6 +479,49 @@
                 btnText.textContent = 'Generate Report';
                 icon.style.display = 'inline-block';
                 loader.style.display = 'none';
+            }
+        });
+
+        // PPTX Generator
+        document.getElementById('linkPptx').addEventListener('click', async (e) => {
+            e.preventDefault();
+            if(!currentKpi) return alert('請先產生報告數據');
+
+            const btn = e.currentTarget;
+            const originalText = btn.innerHTML;
+            btn.innerHTML = `<div class="loader !border-yellow-700 !border-t-yellow-900" style="display:block; width:16px; height:16px;"></div>`;
+            btn.style.pointerEvents = 'none';
+
+            try {
+                const response = await fetch('/api/generate-pptx', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ 
+                        startDate: currentStartDate, 
+                        endDate: currentEndDate, 
+                        brand: currentBrand,
+                        kpi: currentKpi 
+                    }),
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    // 自動觸發下載
+                    const downloadLink = document.createElement('a');
+                    downloadLink.href = data.pptxUrl;
+                    downloadLink.download = '';
+                    document.body.appendChild(downloadLink);
+                    downloadLink.click();
+                    downloadLink.remove();
+                } else {
+                    alert('PPTX 產生失敗：' + data.message);
+                }
+            } catch (err) {
+                alert('伺服器無回應，產生失敗。');
+            } finally {
+                btn.innerHTML = originalText;
+                btn.style.pointerEvents = 'auto';
             }
         });
     </script>
