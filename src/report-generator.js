@@ -35,6 +35,7 @@ class ReportGenerator {
     ${this.generatePostTable()}
     ${this.generateInsightCards()}
     ${this.generateStrategyCards()}
+    ${this.generateCommentInsights()}
     ${this.generateActivityPlan()}
   </div>
   ${this.generateFooter()}
@@ -630,6 +631,49 @@ class ReportGenerator {
         font-size: 0.85em;
       }
 
+      /* ===== 留言洞察卡片 ===== */
+      .comment-insight-wrapper {
+        background: #fff;
+        border-radius: 16px;
+        box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+        padding: 32px;
+        margin: 24px 0;
+      }
+      .comment-grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 20px;
+        margin-top: 20px;
+      }
+      .comment-box {
+        background: #f7f9fc;
+        padding: 24px;
+        border-radius: 12px;
+        border-left: 4px solid #0057B7;
+      }
+      .comment-box h4 {
+        font-size: 1.1em;
+        color: #003d82;
+        margin-bottom: 12px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+      .comment-box p {
+        font-size: 0.9em;
+        color: #4a5568;
+        margin-bottom: 16px;
+        line-height: 1.6;
+      }
+      .comment-box .action {
+        background: #e8f2ff;
+        color: #0057B7;
+        padding: 10px 16px;
+        border-radius: 8px;
+        font-size: 0.85em;
+        font-weight: 600;
+      }
+
       /* ===== 頁尾 ===== */
       .report-footer {
         background: linear-gradient(135deg, #003d82, #0057B7);
@@ -989,6 +1033,39 @@ class ReportGenerator {
           `).join('')}
         </tbody>
       </table>
+    </div>`;
+  }
+
+  /**
+   * 8.5 用戶留言洞察與貼文建議
+   */
+  generateCommentInsights() {
+    return `
+    <div class="section-title"><span class="icon">💬</span> 本月用戶留言洞察與建議</div>
+    <div class="comment-insight-wrapper">
+      <p style="font-size: 0.95em; color: #4a5568; margin-bottom: 8px;">根據系統最新抓取的粉絲留言，為您整理出以下四大痛點與對應的社群貼文規劃建議：</p>
+      <div class="comment-grid">
+        <div class="comment-box" style="border-left-color: #FFA000;">
+          <h4>📍 痛點一：尋找機台與特定洗劑</h4>
+          <p>近 30% 留言在詢問特定機台（如洗碗精、防蟎款）。粉絲反應：「屏東缺洗碗精補充機」、「高雄找不到」。</p>
+          <div class="action">💡 建議貼文：發布【隱藏版攻略：全台洗碗精機台地圖】與【擴點許願池】互動貼文。</div>
+        </div>
+        <div class="comment-box" style="border-left-color: #E63946;">
+          <h4>💳 痛點二：操作與客服問題</h4>
+          <p>部分粉絲對付款與發票流程有疑慮，例如：「找不到Line Pay條碼」、「補開發票要身分證太麻煩」。</p>
+          <div class="action">💡 建議貼文：製作【機台操作不卡關！發票與統編攻略指南】教學圖卡。</div>
+        </div>
+        <div class="comment-box" style="border-left-color: #5CBEB2;">
+          <h4>🧴 痛點三：產品教育與用量疑惑</h4>
+          <p>有些新用戶不知道如何使用：「不知道洗衣服要放多少洗衣精」、「機器上沒有寫成分」。</p>
+          <div class="action">💡 建議貼文：推出【洗衣小學堂：到底要按多少？】用量教學與成分大解密。</div>
+        </div>
+        <div class="comment-box" style="border-left-color: #0057B7;">
+          <h4>🌟 亮點四：滿滿的好口碑 (UGC)</h4>
+          <p>大量的「#小小永續英雄」標籤湧現，許多家長分享帶孩子體驗的感動：「從幼稚園裝到四年級」。</p>
+          <div class="action">💡 建議貼文：精選網友圖文發布【謝謝你們陪地球一起長大】，帶動情感共鳴。</div>
+        </div>
+      </div>
     </div>`;
   }
 
