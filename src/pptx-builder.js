@@ -62,7 +62,7 @@ class PptxBuilder {
       { label: "總貼文篇數", val: `${kpi.totalPosts || 0} 篇` },
       { label: "總觸及人數", val: `${(kpi.totalReach || 0).toLocaleString()}` },
       { label: "總互動次數", val: `${(kpi.totalEngagement || 0).toLocaleString()}` },
-      { label: "平均互動次數", val: `${kpi.avgEngagement || 0} / 篇` }
+      { label: "平均互動次數", val: `${(kpi.avgEngagement || 0).toLocaleString()} / 篇` }
     ];
     kpiData.forEach((item, idx) => {
       const cx = 0.5 + (idx * 2.2);
@@ -77,8 +77,8 @@ class PptxBuilder {
     slide2.addShape(pres.ShapeType.roundRect, { x: 0.5, y: 3.4, w: 9, h: 1.4, fill: { color: "FFF5EB" }, line: { color: COLOR_SECONDARY, width: 1 }, rectRadius: 0.1 });
     slide2.addText(`貼文內容：${topPostMsg}`, { x: 0.7, y: 3.5, w: 8.6, h: 0.6, fontSize: 13, color: COLOR_TEXT, valign: 'top' });
     
-    let rate = topPost.reach && topPost.reach > 0 ? ((topPost.engagement / topPost.reach) * 100).toFixed(2) : '0';
-    let statTxt = `🔹 類型：${topPost.format || '照片'}    🔹 觸及：${(topPost.reach || 0).toLocaleString()}    🔹 互動：${(topPost.engagement || 0).toLocaleString()}    🔹 互動率：${rate}%`;
+    let rate = topPost.reach && topPost.reach > 0 ? ((topPost.totalEngagement / topPost.reach) * 100).toFixed(2) : '0';
+    let statTxt = `🔹 類型：${topPost.mediaType || '照片'}    🔹 觸及：${(topPost.reach || 0).toLocaleString()}    🔹 互動：${(topPost.totalEngagement || 0).toLocaleString()}    🔹 互動率：${rate}%`;
     slide2.addText(statTxt, { x: 0.7, y: 4.3, w: 8.6, h: 0.3, fontSize: 14, bold: true, color: COLOR_PRIMARY });
 
     // ----------------------------------------------------------------------
@@ -99,8 +99,8 @@ class PptxBuilder {
       rowsTop.push([
         { text: `${i + 1}`, options: { align: 'center' } },
         { text: t.topic },
-        { text: t.avgReach.toLocaleString(), options: { align: 'center' } },
-        { text: `${t.engagementRate} (${t.avgEngagement}次)`, options: { align: 'center' } }
+        { text: (t.avgReach || 0).toLocaleString(), options: { align: 'center' } },
+        { text: `${(t.engagementRate * 100).toFixed(2)}% (${t.avgEngagement || 0}次)`, options: { align: 'center' } }
       ]);
     });
     
@@ -126,8 +126,8 @@ class PptxBuilder {
     formats.forEach(f => {
       rowsFmt.push([
         { text: f.type },
-        { text: f.averageReach.toLocaleString(), options: { align: 'center' } },
-        { text: f.engagementRate, options: { align: 'center' } }
+        { text: (f.avgReach || 0).toLocaleString(), options: { align: 'center' } },
+        { text: (f.engagementRate * 100).toFixed(2) + "%", options: { align: 'center' } }
       ]);
     });
     if (rowsFmt.length > 1) {
@@ -157,14 +157,14 @@ class PptxBuilder {
     const posts = data.posts || [];
     posts.slice(0, 7).forEach((p, i) => { // 取前7名
       let shortMsg = p.message ? p.message.substring(0, 15) + "..." : "無";
-      let prate = p.reach ? ((p.engagement / p.reach) * 100).toFixed(2) + "%" : "0%";
+      let prate = p.reach ? ((p.totalEngagement / p.reach) * 100).toFixed(2) + "%" : "0%";
       rowsAll.push([
         { text: `${i + 1}`, options: { align: 'center' } },
         { text: shortMsg },
-        { text: p.topic || '未知' },
-        { text: p.format || '照片' },
+        { text: p.title || '未知' },
+        { text: p.mediaType || '照片' },
         { text: (p.reach || 0).toLocaleString(), options: { align: 'right' } },
-        { text: (p.engagement || 0).toLocaleString(), options: { align: 'right' } },
+        { text: (p.totalEngagement || 0).toLocaleString(), options: { align: 'right' } },
         { text: prate, options: { align: 'right', color: COLOR_SECONDARY, bold: true } }
       ]);
     });
@@ -211,10 +211,10 @@ class PptxBuilder {
     let plans = data.activityPlan || [];
     plans.slice(0, 4).forEach((plan) => {
        rowsPlan.push([
-         { text: plan.month || '' },
+         { text: plan.timing || '' },
          { text: plan.direction || '' },
-         { text: plan.format || '' },
-         { text: plan.ecocoLink || plan.link || '' }
+         { text: plan.material || '' },
+         { text: plan.benefit || '' }
        ]);
     });
     
