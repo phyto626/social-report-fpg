@@ -148,56 +148,119 @@ class DataAnalyzer {
    * 生成受歡迎內容特徵歸納（4 個洞察卡片）
    */
   generateInsights(topicAnalysis, mediaAnalysis) {
-    const topPosts = [...this.posts]
-      .sort((a, b) => b.engagementRate - a.engagementRate)
-      .slice(0, Math.max(1, Math.ceil(this.posts.length * 0.3))); // 取前 30%
+    if (this.posts.length < 3) {
+      // 樣本過少，回傳觀察中
+      const empty = {
+        title: '觀察中',
+        description: '本期樣本不足，建議持續觀察。',
+        borderColor: '#e2e8f0',
+      };
+      return [
+        { emoji: '📐', label: '內容結構', ...empty },
+        { emoji: '🗣️', label: '敘事角度', ...empty },
+        { emoji: '🎭', label: '文案語氣', ...empty },
+        { emoji: '🎯', label: 'CTA 設計', ...empty }
+      ];
+    }
 
-    // 分析高表現貼文的共同特徵
-    const topMediaTypes = this.countField(topPosts, 'mediaType');
-    const avgMessageLength = topPosts.length > 0 ? (topPosts.reduce((sum, p) => sum + (p.message?.length || 0), 0) / topPosts.length) : 0;
+    const sortedPosts = [...this.posts].sort((a, b) => b.engagementRate - a.engagementRate);
+    const topCount = Math.ceil(this.posts.length / 3);
+    const highGroup = sortedPosts.slice(0, topCount);
+    const lowGroup = sortedPosts.slice(topCount);
 
-    // 分析發布時間
-    const topHours = topPosts.map(p => new Date(p.createdTime).getHours());
-    const peakHour = this.findMostFrequent(topHours);
+    const calcGroupMetric = (group, conditionFn) => {
+      if (group.length === 0) return 0;
+      const matched = group.filter(conditionFn);
+      const totalReactions = matched.reduce((sum, p) => sum + p.totalEngagement, 0);
+      const totalReach = matched.reduce((sum, p) => sum + p.reach, 0);
+      return totalReach > 0 ? (totalReactions / totalReach) : 0;
+    };
 
-    // 分析互動類型
-    const totalReactions = topPosts.reduce((sum, p) => sum + p.reactions, 0);
-    const totalComments = topPosts.reduce((sum, p) => sum + p.comments, 0);
-    const totalShares = topPosts.reduce((sum, p) => sum + p.shares, 0);
+    const hasParam = (post, regex) => regex.test(post.message || '');
 
-    const bestMediaCount = topMediaTypes.length > 0 ? topMediaTypes[0].count : 0;
-    const isSampleEnough = topPosts.length >= 3;
+    const dimList = [];
 
-    return [
-      {
-        emoji: '📸',
-        label: '素材表現',
-        title: isSampleEnough ? `${topMediaTypes[0].value}型素材最受歡迎` : '觀察中',
-        description: isSampleEnough ? `高互動貼文中，${Math.round((bestMediaCount / topPosts.length) * 100)}% 使用${topMediaTypes[0].value}格式。此型態內容能更有效吸引粉絲停留與視線。` : '本期有效發文樣本過少，暫時無法分析出具代表性的素材特徵，建議增加發文頻率。',
-        borderColor: '#FFA000',
-      },
-      {
-        emoji: '⏰',
-        label: '發布時段',
-        title: isSampleEnough ? `${peakHour}:00 時段互動最佳` : '觀察中',
-        description: isSampleEnough ? `高表現貼文多集中在 ${peakHour}:00 前後發布。建議將重要內容安排在此時段，以最大化觸及與互動率。` : '本期有效發文樣本過少，暫時無法分析出最具指標性的黃金發文時段。',
-        borderColor: '#00A0BB',
-      },
-      {
-        emoji: '📝',
-        label: '文案結構',
-        title: isSampleEnough ? `${avgMessageLength > 200 ? '長文' : '精簡'}文案效果佳` : '觀察中',
-        description: isSampleEnough ? `高互動文案平均字數約 ${Math.round(avgMessageLength)} 字。${avgMessageLength > 200 ? '詳細的情境鋪陳與說明更能引發共鳴。' : '精簡扼要的痛點溝通更能快速抓住注意力。'}` : '本期有效發文樣本較少，持續收集文案與點擊數據中。',
-        borderColor: '#0057B7',
-      },
-      {
-        emoji: '💬',
-        label: '互動機制',
-        title: isSampleEnough ? `${totalComments > totalShares ? '留言' : '分享'}驅動互動成長` : '觀察中',
-        description: isSampleEnough ? `互動指標分佈：心情 ${totalReactions}、留言 ${totalComments}、分享 ${totalShares}。${totalComments > totalShares ? '引導式提問或誘因有效帶動了大量粉絲留言。' : '實用的乾貨內容促進了受眾主動分享。'}` : '本期有效互動行為數量過少，將持續追蹤各項互動轉化表現。',
-        borderColor: '#5CBEB2',
-      },
-    ];
+    // 1. 內容結構 (問答、條列)
+    const structRegex = /[?？1-9\.]|步驟|如何/i;
+    const highStructRate = calcGroupMetric(highGroup, p => hasParam(p, structRegex));
+    const lowStructRate = calcGroupMetric(lowGroup, p => hasParam(p, structRegex));
+    
+    // 2. 敘事角度 (真人故事 vs 產品特性)
+    const storyRegex = /我|你|大家|朋友|小孩|里長/i;
+    const highStoryRate = calcGroupMetric(highGroup, p => hasParam(p, storyRegex));
+    const lowStoryRate = calcGroupMetric(lowGroup, p => hasParam(p, storyRegex));
+
+    // 3. 文案語氣 (生活感語氣詞)
+    const casualRegex = /啦|喔|啊|哈|😂|😆|😍|❤️/i;
+    const highCasualRate = calcGroupMetric(highGroup, p => hasParam(p, casualRegex));
+    const lowCasualRate = calcGroupMetric(lowGroup, p => hasParam(p, casualRegex));
+
+    // 4. 情感誘因 (痛點或情感)
+    const emotionRegex = /怕|錯過|煩惱|擔心|一起|愛/i;
+    const highEmotionRate = calcGroupMetric(highGroup, p => hasParam(p, emotionRegex));
+    const lowEmotionRate = calcGroupMetric(lowGroup, p => hasParam(p, emotionRegex));
+
+    // 5. 素材型式
+    const hasVisualType = (post) => ['影片', '相簿', '照片'].includes(post.mediaType);
+    const avgVisualRate = calcGroupMetric(this.posts, hasVisualType);
+    const avgOtherRate = calcGroupMetric(this.posts, p => !hasVisualType(p));
+
+    // 6. CTA 設計
+    const ctaRegex = /留言|連結|點擊|這裡看|分享|LINE/i;
+    const avgCtaRate = calcGroupMetric(this.posts, p => hasParam(p, ctaRegex));
+    const avgNoCtaRate = calcGroupMetric(this.posts, p => !hasParam(p, ctaRegex));
+
+    // 構建 6 個維度比較結果
+    // 選取 4 個差異最大或最有意義的維度呈現
+    const formatPct = val => (val * 100).toFixed(1) + '%';
+
+    dimList.push({
+      id: 'cta', emoji: '🎯', label: 'CTA 設計', diff: Math.abs(avgCtaRate - avgNoCtaRate),
+      title: avgCtaRate >= avgNoCtaRate ? '明確行動呼籲帶動整體互動' : '未帶連結貼文互動率較高',
+      description: `帶有明確行動呼籲(如留言/加LINE)的貼文總平均互動率為 ${formatPct(avgCtaRate)}，無 CTA 則為 ${formatPct(avgNoCtaRate)}。`
+    });
+
+    dimList.push({
+      id: 'struct', emoji: '📐', label: '內容結構', diff: Math.abs(highStructRate - lowStructRate),
+      title: highStructRate > lowStructRate ? '提問式與條列步驟效果佳' : '一般直敘形式較受歡迎',
+      description: `高表現內容具備提問/條列格式的互動率達 ${formatPct(highStructRate)}，對照低表現群僅 ${formatPct(lowStructRate)}。`
+    });
+
+    dimList.push({
+      id: 'story', emoji: '🗣️', label: '敘事角度', diff: Math.abs(highStoryRate - lowStoryRate),
+      title: highStoryRate > lowStoryRate ? '真實人物視角較引發共鳴' : '產品功能溝通為本期主軸',
+      description: `採用「你/我/大家」或在地故事的高表現群，互動率達 ${formatPct(highStoryRate)}，低表現群為 ${formatPct(lowStoryRate)}。`
+    });
+
+    dimList.push({
+      id: 'emotion', emoji: '❤️', label: '情感誘因', diff: Math.abs(highEmotionRate - lowEmotionRate),
+      title: highEmotionRate > lowEmotionRate ? '痛點與參與感為流量密碼' : '抽獎等實質誘因較能帶動話題',
+      description: `高表現貼文中包含解決痛點或情感共鳴的互動率達 ${formatPct(highEmotionRate)}，低表現群為 ${formatPct(lowEmotionRate)}。`
+    });
+
+    dimList.push({
+      id: 'tone', emoji: '🎭', label: '文案語氣', diff: Math.abs(highCasualRate - lowCasualRate),
+      title: highCasualRate > lowCasualRate ? '生活化/口語化語氣更容易拉近距離' : '正式的品牌語氣更能建立信賴',
+      description: `帶有生活化語助詞或Emoji的高表現群互動率達 ${formatPct(highCasualRate)}，低表現群為 ${formatPct(lowCasualRate)}。`
+    });
+
+    dimList.push({
+      id: 'visual', emoji: '🖼️', label: '素材型式', diff: Math.abs(avgVisualRate - avgOtherRate),
+      title: avgVisualRate >= avgOtherRate ? '視覺型素材(圖卡/影片)能有效帶動指標' : '純淨形式的素材更易被閱讀',
+      description: `圖片/短影片類型素材平均互動率為 ${formatPct(avgVisualRate)}，相對其他類型文字為主則為 ${formatPct(avgOtherRate)}。`
+    });
+
+    // 依差距(差異顯著度)排序，取前四名
+    dimList.sort((a, b) => b.diff - a.diff);
+    const top4 = dimList.slice(0, 4);
+    
+    // 賦予固定的邊框顏色：橘、青、藍、綠
+    const colors = ['#FFA000', '#00A0BB', '#0057B7', '#5CBEB2'];
+    top4.forEach((item, idx) => {
+      item.borderColor = colors[idx];
+    });
+
+    return top4;
   }
 
   /**
