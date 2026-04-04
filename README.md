@@ -12,6 +12,7 @@
 - ✅ **數據分析** — 自動計算 KPI、互動率、主題分析、素材型式分析
 - ✅ **HTML 報告** — 生成符合品牌規範的精美互動式報告
 - ✅ **Excel 匯出** — 同步匯出 Excel 檔案供備份或其他用途
+- ✅ **PPTX 匯出** — 一鍵生成符合品牌視覺的簡報報告，方便直接匯報
 - ✅ **自動洞察** — 基於數據生成受歡迎內容特徵、優化建議、活動策略
 
 ---
@@ -44,20 +45,27 @@ OUTPUT_DIR=./output
 EXPORT_EXCEL=true
 ```
 
-### 3. 執行工具
+### 3. 執行工具 (Web 介面)
+這是最推薦的使用方式，提供完整的視覺化操作與 PPTX 匯出功能。
+
+```bash
+# 啟動 Web 伺服器
+npm start
+```
+啟動後，請在瀏覽器開啟：`http://localhost:3000`
+
+### 4. CLI 命令列工具
+適合自動化排程或快速抓取數據。
 
 ```bash
 # 互動模式（會詢問月份）
-npm start
+npm run cli
 
 # 指定月份
 node index.js --month 2026-03
 
 # 只抓取數據（匯出 Excel，不生成報告）
 node index.js --month 2026-03 --fetch-only
-
-# 完整流程
-node index.js --month 2026-03
 ```
 
 ---
@@ -69,7 +77,8 @@ node index.js --month 2026-03
 | 檔案 | 說明 |
 |------|------|
 | `{品牌名}_YYYY-MM_社群成果分析報告.html` | 完整 HTML 分析報告 |
-| `{品牌名}_YYYY-MM_貼文數據.xlsx` | Excel 原始數據（可選） |
+| `{品牌名}_YYYY-MM_貼文數據.xlsx` | Excel 原始數據（供進階分析） |
+| `{品牌名}_YYYY-MM_簡報報告.pptx` | 品牌視覺 PPTX 簡報（匯報用） |
 
 ---
 
@@ -128,14 +137,17 @@ GET /oauth/access_token?
 ```
 social/
 ├── index.js                  # CLI 主入口
+├── server.js                 # Web API 伺服器
 ├── package.json              # 專案設定
 ├── .env                      # 環境變數（需自行建立）
 ├── .env.example              # 環境變數範例
+├── template.pptx             # PPTX 匯出範本
 ├── src/
 │   ├── fb-api.js             # Facebook Graph API 串接
 │   ├── data-analyzer.js      # 數據分析引擎
 │   ├── report-generator.js   # HTML 報告生成器
-│   └── excel-export.js       # Excel 匯出模組
+│   ├── excel-export.js       # Excel 匯出模組
+│   └── pptx-builder.js       # PPTX 簡報生成模組
 ├── output/                   # 報告輸出目錄
 └── README.md                 # 本文件
 ```

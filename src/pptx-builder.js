@@ -11,58 +11,106 @@ class PptxBuilder {
     pres.layout = 'LAYOUT_16x9'; // 10 x 5.625 inches
 
     // 色彩常數定義
-    const COLOR_PRIMARY = "060E9F";     // 深藍
-    const COLOR_SECONDARY = "FF5000";   // 橘色
+    // 色彩與品牌邏輯 (根據品牌名稱切換)
+    const brandName = data.brandName || data.pageInfo?.name || '品牌名稱';
+    const isEcoco = brandName.toLowerCase().includes('ecoco') || brandName.toLowerCase().includes('eco');
+    
+    // 定義品牌色系 (PptxGenJS 用 RRGGBB 無 #)
+    const COLOR_PRIMARY = isEcoco ? "060E9F" : "0057B7";     // 深藍
+    const COLOR_SECONDARY = isEcoco ? "FF5000" : "FFA000";   // 橘色/琥珀色
+    const COLOR_ACCENT = isEcoco ? "FFCE00" : "5CBEB2";      // 黃色/青色
     const COLOR_TEXT = "333333";
-    const COLOR_BG_LIGHT = "F3F4F6";
+    const COLOR_TEXT_LIGHT = "777777";
+    const COLOR_BG_PAPER = "F4F4F4"; // 參考圖的淺灰底色
+    const COLOR_BG_WHITE = "FFFFFF";
 
     // 共用頁首/頁尾設定
     pres.defineSlideMaster({
       title: "MASTER_SLIDE",
-      background: { fill: "FFFFFF" },
+      background: { fill: COLOR_BG_WHITE },
       margin: [0.5, 0.5, 0.5, 0.5],
       objects: [
-        { rect: { x: 0, y: 0, w: '100%', h: 0.15, fill: COLOR_PRIMARY } },
-        { text: { text: "Social Analytics Report", options: { x: 0.5, y: 5.2, w: 4, h: 0.3, fontSize: 10, color: "888888" } } },
+        { rect: { x: 0, y: 0, w: '100%', h: 0.1, fill: COLOR_PRIMARY } },
+        { text: { text: `${brandName} Social Analytics`, options: { x: 0.5, y: 5.2, w: 4, h: 0.3, fontSize: 10, color: "888888", fontFace: "Arial" } } },
       ]
     });
 
-    // 格式化資料
-    const brandName = data.brandName || data.pageInfo?.name || '品牌名稱';
     const startDate = data.startDate || '';
     const endDate = data.endDate || '';
     const kpi = data.kpi || {};
     const topPost = data.topPost || {};
 
     // ----------------------------------------------------------------------
-    // Slide 1: 封面 (深藍漸層＋裝飾圓形，含品牌名、月份、製作人欄位)
+    // Slide 1: 封面 (參照 UI 簡約風格重新製作)
     // ----------------------------------------------------------------------
     let slide1 = pres.addSlide();
-    slide1.background = { fill: COLOR_PRIMARY };
+    slide1.background = { fill: COLOR_BG_PAPER };
     
-    // 裝飾圓形
-    slide1.addShape(pres.ShapeType.ellipse, { x: -1, y: 2.5, w: 5, h: 5, fill: "FFFFFF", transparency: 90 });
-    slide1.addShape(pres.ShapeType.ellipse, { x: 6, y: -2, w: 6, h: 6, fill: "FFFFFF", transparency: 90 });
+    // 1. 左側垂直分隔線
+    slide1.addShape(pres.ShapeType.line, { 
+      x: 3.2, y: 0.5, w: 0, h: 4.6, 
+      line: { color: "CCCCCC", width: 1 } 
+    });
     
-    slide1.addText(`${brandName} 社群數據回顧`, { x: 1, y: 1.8, w: 8, h: 1, fontSize: 44, bold: true, color: "FFFFFF" });
-    slide1.addText(`${startDate} ~ ${endDate}`, { x: 1, y: 2.8, w: 8, h: 0.5, fontSize: 24, fontFace: "Arial", color: "FFEB3B" });
+    // 2. 裝飾性幾何圖形 (疊合圓圈) - 放置在分隔線上
+    const circleSize = 0.45;
+    const circleX = 3.2 - (circleSize / 2);
+    slide1.addShape(pres.ShapeType.ellipse, { x: circleX, y: 0.8, w: circleSize, h: circleSize, line: { color: "666666", width: 1 } });
+    slide1.addShape(pres.ShapeType.ellipse, { x: circleX, y: 0.95, w: circleSize, h: circleSize, line: { color: "999999", width: 1 } });
+    slide1.addShape(pres.ShapeType.ellipse, { x: circleX, y: 1.1, w: circleSize, h: circleSize, line: { color: "CCCCCC", width: 1 } });
     
-    const today = new Date().toLocaleDateString('zh-TW');
-    slide1.addText(`製作部門 / 製作人：________________    製作日期：${today}`, { x: 1, y: 4.5, w: 8, h: 0.5, fontSize: 14, color: "FFFFFF" });
-    slide1.addShape(pres.ShapeType.line, { x: 1, y: 4.3, w: 8, h: 0, line: { color: "FFFFFF", width: 1 } });
+    // 3. 左側文字 (品牌與報告類型)
+    slide1.addText(brandName.toUpperCase(), { 
+      x: 0.5, y: 0.8, w: 2.5, h: 0.4, 
+      fontSize: 14, fontFace: "Arial", color: COLOR_TEXT, bold: false, align: 'right' 
+    });
+    slide1.addText("MONTHLY PERFORMANCE\nREPORT", { 
+      x: 0.5, y: 4.4, w: 2.5, h: 0.6, 
+      fontSize: 10, fontFace: "Arial", color: COLOR_TEXT_LIGHT, align: 'right', lineSpacing: 12 
+    });
+    
+    // 4. 右側文字 (主標題)
+    const displayMonth = startDate ? new Date(startDate).toLocaleDateString('en-US', { month: 'long', year: 'numeric' }).toUpperCase() : 'REPORT DATA';
+    
+    slide1.addText("SOCIAL MEDIA\nMARKETING\nREPORT", { 
+      x: 3.6, y: 1.5, w: 6, h: 2.5, 
+      fontSize: 48, fontFace: "Arial Black", color: COLOR_PRIMARY, bold: true, lineSpacing: 45 
+    });
+    
+    slide1.addText(brandName, { 
+      x: 3.6, y: 4.1, w: 5, h: 0.4, 
+      fontSize: 22, fontFace: "Arial", color: COLOR_TEXT, bold: false 
+    });
+    
+    // 5. 右上與右下資訊
+    slide1.addText(displayMonth, { 
+      x: 7.5, y: 0.8, w: 2, h: 0.4, 
+      fontSize: 12, fontFace: "Arial", color: COLOR_TEXT_LIGHT, align: 'right' 
+    });
+    
+    slide1.addText("PAGE 1", { 
+      x: 7.5, y: 4.6, w: 2, h: 0.4, 
+      fontSize: 12, fontFace: "Arial", color: COLOR_TEXT_LIGHT, align: 'right' 
+    });
 
+    // 6. 最右側垂直文字
+    slide1.addText("PREPARED FOR " + brandName.toUpperCase(), { 
+      x: 8.8, y: 2.5, w: 2.0, h: 0.3, 
+      fontSize: 9, fontFace: "Arial", color: "BBBBBB", align: 'right', rotate: 270 
+    });
+    
     // ----------------------------------------------------------------------
     // Slide 2: 整體數據概覽 (4 格 KPI 卡片＋本期最高互動貼文 Highlight)
     // ----------------------------------------------------------------------
     let slide2 = pres.addSlide({ masterName: "MASTER_SLIDE" });
-    slide2.addText("整體數據概覽 Overall Performance", { x: 0.5, y: 0.3, w: 9, h: 0.6, fontSize: 28, bold: true, color: COLOR_PRIMARY });
+    slide2.addText("整體數據概覽 Overall Performance", { x: 0.5, y: 0.3, w: 9, h: 0.6, fontSize: 24, bold: true, color: COLOR_PRIMARY });
     
-    // 4 KPI Cards (Better alignment: total width 9 centered on 10 = margin 0.5 each side)
+    // 4 KPI Cards
     const kpiData = [
-      { label: "總貼文篇數", val: `${kpi.totalPosts || 0} 篇` },
-      { label: "總觸及人數", val: (kpi.totalReach || 0).toLocaleString() },
-      { label: "總互動次數", val: (kpi.totalEngagement || 0).toLocaleString() },
-      { label: "平均互動次數", val: (kpi.avgEngagement || 0).toLocaleString() + " / 篇" }
+      { label: "總貼文篇數", val: `${kpi.totalPosts || 0} 篇`, color: COLOR_PRIMARY },
+      { label: "總觸及人數", val: (kpi.totalReach || 0).toLocaleString(), color: COLOR_SECONDARY },
+      { label: "平均互動次數", val: (kpi.avgEngagement || 0).toLocaleString(), color: COLOR_ACCENT },
+      { label: "整體互動率", val: `${((kpi.overallEngagementRate || 0) * 100).toFixed(2)}%`, color: COLOR_PRIMARY }
     ];
     
     const cardW = 2.1;
@@ -71,121 +119,119 @@ class PptxBuilder {
 
     kpiData.forEach((item, idx) => {
       const cx = startX + (idx * (cardW + cardGap));
+      // Card Shadow-like shape
+      slide2.addShape(pres.ShapeType.roundRect, { x: cx+0.05, y: 1.15, w: cardW, h: 1.2, fill: "EEEEEE", rectRadius: 0.1 });
       // Card Background
-      slide2.addShape(pres.ShapeType.roundRect, { x: cx, y: 1.1, w: cardW, h: 1.3, fill: COLOR_BG_LIGHT, rectRadius: 0.1 });
+      slide2.addShape(pres.ShapeType.roundRect, { x: cx, y: 1.1, w: cardW, h: 1.2, fill: COLOR_BG_WHITE, rectRadius: 0.1, line: {color: "E2E8F0", width: 1} });
       // Label
-      slide2.addText(item.label, { x: cx, y: 1.25, w: cardW, h: 0.3, fontSize: 13, color: "666666", align: 'center', fontFace: 'Arial' });
+      slide2.addText(item.label, { x: cx, y: 1.2, w: cardW, h: 0.3, fontSize: 11, color: "666666", align: 'center', fontFace: 'Arial' });
       // Value
-      slide2.addText(item.val, { x: cx, y: 1.6, w: cardW, h: 0.6, fontSize: 20, bold: true, color: COLOR_PRIMARY, align: 'center', fontFace: 'Arial' });
+      slide2.addText(item.val, { x: cx, y: 1.5, w: cardW, h: 0.6, fontSize: 24, bold: true, color: item.color, align: 'center', fontFace: 'Arial' });
     });
 
     // Top Post Highlight
-    slide2.addText("🏆 本期最高互動貼文 Highlight", { x: 0.5, y: 2.7, w: 9, h: 0.5, fontSize: 18, bold: true, color: COLOR_SECONDARY });
+    slide2.addText("🏆 本期互動之星", { x: 0.5, y: 2.7, w: 9, h: 0.5, fontSize: 18, bold: true, color: COLOR_PRIMARY });
     
     // Highlight Container
-    slide2.addShape(pres.ShapeType.roundRect, { x: 0.5, y: 3.3, w: 9, h: 1.6, fill: "FFF5EB", line: { color: COLOR_SECONDARY, width: 1.5 }, rectRadius: 0.1 });
+    slide2.addShape(pres.ShapeType.roundRect, { x: 0.5, y: 3.2, w: 9, h: 1.7, fill: isEcoco ? "F0F4FF" : "F0F7FF", line: { color: COLOR_PRIMARY, width: 1 }, rectRadius: 0.1 });
     
-    // Top Post Content (Left side of box)
-    let topPostMsg = topPost.message ? topPost.message.substring(0, 180) + "..." : "尚無文字內容";
-    slide2.addText(topPostMsg, { x: 0.8, y: 3.4, w: 8.4, h: 0.9, fontSize: 13, color: "444444", valign: 'top', fontFace: 'Arial' });
+    // Top Post Content 
+    let topPostMsg = topPost.message ? topPost.message.substring(0, 200) + "..." : "尚無文字內容";
+    slide2.addText(topPostMsg, { x: 0.8, y: 3.3, w: 8.4, h: 1.0, fontSize: 13, color: COLOR_TEXT, valign: 'top', fontFace: 'Arial' });
     
-    // Stats Bar (Bottom of box)
+    // Stats Bar
     let rate = topPost.reach && topPost.reach > 0 ? ((topPost.totalEngagement / topPost.reach) * 100).toFixed(2) : '0';
     let statTxt = [
-        { text: "類型：", options: { color: "666666" } },
+        { text: "素材型式：", options: { color: "666666" } },
         { text: (topPost.mediaType || "照片") + "   ", options: { bold: true, color: COLOR_PRIMARY } },
-        { text: "觸及：", options: { color: "666666" } },
+        { text: "觸及人數：", options: { color: "666666" } },
         { text: (topPost.reach || 0).toLocaleString() + "   ", options: { bold: true, color: COLOR_PRIMARY } },
-        { text: "互動：", options: { color: "666666" } },
-        { text: (topPost.totalEngagement || 0).toLocaleString() + "   ", options: { bold: true, color: COLOR_PRIMARY } },
         { text: "互動率：", options: { color: "666666" } },
         { text: rate + "%", options: { bold: true, color: COLOR_SECONDARY } }
     ];
     
-    slide2.addText(statTxt, { x: 0.8, y: 4.4, w: 8.4, h: 0.4, fontSize: 13, align: 'left', fontFace: 'Arial' });
+    slide2.addText(statTxt, { x: 0.8, y: 4.4, w: 8.4, h: 0.4, fontSize: 14, align: 'left', fontFace: 'Arial' });
 
     // ----------------------------------------------------------------------
-    // Slide 3: 各主題互動率排名 (進度條排名表)
+    // Slide 3: 各主題互動率排名
     // ----------------------------------------------------------------------
     let slide3 = pres.addSlide({ masterName: "MASTER_SLIDE" });
-    slide3.addText("各主題互動表現排名", { x: 0.5, y: 0.4, w: 9, h: 0.6, fontSize: 28, bold: true, color: COLOR_PRIMARY });
+    slide3.addText("主題內容表現分析", { x: 0.5, y: 0.4, w: 9, h: 0.6, fontSize: 24, bold: true, color: COLOR_PRIMARY });
 
     let rowsTop = [];
     rowsTop.push([{ text: "排名", options: { bold: true, fill: COLOR_PRIMARY, color: 'FFFFFF' } },
-                  { text: "主題名稱", options: { bold: true, fill: COLOR_PRIMARY, color: 'FFFFFF' } },
+                  { text: "主題分類 (Topic)", options: { bold: true, fill: COLOR_PRIMARY, color: 'FFFFFF' } },
                   { text: "平均觸及", options: { bold: true, fill: COLOR_PRIMARY, color: 'FFFFFF' } },
                   { text: "互動率表現", options: { bold: true, fill: COLOR_PRIMARY, color: 'FFFFFF' } }]);
     
     let topics = data.topicAnalysis || [];
-    // 找最大值來畫占比(此處簡化成直接列出)
-    topics.slice(0, 6).forEach((t, i) => {
+    topics.slice(0, 7).forEach((t, i) => {
       rowsTop.push([
         { text: `${i + 1}`, options: { align: 'center' } },
         { text: t.topic },
         { text: (t.avgReach || 0).toLocaleString(), options: { align: 'center' } },
-        { text: `${(t.engagementRate * 100).toFixed(2)}% (${t.avgEngagement || 0}次)`, options: { align: 'center' } }
+        { text: `${(t.engagementRate * 100).toFixed(2)}%`, options: { align: 'center', color: COLOR_SECONDARY, bold: true } }
       ]);
     });
     
     if (rowsTop.length > 1) {
-      slide3.addTable(rowsTop, { x: 0.5, y: 1.5, w: 9, colW: [1, 4, 1.5, 2.5], border: { type: 'solid', color: 'DDDDDD' }, fontSize: 14, rowH: 0.4, valign: 'middle' });
-    } else {
-      slide3.addText("無足夠的主題分析資料", { x: 0.5, y: 1.5, w: 9, h: 1, fontSize: 16, color: "888888" });
+      slide3.addTable(rowsTop, { x: 0.5, y: 1.3, w: 9, colW: [0.8, 4.2, 2, 2], border: { type: 'solid', color: 'EEEEEE' }, fontSize: 13, rowH: 0.45, valign: 'middle' });
     }
 
     // ----------------------------------------------------------------------
-    // Slide 4: 素材型式分析 (左欄表格、右欄洞察)
+    // Slide 4: 素材型式與洞察
     // ----------------------------------------------------------------------
     let slide4 = pres.addSlide({ masterName: "MASTER_SLIDE" });
-    slide4.addText("素材型式分析", { x: 0.5, y: 0.4, w: 9, h: 0.6, fontSize: 28, bold: true, color: COLOR_PRIMARY });
+    slide4.addText("素材型式效能分析", { x: 0.5, y: 0.4, w: 9, h: 0.6, fontSize: 24, bold: true, color: COLOR_PRIMARY });
 
-    // Left Table
     let rowsFmt = [];
     rowsFmt.push([{ text: "素材型式", options: { bold: true, fill: COLOR_PRIMARY, color: 'FFFFFF' } },
+                  { text: "篇數", options: { bold: true, fill: COLOR_PRIMARY, color: 'FFFFFF' } },
                   { text: "平均觸及", options: { bold: true, fill: COLOR_PRIMARY, color: 'FFFFFF' } },
-                  { text: "互動率", options: { bold: true, fill: COLOR_PRIMARY, color: 'FFFFFF' } }]);
+                  { text: "平均互動率", options: { bold: true, fill: COLOR_PRIMARY, color: 'FFFFFF' } }]);
     
     let formats = data.mediaAnalysis || [];
     formats.forEach(f => {
       rowsFmt.push([
         { text: f.type },
+        { text: `${f.count || 0}`, options: { align: 'center' } },
         { text: (f.avgReach || 0).toLocaleString(), options: { align: 'center' } },
-        { text: (f.engagementRate * 100).toFixed(2) + "%", options: { align: 'center' } }
+        { text: (f.engagementRate * 100).toFixed(2) + "%", options: { align: 'center', fontFace: 'Arial Bold', color: COLOR_SECONDARY } }
       ]);
     });
     if (rowsFmt.length > 1) {
-      slide4.addTable(rowsFmt, { x: 0.5, y: 1.3, w: 4.5, colW: [1.5, 1.5, 1.5], border: { type: 'solid', color: 'DDDDDD' }, fontSize: 13, rowH: 0.4, valign: 'middle' });
+      slide4.addTable(rowsFmt, { x: 0.5, y: 1.2, w: 5.5, colW: [1.5, 0.8, 1.5, 1.7], border: { type: 'solid', color: 'EEEEEE' }, fontSize: 12, rowH: 0.45, valign: 'middle' });
     }
 
-    // Right Insight
-    slide4.addShape(pres.ShapeType.roundRect, { x: 5.5, y: 1.3, w: 4, h: 3, fill: "F8F9FA", line: { color: "E2E8F0", width: 1 }, rectRadius: 0.1 });
-    slide4.addText("📌 分析洞察", { x: 5.7, y: 1.5, w: 3.6, h: 0.4, fontSize: 18, bold: true, color: COLOR_SECONDARY });
-    slide4.addText("不同型式的素材會吸引不同受眾。\n- 相片（Photos）通常能帶來較廣泛的觸及。\n- 短影音（Videos）目前在社群上擁有最佳演算法紅利。\n- 請依據這月份最高互動的型式做為下個月的核心推廣型式。", { x: 5.7, y: 2.0, w: 3.6, h: 2, fontSize: 14, color: COLOR_TEXT, valign: 'top' });
+    // Insight Card
+    slide4.addShape(pres.ShapeType.roundRect, { x: 6.3, y: 1.2, w: 3.2, h: 3.5, fill: "F9FAFB", line: { color: "CBD5E1", width: 1 }, rectRadius: 0.1 });
+    slide4.addText("📌 數據洞察點分析", { x: 6.5, y: 1.4, w: 2.8, h: 0.4, fontSize: 16, bold: true, color: COLOR_PRIMARY });
+    
+    let insightTxt = "1. 當月表現最佳素材為：" + (formats[0]?.type || "照片") + "\n\n2. 建議下月增加相關內容比例，以維持穩定的觸及表現。\n\n3. 如果長影音互動率較高，建議強化影片腳本的開頭鉤子。";
+    slide4.addText(insightTxt, { x: 6.5, y: 1.9, w: 2.8, h: 2.5, fontSize: 12, color: COLOR_TEXT, valign: 'top', lineSpacing: 18 });
 
     // ----------------------------------------------------------------------
-    // Slide 5: 全貼文表現明細 (7 列可擴充)
+    // Slide 5: 全貼文表現明細 (精選前 8 名)
     // ----------------------------------------------------------------------
     let slide5 = pres.addSlide({ masterName: "MASTER_SLIDE" });
-    slide5.addText("全貼文表現明細", { x: 0.5, y: 0.4, w: 9, h: 0.6, fontSize: 28, bold: true, color: COLOR_PRIMARY });
+    slide5.addText("全貼文表現明細 (Top High Engagement)", { x: 0.5, y: 0.4, w: 9, h: 0.6, fontSize: 24, bold: true, color: COLOR_PRIMARY });
 
     let rowsAll = [];
     rowsAll.push([{ text: "#", options: { bold: true, fill: COLOR_PRIMARY, color: 'FFFFFF' } },
                   { text: "內容摘要", options: { bold: true, fill: COLOR_PRIMARY, color: 'FFFFFF' } },
                   { text: "分類", options: { bold: true, fill: COLOR_PRIMARY, color: 'FFFFFF' } },
-                  { text: "型式", options: { bold: true, fill: COLOR_PRIMARY, color: 'FFFFFF' } },
                   { text: "觸及", options: { bold: true, fill: COLOR_PRIMARY, color: 'FFFFFF' } },
                   { text: "互動", options: { bold: true, fill: COLOR_PRIMARY, color: 'FFFFFF' } },
                   { text: "互動率", options: { bold: true, fill: COLOR_PRIMARY, color: 'FFFFFF' } }]);
 
     const posts = data.posts || [];
-    posts.slice(0, 7).forEach((p, i) => { // 取前7名
-      let shortMsg = p.message ? p.message.substring(0, 15) + "..." : "無";
+    posts.slice(0, 8).forEach((p, i) => {
+      let shortMsg = p.message ? p.message.substring(0, 20).replace(/\n/g, ' ') + "..." : "無文字";
       let prate = p.reach ? ((p.totalEngagement / p.reach) * 100).toFixed(2) + "%" : "0%";
       rowsAll.push([
         { text: `${i + 1}`, options: { align: 'center' } },
         { text: shortMsg },
-        { text: p.title || '未知' },
-        { text: p.mediaType || '照片' },
+        { text: p.title || '一般' },
         { text: (p.reach || 0).toLocaleString(), options: { align: 'right' } },
         { text: (p.totalEngagement || 0).toLocaleString(), options: { align: 'right' } },
         { text: prate, options: { align: 'right', color: COLOR_SECONDARY, bold: true } }
@@ -193,43 +239,45 @@ class PptxBuilder {
     });
 
     if (rowsAll.length > 1) {
-      slide5.addTable(rowsAll, { x: 0.5, y: 1.3, w: 9, colW: [0.5, 3.5, 1.2, 0.8, 1, 1, 1], border: { type: 'solid', color: 'DDDDDD' }, fontSize: 12, rowH: 0.35, valign: 'middle' });
-    } else {
-      slide5.addText("無貼文資料", { x: 0.5, y: 1.5, w: 9, h: 1, fontSize: 16 });
+      slide5.addTable(rowsAll, { x: 0.5, y: 1.2, w: 9, colW: [0.5, 4.0, 1.2, 1.1, 1.1, 1.1], border: { type: 'solid', color: 'EEEEEE' }, fontSize: 11, rowH: 0.38, valign: 'middle' });
     }
 
     // ----------------------------------------------------------------------
-    // Slide 6: 優化方向建議 (3 欄策略卡片)
+    // Slide 6: 未來優化方向建議
     // ----------------------------------------------------------------------
     let slide6 = pres.addSlide({ masterName: "MASTER_SLIDE" });
-    slide6.addText("未來優化方向建議", { x: 0.5, y: 0.4, w: 9, h: 0.6, fontSize: 28, bold: true, color: COLOR_PRIMARY });
+    slide6.addText("未來優化方向建議", { x: 0.5, y: 0.4, w: 9, h: 0.6, fontSize: 24, bold: true, color: COLOR_PRIMARY });
 
     let rawInsights = data.insights || [];
-    const insightCards = rawInsights.slice(0, 3).map((item, idx) => ({
-        num: `0${idx + 1}`,
-        title: item.label || item.title,
-        text: item.description
-    }));
+    const insightCards = rawInsights.slice(0, 3).length > 0 ? rawInsights.slice(0, 3) : [
+        { label: '內容策略', description: '強化品牌與消費者的情感連結。' },
+        { label: '發文時間', description: '觀測受眾最活躍時間段進行發布。' },
+        { label: '互動引導', description: '在貼文末尾加入具體的 Call-to-Action。' }
+    ];
 
     insightCards.forEach((c, idx) => {
       let cx = 0.5 + (idx * 3.1);
-      slide6.addShape(pres.ShapeType.roundRect, { x: cx, y: 1.5, w: 2.8, h: 3, fill: "F8F9FA", line: { color: COLOR_PRIMARY, width: 2 }, rectRadius: 0.1 });
-      slide6.addText(c.num, { x: cx, y: 1.6, w: 2.8, h: 0.6, fontSize: 36, bold: true, fontFace: "Impact", color: "E2E8F0", align: 'right' });
-      slide6.addText(c.title, { x: cx + 0.2, y: 1.9, w: 2.4, h: 0.4, fontSize: 18, bold: true, color: COLOR_PRIMARY });
-      slide6.addText(c.text, { x: cx + 0.2, y: 2.4, w: 2.4, h: 1.8, fontSize: 13, color: "444444", valign: 'top' });
+      // Card Shadow
+      slide2.addShape(pres.ShapeType.roundRect, { x: cx+0.05, y: 1.55, w: 2.8, h: 3, fill: "DDDDDD", rectRadius: 0.1 });
+      // Card Main
+      slide6.addShape(pres.ShapeType.roundRect, { x: cx, y: 1.5, w: 2.8, h: 3, fill: COLOR_BG_WHITE, line: { color: COLOR_PRIMARY, width: 2 }, rectRadius: 0.1 });
+      slide6.addText(`0${idx + 1}`, { x: cx + 1.8, y: 1.6, w: 0.8, h: 0.6, fontSize: 32, bold: true, fontFace: "Impact", color: "F1F5F9", align: 'right' });
+      slide6.addText(c.label || c.title, { x: cx + 0.2, y: 1.9, w: 2.4, h: 0.4, fontSize: 18, bold: true, color: COLOR_PRIMARY });
+      slide6.addText(c.description, { x: cx + 0.2, y: 2.4, w: 2.4, h: 1.8, fontSize: 13, color: COLOR_TEXT, valign: 'top', lineSpacing: 20 });
     });
 
     // ----------------------------------------------------------------------
-    // Slide 7: 未來活動策略規劃 (4 欄表格)
+    // Slide 7: 未來活動策略佈局
     // ----------------------------------------------------------------------
     let slide7 = pres.addSlide({ masterName: "MASTER_SLIDE" });
-    slide7.addText("未來活動策略佈局", { x: 0.5, y: 0.4, w: 9, h: 0.6, fontSize: 28, bold: true, color: COLOR_PRIMARY });
+    slide7.addShape(pres.ShapeType.rect, { x: 0, y: 0, w: '100%', h: '100%', fill: isEcoco ? 'F8FAFF' : 'F7F9FF' }); // 特殊背景色
+    slide7.addText("未來活動策略佈局", { x: 0.5, y: 0.4, w: 9, h: 0.6, fontSize: 24, bold: true, color: COLOR_PRIMARY });
 
     let rowsPlan = [];
-    rowsPlan.push([{ text: "時機點", options: { bold: true, fill: COLOR_PRIMARY, color: 'FFFFFF' } },
-                   { text: "活動方向", options: { bold: true, fill: COLOR_PRIMARY, color: 'FFFFFF' } },
-                   { text: "素材建議", options: { bold: true, fill: COLOR_PRIMARY, color: 'FFFFFF' } },
-                   { text: "品牌生態連結", options: { bold: true, fill: COLOR_PRIMARY, color: 'FFFFFF' } }]);
+    rowsPlan.push([{ text: "時機點 (Timing)", options: { bold: true, fill: COLOR_PRIMARY, color: 'FFFFFF' } },
+                   { text: "活動方向 (Direction)", options: { bold: true, fill: COLOR_PRIMARY, color: 'FFFFFF' } },
+                   { text: "素材建議 (Material)", options: { bold: true, fill: COLOR_PRIMARY, color: 'FFFFFF' } },
+                   { text: "預期品牌效益", options: { bold: true, fill: COLOR_PRIMARY, color: 'FFFFFF' } }]);
     
     let plans = data.activityPlan || [];
     plans.slice(0, 4).forEach((plan) => {
@@ -241,13 +289,12 @@ class PptxBuilder {
        ]);
     });
     
-    // 如果沒有 plan 塞入假語料避免出錯
     if(rowsPlan.length === 1) {
-       rowsPlan.push(["下個月", "環保產品推廣", "短影音", "結合回收點數"]);
-       rowsPlan.push(["下兩個月", "會員招募", "知識圖卡", "強調永續循環生活"]);
+       rowsPlan.push(["次月第一週", "節慶促銷方案推廣", "沉浸式短影音", "提升官網轉單率"]);
+       rowsPlan.push(["次月第三週", "品牌核心價值傳遞", "系列知識圖卡", "強化品牌專業形象"]);
     }
 
-    slide7.addTable(rowsPlan, { x: 0.5, y: 1.3, w: 9, colW: [1.5, 3, 1.5, 3], border: { type: 'solid', color: 'DDDDDD' }, fontSize: 13, rowH: 0.6, valign: 'middle' });
+    slide7.addTable(rowsPlan, { x: 0.5, y: 1.3, w: 9, colW: [1.5, 3, 1.5, 3], border: { type: 'solid', color: "CCCCCC" }, fontSize: 13, rowH: 0.7, valign: 'middle' });
 
     // Output file
     await pres.writeFile({ fileName: outputPath });
