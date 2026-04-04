@@ -119,8 +119,6 @@ class PptxBuilder {
 
     kpiData.forEach((item, idx) => {
       const cx = startX + (idx * (cardW + cardGap));
-      // Card Shadow-like shape
-      slide2.addShape(pres.ShapeType.roundRect, { x: cx+0.05, y: 1.15, w: cardW, h: 1.2, fill: "EEEEEE", rectRadius: 0.1 });
       // Card Background
       slide2.addShape(pres.ShapeType.roundRect, { x: cx, y: 1.1, w: cardW, h: 1.2, fill: COLOR_BG_WHITE, rectRadius: 0.1, line: {color: "E2E8F0", width: 1} });
       // Label
@@ -257,8 +255,6 @@ class PptxBuilder {
 
     insightCards.forEach((c, idx) => {
       let cx = 0.5 + (idx * 3.1);
-      // Card Shadow
-      slide2.addShape(pres.ShapeType.roundRect, { x: cx+0.05, y: 1.55, w: 2.8, h: 3, fill: "DDDDDD", rectRadius: 0.1 });
       // Card Main
       slide6.addShape(pres.ShapeType.roundRect, { x: cx, y: 1.5, w: 2.8, h: 3, fill: COLOR_BG_WHITE, line: { color: COLOR_PRIMARY, width: 2 }, rectRadius: 0.1 });
       slide6.addText(`0${idx + 1}`, { x: cx + 1.8, y: 1.6, w: 0.8, h: 0.6, fontSize: 32, bold: true, fontFace: "Impact", color: "F1F5F9", align: 'right' });
