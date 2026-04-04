@@ -25,6 +25,23 @@ if (!fs.existsSync(outputDir)) {
 app.use('/output', express.static(outputDir));
 app.use(express.static(path.join(__dirname, 'public')));
 
+function analysisCacheFilePath(brandKey, startDate, endDate) {
+  const safeKey = String(brandKey).toLowerCase().replace(/[^a-z0-9_-]/g, '');
+  return path.join(outputDir, `${safeKey}_${startDate}_${endDate}_analysis.json`);
+}
+
+function loadAnalysisFromDisk(brandKey, startDate, endDate) {
+  const fp = analysisCacheFilePath(brandKey, startDate, endDate);
+  if (!fs.existsSync(fp)) return null;
+  try {
+    const raw = fs.readFileSync(fp, 'utf-8');
+    return JSON.parse(raw);
+  } catch (e) {
+    console.error('[Cache] 讀取分析 JSON 失敗:', fp, e.message);
+    return null;
+  }
+}
+
 // ===== 品牌設定對照 =====
 const BRANDS = {
   fpg: {
@@ -49,6 +66,12 @@ app.get('/api/brands', (req, res) => {
   res.json({ brands: available });
 });
 
+function parseReportFilenameMeta(filename) {
+  const m = filename.match(/^(.+)_(\d{4}-\d{2}-\d{2})_to_(\d{4}-\d{2}-\d{2})_/);
+  if (!m) return null;
+  return { brandLabel: m[1], startDate: m[2], endDate: m[3] };
+}
+
 // 取得歷史報告清單 API
 app.get('/api/reports', (req, res) => {
   try {
@@ -56,14 +79,23 @@ app.get('/api/reports', (req, res) => {
       return res.json({ reports: [] });
     }
     const files = fs.readdirSync(outputDir);
-    const reports = files.filter(f => f.endsWith('.html') || f.endsWith('.xlsx'))
+    const reports = files
+      .filter(f => {
+        if (f.endsWith('_analysis.json')) return false;
+        return f.endsWith('.html') || f.endsWith('.xlsx') || f.endsWith('.pptx');
+      })
       .map(f => {
         const stats = fs.statSync(path.join(outputDir, f));
-        return { 
-          name: f, 
-          url: `/output/${encodeURIComponent(f)}`, 
-          time: stats.mtimeMs, 
-          type: f.endsWith('.html') ? 'html' : 'excel' 
+        let type = 'html';
+        if (f.endsWith('.xlsx')) type = 'excel';
+        else if (f.endsWith('.pptx')) type = 'pptx';
+        const meta = parseReportFilenameMeta(f);
+        return {
+          name: f,
+          url: `/output/${encodeURIComponent(f)}`,
+          time: stats.mtimeMs,
+          type,
+          ...(meta || {}),
         };
       })
       .sort((a, b) => b.time - a.time);
@@ -121,6 +153,16 @@ app.post('/api/generate', async (req, res) => {
     const cacheKey = `${brandKey}_${startDate}_${endDate}`;
     reportDataCache[cacheKey] = analysisResult;
 
+    try {
+      fs.writeFileSync(
+        analysisCacheFilePath(brandKey, startDate, endDate),
+        JSON.stringify(analysisResult),
+        'utf-8'
+      );
+    } catch (e) {
+      console.error('[Web API] 寫入分析快取檔失敗:', e.message);
+    }
+
     const reportGenerator = new ReportGenerator(analysisResult);
     const html = reportGenerator.generate();
 
@@ -163,16 +205,21 @@ app.post('/api/generate-pptx', async (req, res) => {
       return res.status(400).json({ success: false, message: '無效的品牌' });
     }
 
-    // 從記憶體中抓出剛產生的完整分析數據
     const cacheKey = `${brandKey}_${startDate}_${endDate}`;
-    const analysisResult = reportDataCache[cacheKey];
+    let analysisResult = reportDataCache[cacheKey];
     if (!analysisResult) {
-      return res.status(400).json({ success: false, message: '系統查無分析數據，請重新點擊 Generate Report 抓取最新數據！' });
+      analysisResult = loadAnalysisFromDisk(brandKey, startDate, endDate);
+      if (analysisResult) {
+        reportDataCache[cacheKey] = analysisResult;
+      }
+    }
+    if (!analysisResult) {
+      return res.status(400).json({
+        success: false,
+        message: '查無此期間的分析資料。請先按「產生報告」成功一次，或確認 output 資料夾內是否有對應的分析快取檔。',
+      });
     }
 
-    // 準備輸出路徑
-    const templatePath = path.resolve(__dirname, 'template.pptx');
-    
     const pptxName = `${brandConfig.name}_${startDate}_to_${endDate}_簡報報告.pptx`;
     const outputPath = path.join(outputDir, pptxName);
 

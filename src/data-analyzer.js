@@ -21,6 +21,26 @@ class DataAnalyzer {
   }
 
   /**
+   * 資料品質說明（樣本數、缺漏觸及等）
+   */
+  computeDataQuality() {
+    const n = this.posts.length;
+    const zeroReach = this.posts.filter((p) => !p.reach || p.reach === 0).length;
+    const disclaimers = [];
+    if (n > 0 && n < 5) {
+      disclaimers.push(
+        `本期僅 ${n} 篇貼文，下列排名與洞察樣本較小，建議僅作參考。`
+      );
+    }
+    if (n >= 3 && zeroReach / n > 0.3) {
+      disclaimers.push(
+        `約 ${Math.round((zeroReach / n) * 100)}% 貼文缺少觸及數據（API 權限或貼文類型限制），整體互動率與主題比較可能偏低或波動。`
+      );
+    }
+    return { postCount: n, zeroReachCount: zeroReach, disclaimers };
+  }
+
+  /**
    * 執行完整分析流程
    */
   analyze() {
@@ -30,6 +50,7 @@ class DataAnalyzer {
     const mediaAnalysis = this.analyzeByMediaType();
     const insights = this.generateInsights(topicAnalysis, mediaAnalysis);
     const activityPlan = this.generateActivityPlan(topicAnalysis, mediaAnalysis);
+    const dataQuality = this.computeDataQuality();
 
     return {
       pageInfo: this.pageInfo,
@@ -44,6 +65,7 @@ class DataAnalyzer {
       insights,
       activityPlan,
       posts: this.posts,
+      dataQuality,
     };
   }
 

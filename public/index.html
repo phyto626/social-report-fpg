@@ -110,14 +110,12 @@
     <nav class="w-full top-0 sticky z-50 glass-nav border-b border-orange-100/20 shadow-sm shadow-orange-900/5">
         <div class="flex justify-between items-center px-8 py-4 max-w-screen-2xl mx-auto">
             <div class="font-headline font-bold text-2xl text-[#FF5000] tracking-tight">Social Report Tool</div>
-            <div class="hidden md:flex items-center space-x-8 font-headline font-semibold">
-                <a id="navDashboard" class="border-b-2 pb-1 text-[#FF5000] border-[#FF5000] cursor-pointer" onclick="switchTab('dashboard')">Dashboard</a>
-                <a id="navReports" class="text-slate-600 hover:text-orange-600 transition-colors cursor-pointer" onclick="switchTab('reports')">Reports Archive</a>
+            <div class="hidden md:flex items-center space-x-8 font-headline font-semibold" role="tablist" aria-label="主選單">
+                <a id="navDashboard" href="#" role="tab" aria-selected="true" aria-controls="tabDashboard" class="border-b-2 pb-1 text-[#FF5000] border-[#FF5000] cursor-pointer" onclick="switchTab('dashboard'); return false;">Dashboard</a>
+                <a id="navReports" href="#" role="tab" aria-selected="false" aria-controls="tabReports" class="text-slate-600 hover:text-orange-600 transition-colors cursor-pointer" onclick="switchTab('reports'); return false;">Reports Archive</a>
             </div>
-            <div class="flex items-center space-x-4">
-                <button class="p-2 text-slate-600 hover:bg-orange-50 rounded-lg transition-all active:scale-90">
-                    <span class="material-symbols-outlined" data-icon="account_circle">account_circle</span>
-                </button>
+            <div class="flex items-center">
+                <span class="text-xs text-slate-400 hidden sm:inline" title="本工具無需登入，使用 .env 設定品牌權杖">內部工具</span>
             </div>
         </div>
     </nav>
@@ -139,42 +137,11 @@
                 <!-- Abstract Brand Pattern Bleed -->
                 <div class="absolute -top-24 -right-24 w-64 h-64 bg-surface-container rounded-full opacity-30 pointer-events-none"></div>
                 <div class="relative z-10 space-y-10">
-                    <!-- Brand Selection Zone -->
+                    <!-- Brand Selection Zone（由 /api/brands 動態載入） -->
                     <section>
                         <h2 class="font-headline text-[13px] font-bold tracking-widest uppercase mb-4 text-[#FF5000]">Step 1: Select Brand Identity</h2>
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <!-- Tai-Plast Brand Option -->
-                            <label class="group cursor-pointer relative" onclick="selectBrand('fpg')">
-                                <input id="radioFpg" checked class="peer sr-only" name="brand" type="radio" value="fpg"/>
-                                <div class="p-5 rounded-lg bg-surface-container-low border peer-checked:border-primary peer-checked:bg-primary/5 transition-all group-hover:scale-[1.02] duration-200 border-orange-50">
-                                    <div class="flex items-center justify-between">
-                                        <div>
-                                            <p class="font-headline font-bold text-lg text-on-surface">台塑便利家</p>
-                                            <p class="text-xs text-on-surface-variant mt-1">洗劑補充站粉專分析</p>
-                                        </div>
-                                        <div class="w-6 h-6 rounded-full border-2 border-outline-variant peer-checked:border-primary peer-checked:bg-primary flex items-center justify-center transition-colors">
-                                            <div class="w-2.5 h-2.5 bg-white rounded-full opacity-0 peer-checked:opacity-100 transition-opacity"></div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </label>
-
-                            <!-- ECOCO Brand Option -->
-                            <label class="group cursor-pointer relative" onclick="selectBrand('ecoco')">
-                                <input id="radioEcoco" class="peer sr-only" name="brand" type="radio" value="ecoco"/>
-                                <div class="p-5 rounded-lg bg-surface-container-low border peer-checked:border-primary peer-checked:bg-primary/5 transition-all group-hover:scale-[1.02] duration-200 border-orange-50">
-                                    <div class="flex items-center justify-between">
-                                        <div>
-                                            <p class="font-headline font-bold text-lg text-on-surface">ECOCO</p>
-                                            <p class="text-xs text-on-surface-variant mt-1">智慧回收機綠色生態</p>
-                                        </div>
-                                        <div class="w-6 h-6 rounded-full border-2 border-outline-variant peer-checked:border-primary peer-checked:bg-primary flex items-center justify-center transition-colors">
-                                            <div class="w-2.5 h-2.5 bg-white rounded-full opacity-0 peer-checked:opacity-100 transition-opacity"></div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </label>
-                        </div>
+                        <p id="brandOptionsEmpty" class="hidden text-sm text-red-600 font-medium mb-2">目前沒有可用的品牌：請在伺服器 .env 設定 FPG／ECOCO 的 PAGE_ID 與 ACCESS_TOKEN。</p>
+                        <div id="brandOptions" class="grid grid-cols-1 md:grid-cols-2 gap-4" role="radiogroup" aria-label="選擇品牌"></div>
                     </section>
 
                     <!-- Date Selection Section -->
@@ -199,6 +166,8 @@
                             <button id="btnLastQuarter" type="button" onclick="setPreset('lastQuarter', event)" class="px-4 py-2 rounded-lg bg-surface-container text-xs font-bold text-on-surface-variant hover:bg-[#FF5000] hover:text-white transition-all active:scale-95">LAST QUARTER</button>
                             <button id="btnYtd" type="button" onclick="setPreset('ytd', event)" class="px-4 py-2 rounded-lg bg-surface-container text-xs font-bold text-on-surface-variant hover:bg-[#FF5000] hover:text-white transition-all active:scale-95">YEAR TO DATE</button>
                         </div>
+                        <p class="text-xs text-on-surface-variant mt-3 leading-relaxed">若日期區間較長，Facebook 資料抓取可能需要數分鐘，請耐心等候且勿重複點擊產生。</p>
+                        <p id="longRangeWarning" class="hidden text-xs text-amber-800 font-medium mt-2">目前區間超過 90 天，建議分段產報以降低逾時或 API 限制風險。</p>
                     </section>
 
                     <!-- Feedback Containers -->
@@ -210,10 +179,11 @@
 
                     <!-- Success Result Container -->
                     <div id="statusContainer" class="bg-green-50 border border-green-200 rounded-xl p-6 mt-4">
-                        <h3 class="text-green-700 font-headline font-bold text-lg mb-4 flex items-center">
-                            <span class="material-symbols-outlined mr-2">check_circle</span> Report Generated Successfully!
+                        <h3 class="text-green-700 font-headline font-bold text-lg mb-2 flex items-center">
+                            <span class="material-symbols-outlined mr-2">check_circle</span> 報告已產生
                         </h3>
-                        <div class="grid grid-cols-3 gap-4 mb-6">
+                        <p id="successMeta" class="text-sm text-green-900/90 mb-4 font-medium"></p>
+                        <div class="grid grid-cols-3 gap-4 mb-4">
                             <div class="bg-white p-3 rounded-lg border border-green-100 text-center">
                                 <div id="kpiPosts" class="text-xl font-bold text-green-800">-</div>
                                 <div class="text-[11px] font-bold text-green-600 tracking-wider uppercase mt-1">Posts Analyzed</div>
@@ -227,27 +197,39 @@
                                 <div class="text-[11px] font-bold text-green-600 tracking-wider uppercase mt-1">Avg Engagement</div>
                             </div>
                         </div>
+                        <div class="flex flex-col sm:flex-row gap-2 mb-3">
+                            <button type="button" id="copyHtmlUrl" class="flex-1 flex justify-center items-center gap-2 bg-white border border-green-200 text-green-900 py-2 rounded-lg font-bold text-xs hover:bg-green-100/50 transition-all">
+                                <span class="material-symbols-outlined text-[16px]">content_copy</span> 複製 HTML 連結
+                            </button>
+                            <button type="button" id="copyExcelUrl" class="flex-1 flex justify-center items-center gap-2 bg-white border border-green-200 text-green-900 py-2 rounded-lg font-bold text-xs hover:bg-green-100/50 transition-all">
+                                <span class="material-symbols-outlined text-[16px]">content_copy</span> 複製 Excel 連結
+                            </button>
+                        </div>
                         <div class="flex flex-col sm:flex-row gap-3">
                             <a href="#" id="linkHtml" target="_blank" class="flex-1 flex justify-center items-center gap-2 bg-[#060E9F] text-white py-3 rounded-lg font-bold text-sm hover:bg-[#04097a] hover:scale-[1.02] transition-all">
-                                <span class="material-symbols-outlined text-[18px]">visibility</span> View HTML
+                                <span class="material-symbols-outlined text-[18px]">visibility</span> 開啟 HTML
                             </a>
                             <a href="#" id="linkExcel" download class="flex-1 flex justify-center items-center gap-2 bg-white border border-slate-200 text-slate-700 py-3 rounded-lg font-bold text-sm hover:bg-slate-50 hover:border-slate-300 transition-all">
-                                <span class="material-symbols-outlined text-[18px]">download</span> Download Excel
+                                <span class="material-symbols-outlined text-[18px]">download</span> 下載 Excel
                             </a>
                             <a href="#" id="linkPptx" class="flex-1 flex justify-center items-center gap-2 bg-[#FFEB3B] border border-[#FBC02D] text-yellow-900 py-3 rounded-lg font-bold text-sm hover:bg-[#FFF59D] transition-all cursor-pointer">
-                                <span class="material-symbols-outlined text-[18px]">slideshow</span> Download PPTX
+                                <span class="material-symbols-outlined text-[18px]">slideshow</span> 下載 PPTX
                             </a>
                         </div>
+                        <p class="text-xs text-green-800/80 mt-3 leading-relaxed">PPTX 使用剛產生的分析資料；伺服器重啟後仍可下載（會讀取已儲存的分析快取）。若從未成功產報過該區間，請先按上方「產生報告」。</p>
                     </div>
 
                     <!-- Primary Action -->
                     <div class="pt-6 flex flex-col md:flex-row items-center justify-between gap-6 border-t border-surface-container-high">
-                        <div class="flex items-center text-on-surface-variant gap-3">
-                            <span class="material-symbols-outlined text-[#FF5000]" data-icon="auto_awesome">auto_awesome</span>
-                            <p class="text-[13px] font-body italic">Processing multi-point data via Graph API.</p>
+                        <div class="flex flex-col text-on-surface-variant gap-1">
+                            <div class="flex items-center gap-3">
+                                <span class="material-symbols-outlined text-[#FF5000]" data-icon="auto_awesome">auto_awesome</span>
+                                <p class="text-[13px] font-body">透過 Meta Graph API 抓取貼文與洞察。</p>
+                            </div>
+                            <p id="jobElapsed" class="text-[12px] text-slate-500 pl-9 min-h-[1.25em]"></p>
                         </div>
                         <button id="generateBtn" class="w-full md:w-auto px-10 py-4 bg-[#060E9F] hover:bg-[#04097a] text-white font-headline font-bold text-lg rounded-xl shadow-lg hover:scale-[1.03] active:scale-95 transition-all duration-300 flex items-center justify-center gap-3 disabled:opacity-50 disabled:pointer-events-none">
-                            <span id="btnText">Generate Report</span>
+                            <span id="btnText">產生報告</span>
                             <span id="btnIcon" class="material-symbols-outlined" data-icon="rocket_launch">rocket_launch</span>
                             <div class="loader" id="loader"></div>
                         </button>
@@ -307,25 +289,95 @@
     </footer>
 
     <script>
+        const BRAND_SUBTITLES = { fpg: '洗劑補充站粉專分析', ecoco: '智慧回收機綠色生態' };
         let currentBrand = 'fpg';
+        let currentKpi = null;
+        let currentStartDate = null;
+        let currentEndDate = null;
+        let currentBrandDisplayName = '';
+        let lastReportUrl = '';
+        let lastExcelUrl = '';
+        let generateInFlight = false;
+        let jobElapsedTimer = null;
+
+        function fullUrl(path) {
+            if (!path) return '';
+            if (path.startsWith('http')) return path;
+            return window.location.origin + path;
+        }
 
         function switchTab(tab) {
-            // Update nav active states
-            const activeClass = "border-b-2 pb-1 text-[#FF5000] border-[#FF5000] cursor-pointer";
-            const inactiveClass = "text-slate-600 hover:text-orange-600 transition-colors cursor-pointer";
-            
+            const activeClass = 'border-b-2 pb-1 text-[#FF5000] border-[#FF5000] cursor-pointer';
+            const inactiveClass = 'text-slate-600 hover:text-orange-600 transition-colors cursor-pointer';
+            const dash = document.getElementById('navDashboard');
+            const rep = document.getElementById('navReports');
             if (tab === 'dashboard') {
-                document.getElementById('navDashboard').className = activeClass;
-                document.getElementById('navReports').className = inactiveClass;
+                dash.className = activeClass;
+                rep.className = inactiveClass;
+                dash.setAttribute('aria-selected', 'true');
+                rep.setAttribute('aria-selected', 'false');
                 document.getElementById('tabDashboard').style.display = 'flex';
                 document.getElementById('tabReports').style.display = 'none';
             } else if (tab === 'reports') {
-                document.getElementById('navDashboard').className = inactiveClass;
-                document.getElementById('navReports').className = activeClass;
+                dash.className = inactiveClass;
+                rep.className = activeClass;
+                dash.setAttribute('aria-selected', 'false');
+                rep.setAttribute('aria-selected', 'true');
                 document.getElementById('tabDashboard').style.display = 'none';
                 document.getElementById('tabReports').style.display = 'flex';
                 loadReports();
             }
+        }
+
+        async function loadBrands() {
+            const container = document.getElementById('brandOptions');
+            const empty = document.getElementById('brandOptionsEmpty');
+            const genBtn = document.getElementById('generateBtn');
+            try {
+                const res = await fetch('/api/brands');
+                const data = await res.json();
+                const brands = data.brands || [];
+                container.innerHTML = '';
+                if (brands.length === 0) {
+                    empty.classList.remove('hidden');
+                    genBtn.disabled = true;
+                    return;
+                }
+                empty.classList.add('hidden');
+                genBtn.disabled = false;
+                brands.forEach((b, idx) => {
+                    const id = 'radio_' + b.key;
+                    const sub = BRAND_SUBTITLES[b.key] || '社群粉專分析';
+                    const checked = idx === 0 ? 'checked' : '';
+                    container.innerHTML += `
+                        <label class="group cursor-pointer relative" onclick="selectBrand('${b.key}')">
+                            <input id="${id}" ${checked} class="peer sr-only" name="brand" type="radio" value="${b.key}"/>
+                            <div class="p-5 rounded-lg bg-surface-container-low border peer-checked:border-primary peer-checked:bg-primary/5 transition-all group-hover:scale-[1.02] duration-200 border-orange-50">
+                                <div class="flex items-center justify-between">
+                                    <div>
+                                        <p class="font-headline font-bold text-lg text-on-surface">${escapeHtml(b.name)}</p>
+                                        <p class="text-xs text-on-surface-variant mt-1">${escapeHtml(sub)}</p>
+                                    </div>
+                                    <div class="w-6 h-6 rounded-full border-2 border-outline-variant peer-checked:border-primary peer-checked:bg-primary flex items-center justify-center transition-colors">
+                                        <div class="w-2.5 h-2.5 bg-white rounded-full opacity-0 peer-checked:opacity-100 transition-opacity"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </label>`;
+                });
+                currentBrand = brands[0].key;
+                currentBrandDisplayName = brands[0].name;
+            } catch (e) {
+                empty.textContent = '無法載入品牌列表，請確認伺服器運作正常。';
+                empty.classList.remove('hidden');
+                genBtn.disabled = true;
+            }
+        }
+
+        function escapeHtml(s) {
+            const d = document.createElement('div');
+            d.textContent = s;
+            return d.innerHTML;
         }
 
         async function loadReports() {
@@ -333,95 +385,114 @@
             const loader = document.getElementById('reportsLoader');
             list.innerHTML = '';
             loader.style.display = 'block';
-            
             try {
                 const res = await fetch('/api/reports');
                 const data = await res.json();
                 loader.style.display = 'none';
-                
                 if (data.reports && data.reports.length > 0) {
-                    data.reports.forEach(report => {
+                    data.reports.forEach((report) => {
                         const dateStr = new Date(report.time).toLocaleString('zh-TW');
-                        const icon = report.type === 'html' ? 'description' : 'table_view';
-                        const color = report.type === 'html' ? 'text-blue-600' : 'text-green-600';
-                        
+                        let icon = 'description';
+                        let color = 'text-blue-600';
+                        if (report.type === 'excel') {
+                            icon = 'table_view';
+                            color = 'text-green-600';
+                        } else if (report.type === 'pptx') {
+                            icon = 'slideshow';
+                            color = 'text-amber-600';
+                        }
+                        const target = report.type === 'html' ? 'target="_blank" rel="noopener"' : 'download';
+                        let sub = '最後修改：' + dateStr;
+                        if (report.brandLabel && report.startDate && report.endDate) {
+                            sub = report.brandLabel + ' · ' + report.startDate + ' ~ ' + report.endDate + ' · ' + sub;
+                        }
                         list.innerHTML += `
-                            <a href="${report.url}" ${report.type === 'html' ? 'target="_blank"' : 'download'} class="group p-4 bg-white border border-slate-200 rounded-lg shadow-sm hover:shadow-md transition-all flex items-center justify-between hover:border-orange-300">
+                            <a href="${report.url}" ${target} class="group p-4 bg-white border border-slate-200 rounded-lg shadow-sm hover:shadow-md transition-all flex items-center justify-between hover:border-orange-300">
                                 <div class="flex items-center gap-4 overflow-hidden">
                                     <div class="h-10 w-10 bg-slate-50 flex items-center justify-center rounded-full flex-shrink-0 group-hover:bg-orange-50 transition-colors">
                                         <span class="material-symbols-outlined ${color}">${icon}</span>
                                     </div>
                                     <div class="truncate">
-                                        <div class="font-bold text-sm text-slate-800 truncate">${report.name}</div>
-                                        <div class="text-xs text-slate-500 mt-0.5">最後修改：${dateStr}</div>
+                                        <div class="font-bold text-sm text-slate-800 truncate">${escapeHtml(report.name)}</div>
+                                        <div class="text-xs text-slate-500 mt-0.5 truncate">${escapeHtml(sub)}</div>
                                     </div>
                                 </div>
-                                <span class="material-symbols-outlined text-slate-300 group-hover:text-[#FF5000] ml-4 transition-colors">download</span>
-                            </a>
-                        `;
+                                <span class="material-symbols-outlined text-slate-300 group-hover:text-[#FF5000] ml-4 transition-colors shrink-0">download</span>
+                            </a>`;
                     });
                 } else {
-                    list.innerHTML = `<div class="text-center py-10 text-slate-500 font-bold">目前尚無歷史報告，請先至 Dashboard 產生。</div>`;
+                    list.innerHTML = '<div class="text-center py-10 text-slate-500 font-bold">目前尚無歷史報告，請先至 Dashboard 產生。</div>';
                 }
             } catch (e) {
                 loader.style.display = 'none';
-                list.innerHTML = `<div class="text-center py-10 text-red-500 font-bold">無法載入歷史報告，請稍後再試。</div>`;
+                list.innerHTML = '<div class="text-center py-10 text-red-500 font-bold">無法載入歷史報告，請稍後再試。</div>';
             }
         }
 
         function selectBrand(brand) {
             currentBrand = brand;
-            
-            // hide results when brand changes
+            document.querySelectorAll('input[name="brand"]').forEach((el) => {
+                el.checked = el.value === brand;
+            });
             document.getElementById('statusContainer').style.display = 'none';
             document.getElementById('errorMsg').style.display = 'none';
+            const labels = document.querySelectorAll('#brandOptions label');
+            /* sync display name from selected radio */
+            const sel = document.querySelector('input[name="brand"]:checked');
+            if (sel) {
+                const nameEl = sel.closest('label').querySelector('.font-headline.font-bold');
+                if (nameEl) currentBrandDisplayName = nameEl.textContent;
+            }
+        }
+
+        function refreshLongRangeWarning() {
+            const s = document.getElementById('startDate').value;
+            const e = document.getElementById('endDate').value;
+            const warn = document.getElementById('longRangeWarning');
+            if (!s || !e) {
+                warn.classList.add('hidden');
+                return;
+            }
+            const days = (new Date(e) - new Date(s)) / (86400000);
+            warn.classList.toggle('hidden', days <= 90);
         }
 
         function setPreset(type, evt) {
             const dEnd = new Date();
             const dStart = new Date();
-            
-            if (type === 'last30') {
-                dStart.setDate(dStart.getDate() - 30);
-            } else if (type === 'lastQuarter') {
-                dStart.setMonth(dStart.getMonth() - 3);
-            } else if (type === 'ytd') {
+            if (type === 'last30') dStart.setDate(dStart.getDate() - 30);
+            else if (type === 'lastQuarter') dStart.setMonth(dStart.getMonth() - 3);
+            else if (type === 'ytd') {
                 dStart.setMonth(0);
                 dStart.setDate(1);
             }
-            
             document.getElementById('endDate').value = dEnd.toISOString().split('T')[0];
             document.getElementById('startDate').value = dStart.toISOString().split('T')[0];
-            
-            // Visual feedback on buttons
-            document.querySelectorAll('button[onclick^="setPreset"]').forEach(btn => {
-                btn.className = "px-4 py-2 rounded-lg bg-surface-container text-xs font-bold text-on-surface-variant hover:bg-[#FF5000] hover:text-white transition-all active:scale-95";
+            refreshLongRangeWarning();
+            document.querySelectorAll('button[onclick^="setPreset"]').forEach((btn) => {
+                btn.className = 'px-4 py-2 rounded-lg bg-surface-container text-xs font-bold text-on-surface-variant hover:bg-[#FF5000] hover:text-white transition-all active:scale-95';
             });
             if (evt && evt.currentTarget) {
-                evt.currentTarget.className = "px-4 py-2 rounded-lg bg-[#FF5000] text-white text-xs font-bold shadow-md active:scale-95 transition-all";
+                evt.currentTarget.className = 'px-4 py-2 rounded-lg bg-[#FF5000] text-white text-xs font-bold shadow-md active:scale-95 transition-all';
             }
         }
 
-        // Init date range picker (default = last 30 days)
+        document.getElementById('startDate').addEventListener('change', refreshLongRangeWarning);
+        document.getElementById('endDate').addEventListener('change', refreshLongRangeWarning);
+
         setPreset('last30');
-        // Visually set the first button as active
-        if(document.getElementById('btnLast30')) {
-            document.getElementById('btnLast30').className = "px-4 py-2 rounded-lg bg-[#FF5000] text-white text-xs font-bold shadow-md active:scale-95 transition-all";
+        if (document.getElementById('btnLast30')) {
+            document.getElementById('btnLast30').className = 'px-4 py-2 rounded-lg bg-[#FF5000] text-white text-xs font-bold shadow-md active:scale-95 transition-all';
         }
 
-        // Global current session variables
-        let currentKpi = null;
-        let currentStartDate = null;
-        let currentEndDate = null;
-
-        // Generate Report Trigger
         document.getElementById('generateBtn').addEventListener('click', async () => {
+            if (generateInFlight) return;
             const startDate = document.getElementById('startDate').value;
             const endDate = document.getElementById('endDate').value;
-            
-            if (!startDate || !endDate) return alert('Please select a complete date range.');
-            if (new Date(startDate) > new Date(endDate)) return alert('Start date cannot be after end date.');
-            
+            if (!startDate || !endDate) return alert('請選擇完整日期區間。');
+            if (new Date(startDate) > new Date(endDate)) return alert('起始日不可晚於結束日。');
+
+            generateInFlight = true;
             const btn = document.getElementById('generateBtn');
             const btnText = document.getElementById('btnText');
             const loader = document.getElementById('loader');
@@ -429,9 +500,17 @@
             const errorMsg = document.getElementById('errorMsg');
             const errorMsgText = document.getElementById('errorMsgText');
             const statusContainer = document.getElementById('statusContainer');
+            const jobElapsed = document.getElementById('jobElapsed');
+            const t0 = Date.now();
+            jobElapsed.textContent = '已進行 0 秒…';
+            if (jobElapsedTimer) clearInterval(jobElapsedTimer);
+            jobElapsedTimer = setInterval(() => {
+                const sec = Math.floor((Date.now() - t0) / 1000);
+                jobElapsed.textContent = '已進行 ' + sec + ' 秒，仍與 Facebook 同步資料中…';
+            }, 1000);
 
             btn.disabled = true;
-            btnText.textContent = 'Analyzing...';
+            btnText.textContent = '產生中…';
             icon.style.display = 'none';
             loader.style.display = 'block';
             errorMsg.style.display = 'none';
@@ -443,68 +522,101 @@
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ startDate, endDate, brand: currentBrand }),
                 });
-
-                const data = await response.json();
-
+                let data;
+                try {
+                    data = await response.json();
+                } catch (parseErr) {
+                    throw new Error('伺服器回應異常，請稍後再試。');
+                }
                 if (data.success) {
                     currentKpi = data.kpi;
                     currentStartDate = startDate;
                     currentEndDate = endDate;
+                    if (data.brandName) currentBrandDisplayName = data.brandName;
 
                     document.getElementById('kpiPosts').textContent = data.kpi.totalPosts;
                     document.getElementById('kpiReach').textContent = data.kpi.totalReach.toLocaleString();
                     document.getElementById('kpiEngage').textContent = data.kpi.avgEngagement;
 
+                    lastReportUrl = data.reportUrl;
+                    lastExcelUrl = data.excelUrl || '';
                     document.getElementById('linkHtml').href = data.reportUrl;
+                    const excelEl = document.getElementById('linkExcel');
+                    const copyEx = document.getElementById('copyExcelUrl');
                     if (data.excelUrl) {
-                        document.getElementById('linkExcel').href = data.excelUrl;
-                        document.getElementById('linkExcel').style.display = 'flex';
+                        excelEl.href = data.excelUrl;
+                        excelEl.style.display = 'flex';
+                        copyEx.style.display = 'flex';
                     } else {
-                        document.getElementById('linkExcel').style.display = 'none';
+                        excelEl.style.display = 'none';
+                        copyEx.style.display = 'none';
                     }
 
+                    document.getElementById('successMeta').textContent =
+                        currentBrandDisplayName + ' · ' + startDate + ' ~ ' + endDate;
                     statusContainer.style.display = 'block';
                 } else {
-                    errorMsgText.textContent = data.message;
+                    errorMsgText.textContent = data.message || '產生失敗';
                     errorMsg.style.display = 'block';
                 }
             } catch (err) {
-                errorMsgText.textContent = ' Network connection error. Please ensure the server is running.';
+                errorMsgText.textContent = err.message || '無法連線伺服器，請確認服務已啟動。';
                 errorMsg.style.display = 'block';
             } finally {
+                clearInterval(jobElapsedTimer);
+                jobElapsedTimer = null;
+                jobElapsed.textContent = '';
+                generateInFlight = false;
                 btn.disabled = false;
-                btnText.textContent = 'Generate Report';
+                btnText.textContent = '產生報告';
                 icon.style.display = 'inline-block';
                 loader.style.display = 'none';
             }
         });
 
-        // PPTX Generator
+        document.getElementById('copyHtmlUrl').addEventListener('click', async () => {
+            if (!lastReportUrl) return;
+            try {
+                await navigator.clipboard.writeText(fullUrl(lastReportUrl));
+                alert('已複製 HTML 完整連結');
+            } catch (e) {
+                alert('複製失敗，請手動從「開啟 HTML」複製網址列。');
+            }
+        });
+
+        document.getElementById('copyExcelUrl').addEventListener('click', async () => {
+            if (!lastExcelUrl) return;
+            try {
+                await navigator.clipboard.writeText(fullUrl(lastExcelUrl));
+                alert('已複製 Excel 完整連結');
+            } catch (e) {
+                alert('複製失敗。');
+            }
+        });
+
         document.getElementById('linkPptx').addEventListener('click', async (e) => {
             e.preventDefault();
-            if(!currentKpi) return alert('請先產生報告數據');
-
+            if (!currentKpi || !currentStartDate || !currentEndDate) {
+                alert('請先成功產生報告，再下載 PPTX。');
+                return;
+            }
             const btn = e.currentTarget;
             const originalText = btn.innerHTML;
-            btn.innerHTML = `<div class="loader !border-yellow-700 !border-t-yellow-900" style="display:block; width:16px; height:16px;"></div>`;
+            btn.innerHTML = '<div class="loader !border-yellow-700 !border-t-yellow-900" style="display:block; width:16px; height:16px;"></div>';
             btn.style.pointerEvents = 'none';
-
             try {
                 const response = await fetch('/api/generate-pptx', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ 
-                        startDate: currentStartDate, 
-                        endDate: currentEndDate, 
+                    body: JSON.stringify({
+                        startDate: currentStartDate,
+                        endDate: currentEndDate,
                         brand: currentBrand,
-                        kpi: currentKpi 
+                        kpi: currentKpi,
                     }),
                 });
-                
                 const data = await response.json();
-                
                 if (data.success) {
-                    // 自動觸發下載
                     const downloadLink = document.createElement('a');
                     downloadLink.href = data.pptxUrl;
                     downloadLink.download = '';
@@ -512,7 +624,7 @@
                     downloadLink.click();
                     downloadLink.remove();
                 } else {
-                    alert('PPTX 產生失敗：' + data.message);
+                    alert('PPTX 產生失敗：' + (data.message || ''));
                 }
             } catch (err) {
                 alert('伺服器無回應，產生失敗。');
@@ -521,6 +633,8 @@
                 btn.style.pointerEvents = 'auto';
             }
         });
+
+        loadBrands();
     </script>
 </body>
 </html>

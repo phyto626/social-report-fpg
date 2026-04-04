@@ -50,6 +50,8 @@ class ReportGenerator {
 <body>
   ${this.generateHeader()}
   <div class="container">
+    ${this.generateDataQualityBanner()}
+    ${this.generateTOC()}
     ${this.generateKPI()}
     ${this.generateTopPostHighlight()}
     ${this.generateContentAnalysis()}
@@ -81,6 +83,58 @@ class ReportGenerator {
         max-width: 1200px;
         margin: 0 auto;
         padding: 0 24px 60px;
+      }
+
+      .data-quality-banner {
+        background: #fffbeb;
+        border: 1px solid #fcd34d;
+        border-radius: 12px;
+        padding: 16px 20px;
+        margin: 24px 0 8px;
+        color: #78350f;
+        font-size: 0.9em;
+        line-height: 1.65;
+      }
+
+      .data-quality-banner ul {
+        margin: 8px 0 0 1.2em;
+        padding: 0;
+      }
+
+      .report-toc {
+        background: #fff;
+        border: 1px solid ${this.c.border};
+        border-radius: 12px;
+        padding: 20px 24px;
+        margin: 20px 0 32px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+      }
+
+      .report-toc .toc-title {
+        font-size: 1em;
+        font-weight: 700;
+        color: ${this.c.primary};
+        margin-bottom: 12px;
+      }
+
+      .report-toc ol {
+        margin: 0;
+        padding-left: 1.25em;
+        line-height: 2;
+      }
+
+      .report-toc a {
+        color: ${this.c.primary};
+        text-decoration: none;
+        font-weight: 500;
+      }
+
+      .report-toc a:hover {
+        text-decoration: underline;
+      }
+
+      .report-section {
+        scroll-margin-top: 16px;
       }
 
       /* ===== 頁首 ===== */
@@ -428,6 +482,10 @@ class ReportGenerator {
         font-weight: 600;
         text-align: left;
         white-space: nowrap;
+        position: sticky;
+        top: 0;
+        z-index: 3;
+        box-shadow: 0 1px 0 rgba(255,255,255,0.2);
       }
 
       .post-table tbody tr {
@@ -686,13 +744,60 @@ class ReportGenerator {
         .report-header h1 { font-size: 1.6em; }
       }
 
+      .scroll-hint {
+        display: none;
+        font-size: 0.8em;
+        color: #718096;
+        margin-bottom: 8px;
+      }
+
+      @media (max-width: 900px) {
+        .scroll-hint { display: block; }
+      }
+
       /* 列印最佳化 */
       @media print {
         body { background: #fff; }
         .kpi-card:hover, .insight-card:hover { transform: none; }
         .report-header::before { display: none; }
+        .report-toc { break-inside: avoid; page-break-inside: avoid; }
+        .data-quality-banner { break-inside: avoid; background: #fff; }
+        .report-section { break-inside: avoid; }
+        .highlight-card, .insight-card { break-inside: avoid; }
+        .post-table thead th {
+          position: static;
+          box-shadow: none;
+        }
+        .scroll-hint { display: none; }
       }
     `;
+  }
+
+  generateDataQualityBanner() {
+    const dq = this.data.dataQuality;
+    if (!dq || !dq.disclaimers || dq.disclaimers.length === 0) return '';
+    const items = dq.disclaimers.map((t) => `<li>${this.escapeHtml(t)}</li>`).join('');
+    return `
+    <div class="data-quality-banner" role="status">
+      <strong>資料品質說明</strong>
+      <ul>${items}</ul>
+    </div>`;
+  }
+
+  generateTOC() {
+    return `
+    <nav class="report-toc" aria-label="報告目錄">
+      <div class="toc-title">目錄</div>
+      <ol>
+        <li><a href="#sec-kpi">KPI 概覽</a></li>
+        <li><a href="#sec-top">本期互動率最高貼文</a></li>
+        <li><a href="#sec-content">內容表現分析</a></li>
+        <li><a href="#sec-posts">全貼文表現明細表</a></li>
+        <li><a href="#sec-insights">受歡迎內容特徵歸納</a></li>
+        <li><a href="#sec-comments">用戶留言洞察與建議</a></li>
+        <li><a href="#sec-plan">未來活動策略規劃</a></li>
+      </ol>
+    </nav>`;
   }
 
   /**
@@ -725,7 +830,8 @@ class ReportGenerator {
     ];
 
     return `
-    <div class="section-title"><span class="icon">📊</span> KPI 概覽</div>
+    <section id="sec-kpi" class="report-section" aria-labelledby="title-kpi">
+    <div class="section-title" id="title-kpi"><span class="icon">📊</span> KPI 概覽</div>
     <div class="kpi-grid">
       ${cards.map(c => `
         <div class="kpi-card" style="border-color: ${c.color};">
@@ -734,7 +840,8 @@ class ReportGenerator {
           <div class="kpi-label">${c.label}</div>
         </div>
       `).join('')}
-    </div>`;
+    </div>
+    </section>`;
   }
 
   /**
@@ -748,7 +855,8 @@ class ReportGenerator {
     const ratePercent = (post.engagementRate * 100).toFixed(2);
 
     return `
-    <div class="section-title"><span class="icon">🏆</span> 本期互動率最高貼文</div>
+    <section id="sec-top" class="report-section" aria-labelledby="title-top">
+    <div class="section-title" id="title-top"><span class="icon">🏆</span> 本期互動率最高貼文</div>
     <div class="highlight-card">
       <div class="highlight-title">📌 ${post.title}</div>
       <div class="highlight-excerpt">${this.escapeHtml(excerpt)}</div>
@@ -770,7 +878,8 @@ class ReportGenerator {
           <div class="stat-label">素材型式</div>
         </div>
       </div>
-    </div>`;
+    </div>
+    </section>`;
   }
 
   /**
@@ -850,11 +959,13 @@ class ReportGenerator {
       </div>`;
 
     return `
-    <div class="section-title"><span class="icon">📈</span> 內容表現分析</div>
+    <section id="sec-content" class="report-section" aria-labelledby="title-content">
+    <div class="section-title" id="title-content"><span class="icon">📈</span> 內容表現分析</div>
     <div class="analysis-grid">
       ${leftPanel}
       ${rightPanel}
-    </div>`;
+    </div>
+    </section>`;
   }
 
   /**
@@ -873,7 +984,12 @@ class ReportGenerator {
     }
     parts.push('建議下月可增加高互動型素材的發布比例，並延續受歡迎主題的內容方向。');
 
-    return parts.join('');
+    let out = parts.join('');
+    if (this.data.dataQuality?.disclaimers?.length) {
+      out +=
+        '<br><br><em style="color:#718096;font-size:0.92em;">※ 若本期觸及數據缺漏較多，請一併參考頁首「資料品質說明」解讀下列結論。</em>';
+    }
+    return out;
   }
 
   /**
@@ -891,7 +1007,9 @@ class ReportGenerator {
     const rateColors = [this.c.primary, this.c.primaryLight, this.c.accent, this.c.secondary];
 
     return `
-    <div class="section-title"><span class="icon">📋</span> 全貼文表現明細表</div>
+    <section id="sec-posts" class="report-section" aria-labelledby="title-posts">
+    <div class="section-title" id="title-posts"><span class="icon">📋</span> 全貼文表現明細表</div>
+    <p class="scroll-hint">表格欄位較多時，可左右滑動以檢視完整內容。</p>
     <div class="post-table-wrapper">
       <table class="post-table">
         <thead>
@@ -925,7 +1043,8 @@ class ReportGenerator {
           }).join('')}
         </tbody>
       </table>
-    </div>`;
+    </div>
+    </section>`;
   }
 
   /**
@@ -935,7 +1054,8 @@ class ReportGenerator {
     const { insights } = this.data;
 
     return `
-    <div class="section-title"><span class="icon">💡</span> 受歡迎內容特徵歸納</div>
+    <section id="sec-insights" class="report-section" aria-labelledby="title-insights">
+    <div class="section-title" id="title-insights"><span class="icon">💡</span> 受歡迎內容特徵歸納</div>
     <div class="insight-grid">
       ${insights.map(card => `
         <div class="insight-card" style="border-color: ${card.borderColor};">
@@ -945,7 +1065,8 @@ class ReportGenerator {
           <div class="insight-desc">${card.description}</div>
         </div>
       `).join('')}
-    </div>`;
+    </div>
+    </section>`;
   }
 
   /**
@@ -955,7 +1076,8 @@ class ReportGenerator {
     const { activityPlan } = this.data;
 
     return `
-    <div class="section-title"><span class="icon">🗓</span> 未來活動策略規劃</div>
+    <section id="sec-plan" class="report-section" aria-labelledby="title-plan">
+    <div class="section-title" id="title-plan"><span class="icon">🗓</span> 未來活動策略規劃</div>
     <div class="activity-table-wrapper">
       <table class="activity-table">
         <thead>
@@ -977,7 +1099,8 @@ class ReportGenerator {
           `).join('')}
         </tbody>
       </table>
-    </div>`;
+    </div>
+    </section>`;
   }
 
   /**
@@ -987,7 +1110,8 @@ class ReportGenerator {
     const isEcoco = this.brandName.toLowerCase().includes('ecoco') || this.brandName.toLowerCase().includes('eco');
     if (isEcoco) {
       return `
-      <div class="section-title"><span class="icon">💬</span> 本月用戶留言洞察與建議</div>
+      <section id="sec-comments" class="report-section" aria-labelledby="title-comments">
+      <div class="section-title" id="title-comments"><span class="icon">💬</span> 本月用戶留言洞察與建議</div>
       <div class="comment-insight-wrapper">
         <p style="font-size: 0.95em; color: #4a5568; margin-bottom: 8px;">根據系統最新抓取的 ECOCO 粉絲留言，為您整理出以下四大反饋與對應的社群貼文規劃建議：</p>
         <div class="comment-grid">
@@ -1012,10 +1136,12 @@ class ReportGenerator {
             <div class="action">💡 建議貼文：募集並精選【ECOCO 小小環保英雄】粉絲圖文，帶動社區參與。</div>
           </div>
         </div>
-      </div>`;
+      </div>
+      </section>`;
     }
     return `
-    <div class="section-title"><span class="icon">💬</span> 本月用戶留言洞察與建議</div>
+    <section id="sec-comments" class="report-section" aria-labelledby="title-comments">
+    <div class="section-title" id="title-comments"><span class="icon">💬</span> 本月用戶留言洞察與建議</div>
     <div class="comment-insight-wrapper">
       <p style="font-size: 0.95em; color: #4a5568; margin-bottom: 8px;">根據系統最新抓取的粉絲留言，為您整理出以下四大痛點與對應的社群貼文規劃建議：</p>
       <div class="comment-grid">
@@ -1040,7 +1166,8 @@ class ReportGenerator {
           <div class="action">💡 建議貼文：精選網友圖文發布【謝謝你們陪地球一起長大】，帶動情感共鳴。</div>
         </div>
       </div>
-    </div>`;
+    </div>
+    </section>`;
   }
 
   /**
