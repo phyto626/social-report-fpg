@@ -1,5 +1,22 @@
 const PptxGenJS = require("pptxgenjs");
 
+/** 擷取前 n 句（句尾：。！？.!?）；若全文不足 n 個句號則回傳整理後的全文。 */
+function takeFirstSentences(text, n = 2) {
+  if (!text || typeof text !== "string") return "";
+  const t = text.replace(/\r\n/g, "\n").replace(/\n\s*\n/g, "\n").trim();
+  if (!t) return "";
+  const re = /[。！？.!?]/g;
+  let count = 0;
+  let cut = -1;
+  let m;
+  while ((m = re.exec(t)) !== null) {
+    count++;
+    cut = m.index + 1;
+    if (count >= n) return t.slice(0, cut).trim();
+  }
+  return t;
+}
+
 class PptxBuilder {
   constructor(templatePath) {
     // 捨棄原本 docxtemplater 的 template 讀取，改採完全從無到有繪製
@@ -133,10 +150,13 @@ class PptxBuilder {
     // Highlight Container (稍微加高到 1.9，底部留白縮減)
     slide2.addShape(pres.ShapeType.roundRect, { x: 0.5, y: 3.2, w: 9, h: 1.9, fill: isEcoco ? "F0F4FF" : "F0F7FF", line: { color: COLOR_PRIMARY, width: 1 }, rectRadius: 0.1 });
     
-    // Top Post Content (利用 shrinkText 自動縮小字級，並增大文字框高度)
-    let topPostMsg = topPost.message ? topPost.message : "尚無文字內容";
-    // 預先過濾過多換行，避免空行佔用空間
-    topPostMsg = topPostMsg.replace(/\n\s*\n/g, '\n').substring(0, 400); 
+    // Top Post Content：簡報只顯示前兩句摘要（全文見 HTML）；單句過長仍設字數上限
+    const rawMsg = topPost.message ? String(topPost.message) : "";
+    let topPostMsg = rawMsg.trim()
+      ? takeFirstSentences(rawMsg, 2)
+      : "尚無文字內容";
+    if (!topPostMsg) topPostMsg = "尚無文字內容";
+    topPostMsg = topPostMsg.substring(0, 400);
 
     slide2.addText(topPostMsg, { 
       x: 0.8, y: 3.3, w: 8.4, h: 1.3, 
