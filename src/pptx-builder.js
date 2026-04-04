@@ -130,14 +130,21 @@ class PptxBuilder {
     // Top Post Highlight
     slide2.addText("🏆 本期互動之星", { x: 0.5, y: 2.7, w: 9, h: 0.5, fontSize: 18, bold: true, color: COLOR_PRIMARY });
     
-    // Highlight Container
-    slide2.addShape(pres.ShapeType.roundRect, { x: 0.5, y: 3.2, w: 9, h: 1.7, fill: isEcoco ? "F0F4FF" : "F0F7FF", line: { color: COLOR_PRIMARY, width: 1 }, rectRadius: 0.1 });
+    // Highlight Container (稍微加高到 1.9，底部留白縮減)
+    slide2.addShape(pres.ShapeType.roundRect, { x: 0.5, y: 3.2, w: 9, h: 1.9, fill: isEcoco ? "F0F4FF" : "F0F7FF", line: { color: COLOR_PRIMARY, width: 1 }, rectRadius: 0.1 });
     
-    // Top Post Content 
-    let topPostMsg = topPost.message ? topPost.message.substring(0, 200) + "..." : "尚無文字內容";
-    slide2.addText(topPostMsg, { x: 0.8, y: 3.3, w: 8.4, h: 1.0, fontSize: 13, color: COLOR_TEXT, valign: 'top', fontFace: 'Arial' });
+    // Top Post Content (利用 shrinkText 自動縮小字級，並增大文字框高度)
+    let topPostMsg = topPost.message ? topPost.message : "尚無文字內容";
+    // 預先過濾過多換行，避免空行佔用空間
+    topPostMsg = topPostMsg.replace(/\n\s*\n/g, '\n').substring(0, 400); 
+
+    slide2.addText(topPostMsg, { 
+      x: 0.8, y: 3.3, w: 8.4, h: 1.3, 
+      fontSize: 12, color: COLOR_TEXT, valign: 'top', fontFace: 'Arial',
+      shrinkText: true // 關鍵：文字過多時自動縮小字級
+    });
     
-    // Stats Bar
+    // Stats Bar (位置微調下移)
     let rate = topPost.reach && topPost.reach > 0 ? ((topPost.totalEngagement / topPost.reach) * 100).toFixed(2) : '0';
     let statTxt = [
         { text: "素材型式：", options: { color: "666666" } },
@@ -148,7 +155,7 @@ class PptxBuilder {
         { text: rate + "%", options: { bold: true, color: COLOR_SECONDARY } }
     ];
     
-    slide2.addText(statTxt, { x: 0.8, y: 4.4, w: 8.4, h: 0.4, fontSize: 14, align: 'left', fontFace: 'Arial' });
+    slide2.addText(statTxt, { x: 0.8, y: 4.65, w: 8.4, h: 0.4, fontSize: 13, align: 'left', fontFace: 'Arial' });
 
     // ----------------------------------------------------------------------
     // Slide 3: 各主題互動率排名
