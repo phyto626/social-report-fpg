@@ -111,7 +111,7 @@ const reportDataCache = {};
 
 app.post('/api/generate', async (req, res) => {
   try {
-    const { startDate, endDate, brand } = req.body;
+    const { startDate, endDate, brand, selectedSections } = req.body;
     
     if (!startDate || !endDate) {
       return res.status(400).json({ success: false, message: '請提供起始與結束日期' });
@@ -180,7 +180,7 @@ app.post('/api/generate', async (req, res) => {
       console.error('[Web API] 寫入分析快取檔失敗:', e.message);
     }
 
-    const reportGenerator = new ReportGenerator(analysisResult);
+    const reportGenerator = new ReportGenerator(analysisResult, selectedSections);
     const html = reportGenerator.generate();
 
     const brandName = brandConfig.name;

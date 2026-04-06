@@ -170,6 +170,41 @@
                         <p id="longRangeWarning" class="hidden text-xs text-amber-800 font-medium mt-2">目前區間超過 90 天，建議分段產報以降低逾時或 API 限制風險。</p>
                     </section>
 
+                    <!-- Section Selection -->
+                    <section>
+                        <h2 class="font-headline text-[13px] font-bold tracking-widest uppercase mb-4 text-[#FF5000]">Step 3: Select Report Content</h2>
+                        <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+                            <label class="flex items-center space-x-2 cursor-pointer bg-white p-2 rounded border border-orange-100 hover:bg-orange-50/50 transition">
+                                <input type="checkbox" id="chkKpi" value="kpi" checked class="form-checkbox h-4 w-4 text-[#FF5000] rounded border-gray-300 focus:ring-[#FF5000]">
+                                <span class="text-sm text-on-surface">KPI 概覽</span>
+                            </label>
+                            <label class="flex items-center space-x-2 cursor-pointer bg-white p-2 rounded border border-orange-100 hover:bg-orange-50/50 transition">
+                                <input type="checkbox" id="chkTopPost" value="topPost" checked class="form-checkbox h-4 w-4 text-[#FF5000] rounded border-gray-300 focus:ring-[#FF5000]">
+                                <span class="text-sm text-on-surface">最高互動貼文</span>
+                            </label>
+                            <label class="flex items-center space-x-2 cursor-pointer bg-white p-2 rounded border border-orange-100 hover:bg-orange-50/50 transition">
+                                <input type="checkbox" id="chkContent" value="content" checked class="form-checkbox h-4 w-4 text-[#FF5000] rounded border-gray-300 focus:ring-[#FF5000]">
+                                <span class="text-sm text-on-surface">內容表現分析</span>
+                            </label>
+                            <label class="flex items-center space-x-2 cursor-pointer bg-white p-2 rounded border border-orange-100 hover:bg-orange-50/50 transition">
+                                <input type="checkbox" id="chkPosts" value="posts" checked class="form-checkbox h-4 w-4 text-[#FF5000] rounded border-gray-300 focus:ring-[#FF5000]">
+                                <span class="text-sm text-on-surface">全貼文表現明細表</span>
+                            </label>
+                            <label class="flex items-center space-x-2 cursor-pointer bg-white p-2 rounded border border-orange-100 hover:bg-orange-50/50 transition">
+                                <input type="checkbox" id="chkInsights" value="insights" checked class="form-checkbox h-4 w-4 text-[#FF5000] rounded border-gray-300 focus:ring-[#FF5000]">
+                                <span class="text-sm text-on-surface">受歡迎內容特徵</span>
+                            </label>
+                            <label class="flex items-center space-x-2 cursor-pointer bg-white p-2 rounded border border-orange-100 hover:bg-orange-50/50 transition">
+                                <input type="checkbox" id="chkComments" value="comments" checked class="form-checkbox h-4 w-4 text-[#FF5000] rounded border-gray-300 focus:ring-[#FF5000]">
+                                <span class="text-sm text-on-surface">留言洞察與建議</span>
+                            </label>
+                            <label class="flex items-center space-x-2 cursor-pointer bg-white p-2 rounded border border-orange-100 hover:bg-orange-50/50 transition">
+                                <input type="checkbox" id="chkPlan" value="plan" checked class="form-checkbox h-4 w-4 text-[#FF5000] rounded border-gray-300 focus:ring-[#FF5000]">
+                                <span class="text-sm text-on-surface">活動策略規劃</span>
+                            </label>
+                        </div>
+                    </section>
+
                     <!-- Feedback Containers -->
                     <!-- Error Message -->
                     <div id="errorMsg" class="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-lg text-sm font-medium mt-4">
@@ -516,11 +551,21 @@
             errorMsg.style.display = 'none';
             statusContainer.style.display = 'none';
 
+            const selectedSections = {
+                kpi: document.getElementById('chkKpi').checked,
+                topPost: document.getElementById('chkTopPost').checked,
+                content: document.getElementById('chkContent').checked,
+                posts: document.getElementById('chkPosts').checked,
+                insights: document.getElementById('chkInsights').checked,
+                comments: document.getElementById('chkComments').checked,
+                plan: document.getElementById('chkPlan').checked
+            };
+
             try {
                 const response = await fetch('/api/generate', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ startDate, endDate, brand: currentBrand }),
+                    body: JSON.stringify({ startDate, endDate, brand: currentBrand, selectedSections }),
                 });
                 let data;
                 try {

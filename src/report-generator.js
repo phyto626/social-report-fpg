@@ -11,6 +11,17 @@ class ReportGenerator {
     this.endDate = analysisResult.endDate;
     this.year = analysisResult.startDate ? analysisResult.startDate.substring(0, 4) : '2026';
     this.month = analysisResult.startDate ? analysisResult.startDate.substring(5, 7) : '01';
+    
+    // 選定的區塊
+    this.selectedSections = arguments[1] || {
+      kpi: true,
+      topPost: true,
+      content: true,
+      posts: true,
+      insights: true,
+      comments: true,
+      plan: true
+    };
 
     // Theme logic
     const isEcoco = this.brandName.toLowerCase().includes('ecoco') || this.brandName.toLowerCase().includes('eco');
@@ -52,13 +63,13 @@ class ReportGenerator {
   <div class="container">
     ${this.generateDataQualityBanner()}
     ${this.generateTOC()}
-    ${this.generateKPI()}
-    ${this.generateTopPostHighlight()}
-    ${this.generateContentAnalysis()}
-    ${this.generatePostTable()}
-    ${this.generateInsightCards()}
-    ${this.generateCommentInsights()}
-    ${this.generateActivityPlan()}
+    ${this.selectedSections.kpi ? this.generateKPI() : ''}
+    ${this.selectedSections.topPost ? this.generateTopPostHighlight() : ''}
+    ${this.selectedSections.content ? this.generateContentAnalysis() : ''}
+    ${this.selectedSections.posts ? this.generatePostTable() : ''}
+    ${this.selectedSections.insights ? this.generateInsightCards() : ''}
+    ${this.selectedSections.comments ? this.generateCommentInsights() : ''}
+    ${this.selectedSections.plan ? this.generateActivityPlan() : ''}
   </div>
   ${this.generateFooter()}
 </body>
@@ -785,17 +796,22 @@ class ReportGenerator {
   }
 
   generateTOC() {
+    let tocItems = '';
+    if (this.selectedSections.kpi) tocItems += `<li><a href="#sec-kpi">KPI 概覽</a></li>\n`;
+    if (this.selectedSections.topPost) tocItems += `<li><a href="#sec-top">本期互動率最高貼文</a></li>\n`;
+    if (this.selectedSections.content) tocItems += `<li><a href="#sec-content">內容表現分析</a></li>\n`;
+    if (this.selectedSections.posts) tocItems += `<li><a href="#sec-posts">全貼文表現明細表</a></li>\n`;
+    if (this.selectedSections.insights) tocItems += `<li><a href="#sec-insights">受歡迎內容特徵歸納</a></li>\n`;
+    if (this.selectedSections.comments) tocItems += `<li><a href="#sec-comments">用戶留言洞察與建議</a></li>\n`;
+    if (this.selectedSections.plan) tocItems += `<li><a href="#sec-plan">未來活動策略規劃</a></li>\n`;
+
+    if (!tocItems) return '';
+
     return `
     <nav class="report-toc" aria-label="報告目錄">
       <div class="toc-title">目錄</div>
       <ol>
-        <li><a href="#sec-kpi">KPI 概覽</a></li>
-        <li><a href="#sec-top">本期互動率最高貼文</a></li>
-        <li><a href="#sec-content">內容表現分析</a></li>
-        <li><a href="#sec-posts">全貼文表現明細表</a></li>
-        <li><a href="#sec-insights">受歡迎內容特徵歸納</a></li>
-        <li><a href="#sec-comments">用戶留言洞察與建議</a></li>
-        <li><a href="#sec-plan">未來活動策略規劃</a></li>
+        ${tocItems}
       </ol>
     </nav>`;
   }
