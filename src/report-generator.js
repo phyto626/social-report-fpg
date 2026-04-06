@@ -1223,7 +1223,6 @@ class ReportGenerator {
       <div class="section-title" id="title-comments"><span class="icon">💬</span> 本月用戶留言洞察與建議</div>
       <div class="comment-insight-wrapper">
         <p style="font-size: 0.95em; color: #4a5568; margin-bottom: 8px;">根據系統最新抓取的 ECOCO 粉絲留言，為您整理出以下四大反饋與對應的社群貼文規劃建議：</p>
-        <p style="font-size: 0.8em; color: #94a3b8; margin-bottom: 12px;">⚠️ 未設定 GEMINI_API_KEY，以下為預設範本。設定金鑰後將自動切換為 AI 即時分析。</p>
         <div class="comment-grid">
           <div class="comment-box" style="border-left-color: ${this.c.secondary};">
             <h4>📍 痛點一：機台滿桶或故障狀態</h4>
@@ -1254,7 +1253,6 @@ class ReportGenerator {
     <div class="section-title" id="title-comments"><span class="icon">💬</span> 本月用戶留言洞察與建議</div>
     <div class="comment-insight-wrapper">
       <p style="font-size: 0.95em; color: #4a5568; margin-bottom: 8px;">根據系統最新抓取的粉絲留言，為您整理出以下四大痛點與對應的社群貼文規劃建議：</p>
-      <p style="font-size: 0.8em; color: #94a3b8; margin-bottom: 12px;">⚠️ 未設定 GEMINI_API_KEY，以下為預設範本。設定金鑰後將自動切換為 AI 即時分析。</p>
       <div class="comment-grid">
         <div class="comment-box" style="border-left-color: ${this.c.secondary};">
           <h4>📍 痛點一：尋找機台與特定洗劑</h4>

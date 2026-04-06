@@ -133,6 +133,7 @@ app.post('/api/generate', async (req, res) => {
     });
 
     const rawData = await fbApi.fetchAllData(startDate, endDate);
+    if (rawData.pageInfo) rawData.pageInfo.name = brandConfig.name;
 
     if (rawData.posts.length === 0) {
       return res.json({ success: false, message: '該期間沒有貼文數據，無法生成報告。' });

@@ -90,6 +90,7 @@ async function main() {
     });
 
     const rawData = await fbApi.fetchAllData(year, month);
+    if (rawData.pageInfo) rawData.pageInfo.name = CONFIG.brandName;
 
     if (rawData.posts.length === 0) {
       console.log('\n⚠️ 該月份沒有貼文數據，無法生成報告。');
