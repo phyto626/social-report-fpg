@@ -8,6 +8,7 @@ const DataAnalyzer = require('./src/data-analyzer');
 const ReportGenerator = require('./src/report-generator');
 const { exportToExcel } = require('./src/excel-export');
 const PptxBuilder = require('./src/pptx-builder');
+const { analyzeComments } = require('./src/comment-analyzer');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -152,6 +153,21 @@ app.post('/api/generate', async (req, res) => {
     // 將完整分析結果存入對應 Key，以便後續產出簡報
     const cacheKey = `${brandKey}_${startDate}_${endDate}`;
     reportDataCache[cacheKey] = analysisResult;
+
+    // AI 留言分析（Gemini）
+    const geminiApiKey = process.env.GEMINI_API_KEY;
+    if (geminiApiKey) {
+      console.log('[Web API] 正在進行 AI 留言分析...');
+      const commentInsights = await analyzeComments(
+        analysisResult.posts,
+        brandConfig.name,
+        { geminiApiKey }
+      );
+      analysisResult.commentInsights = commentInsights;
+    } else {
+      console.log('[Web API] 未設定 GEMINI_API_KEY，跳過 AI 留言分析。');
+      analysisResult.commentInsights = null;
+    }
 
     try {
       fs.writeFileSync(

@@ -17,6 +17,7 @@ const FacebookAPI = require('./src/fb-api');
 const DataAnalyzer = require('./src/data-analyzer');
 const ReportGenerator = require('./src/report-generator');
 const { exportToExcel } = require('./src/excel-export');
+const { analyzeComments } = require('./src/comment-analyzer');
 
 // ===== 設定 =====
 const CONFIG = {
@@ -110,6 +111,21 @@ async function main() {
     console.log('\n🔍 正在分析數據...');
     const analyzer = new DataAnalyzer(rawData);
     const analysisResult = analyzer.analyze();
+
+    // ===== Step 3.5: AI 留言分析 =====
+    const geminiApiKey = process.env.GEMINI_API_KEY;
+    if (geminiApiKey) {
+      console.log('\n🧠 正在呼叫 Gemini AI 分析留言...');
+      const commentInsights = await analyzeComments(
+        analysisResult.posts,
+        rawData.pageInfo.name,
+        { geminiApiKey }
+      );
+      analysisResult.commentInsights = commentInsights;
+    } else {
+      console.log('\n⚠️ 未設定 GEMINI_API_KEY，跳過 AI 留言分析。');
+      analysisResult.commentInsights = null;
+    }
 
     // ===== Step 4: 生成 HTML 報告 =====
     console.log('📄 正在生成 HTML 報告...');

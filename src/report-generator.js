@@ -1104,9 +1104,118 @@ class ReportGenerator {
   }
 
   /**
-   * 8.5 用戶留言洞察與貼文建議
+   * 8.5 用戶留言洞察與貼文建議（AI 動態版）
    */
   generateCommentInsights() {
+    const ci = this.data.commentInsights;
+
+    // 有 AI 分析結果 → 動態渲染
+    if (ci && ci.source === 'gemini' && ci.categories && ci.categories.length > 0) {
+      return this._renderAICommentInsights(ci);
+    }
+
+    // 留言不足
+    if (ci && ci.source === 'insufficient') {
+      return this._renderInsufficientComments(ci);
+    }
+
+    // API 錯誤或未設定 → fallback 靜態內容
+    return this._renderFallbackCommentInsights();
+  }
+
+  /**
+   * 動態渲染 Gemini AI 分析結果
+   */
+  _renderAICommentInsights(ci) {
+    const borderColors = [this.c.secondary, this.c.orangeAlert, this.c.accent, this.c.primary, this.c.primaryLight];
+
+    const categoryCards = ci.categories.map((cat, idx) => {
+      const color = borderColors[idx % borderColors.length];
+      const emoji = cat.emoji || '📌';
+      const pct = cat.percentage || 0;
+
+      // 代表留言（灰底引言框）
+      const quotes = (cat.representativeComments || [])
+        .map(q => `<blockquote style="
+          background: #f1f5f9;
+          border-left: 3px solid ${color};
+          margin: 8px 0;
+          padding: 10px 14px;
+          border-radius: 6px;
+          font-size: 0.88em;
+          color: #475569;
+          line-height: 1.6;
+          font-style: italic;
+        ">「${this.escapeHtml(q)}」</blockquote>`)
+        .join('');
+
+      return `
+        <div class="comment-box" style="border-left-color: ${color};">
+          <h4>${emoji} ${this.escapeHtml(cat.category)}</h4>
+          <div style="
+            display: inline-block;
+            background: ${color}18;
+            color: ${color};
+            padding: 3px 12px;
+            border-radius: 12px;
+            font-size: 0.82em;
+            font-weight: 700;
+            margin-bottom: 10px;
+          ">${pct}% 的留言屬於此類</div>
+          ${quotes}
+          <div class="action">💡 建議貼文方向：${this.escapeHtml(cat.suggestion || '')}</div>
+        </div>`;
+    }).join('');
+
+    const summaryHtml = ci.summary
+      ? `<div style="
+          background: ${this.c.bgHighlight};
+          border-radius: 10px;
+          padding: 16px 20px;
+          margin-top: 20px;
+          font-size: 0.92em;
+          color: #4a5568;
+          line-height: 1.7;
+          border-left: 3px solid ${this.c.primaryLight};
+        "><strong>📖 AI 總結觀察：</strong>${this.escapeHtml(ci.summary)}</div>`
+      : '';
+
+    return `
+    <section id="sec-comments" class="report-section" aria-labelledby="title-comments">
+    <div class="section-title" id="title-comments"><span class="icon">💬</span> 本月用戶留言洞察與建議</div>
+    <div class="comment-insight-wrapper">
+      <p style="font-size: 0.95em; color: #4a5568; margin-bottom: 4px;">
+        根據 AI 分析本月 <strong>${ci.totalValid}</strong> 則有效留言（原始留言 ${ci.totalRaw} 則，已篩除純 emoji、字數不足與品牌回覆），歸納出以下洞察與貼文建議：
+      </p>
+      <div style="font-size: 0.8em; color: #94a3b8; margin-bottom: 16px;">🤖 Powered by Gemini AI</div>
+      <div class="comment-grid">
+        ${categoryCards}
+      </div>
+      ${summaryHtml}
+    </div>
+    </section>`;
+  }
+
+  /**
+   * 留言不足提示
+   */
+  _renderInsufficientComments(ci) {
+    return `
+    <section id="sec-comments" class="report-section" aria-labelledby="title-comments">
+    <div class="section-title" id="title-comments"><span class="icon">💬</span> 本月用戶留言洞察與建議</div>
+    <div class="comment-insight-wrapper">
+      <p style="font-size: 0.95em; color: #718096; text-align: center; padding: 40px 0;">
+        📭 本月有效留言僅 ${ci.totalValid} 則（原始 ${ci.totalRaw} 則），數量不足以進行分類分析。<br>
+        <span style="font-size: 0.88em;">建議增加互動型貼文以收集更多粉絲回饋。</span>
+      </p>
+    </div>
+    </section>`;
+  }
+
+  /**
+   * Fallback：原始靜態留言洞察（無 AI Key 或 API 失敗時使用）
+   */
+  _renderFallbackCommentInsights() {
     const isEcoco = this.brandName.toLowerCase().includes('ecoco') || this.brandName.toLowerCase().includes('eco');
     if (isEcoco) {
       return `
@@ -1114,6 +1223,7 @@ class ReportGenerator {
       <div class="section-title" id="title-comments"><span class="icon">💬</span> 本月用戶留言洞察與建議</div>
       <div class="comment-insight-wrapper">
         <p style="font-size: 0.95em; color: #4a5568; margin-bottom: 8px;">根據系統最新抓取的 ECOCO 粉絲留言，為您整理出以下四大反饋與對應的社群貼文規劃建議：</p>
+        <p style="font-size: 0.8em; color: #94a3b8; margin-bottom: 12px;">⚠️ 未設定 GEMINI_API_KEY，以下為預設範本。設定金鑰後將自動切換為 AI 即時分析。</p>
         <div class="comment-grid">
           <div class="comment-box" style="border-left-color: ${this.c.secondary};">
             <h4>📍 痛點一：機台滿桶或故障狀態</h4>
@@ -1144,6 +1254,7 @@ class ReportGenerator {
     <div class="section-title" id="title-comments"><span class="icon">💬</span> 本月用戶留言洞察與建議</div>
     <div class="comment-insight-wrapper">
       <p style="font-size: 0.95em; color: #4a5568; margin-bottom: 8px;">根據系統最新抓取的粉絲留言，為您整理出以下四大痛點與對應的社群貼文規劃建議：</p>
+      <p style="font-size: 0.8em; color: #94a3b8; margin-bottom: 12px;">⚠️ 未設定 GEMINI_API_KEY，以下為預設範本。設定金鑰後將自動切換為 AI 即時分析。</p>
       <div class="comment-grid">
         <div class="comment-box" style="border-left-color: ${this.c.secondary};">
           <h4>📍 痛點一：尋找機台與特定洗劑</h4>

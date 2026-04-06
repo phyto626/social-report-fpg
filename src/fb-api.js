@@ -102,7 +102,7 @@ class FacebookAPI {
       'full_picture',
       'attachments{media_type,type,title,description,subattachments}',
       'reactions.summary(true)',
-      'comments.limit(50).summary(true){message,created_time}',
+      'comments.limit(50).summary(true){message,created_time,from{name,id}}',
       'shares',
     ].join(',');
 
@@ -242,7 +242,8 @@ class FacebookAPI {
     // 解析留言詳細內容
     const commentsList = (rawPost.comments?.data || []).map(c => ({
       message: c.message,
-      createdTime: c.created_time
+      createdTime: c.created_time,
+      from: c.from || null,
     }));
 
     return {
