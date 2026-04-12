@@ -665,6 +665,30 @@ class ReportGenerator {
         margin-top: 1px;
       }
 
+      .insight-refs {
+        margin-top: 12px;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+      }
+
+      .insight-ref-link {
+        display: inline-flex;
+        align-items: center;
+        font-size: 0.75em;
+        color: #0057B7;
+        background: #ebf4ff;
+        padding: 4px 8px;
+        border-radius: 6px;
+        text-decoration: none;
+        transition: all 0.2s ease;
+      }
+
+      .insight-ref-link:hover {
+        background: #d1e2ff;
+        color: #003d82;
+      }
+
       .insight-ai-badge {
         margin-top: 14px;
         text-align: right;
@@ -1144,6 +1168,24 @@ class ReportGenerator {
           .map(tip => `<div class="action-tip">${this.escapeHtml(tip)}</div>`)
           .join('');
 
+        // 整理參考貼文的連結
+        let refsHtml = '';
+        if (Array.isArray(card.samplePostIds) && card.samplePostIds.length > 0) {
+          const links = card.samplePostIds.map((id, idIdx) => {
+            const p = this.data.posts.find(post => post.id === id);
+            if (p && p.permalink) {
+              const rawTitle = p.title || `參考貼文 ${idIdx + 1}`;
+              const postTitle = rawTitle.length > 15 ? rawTitle.substring(0, 15) + '...' : rawTitle;
+              return `<a href="${p.permalink}" target="_blank" class="insight-ref-link" title="前往查看：${this.escapeHtml(rawTitle)}">🔗 ${this.escapeHtml(postTitle)}</a>`;
+            }
+            return '';
+          }).filter(l => l !== '');
+          
+          if (links.length > 0) {
+            refsHtml = `<div class="insight-refs">${links.join('')}</div>`;
+          }
+        }
+
         return `
           <div class="insight-card" style="border-color: ${color};">
             <div class="insight-card-header">
@@ -1155,6 +1197,7 @@ class ReportGenerator {
             </div>
             <div class="insight-title">${this.escapeHtml(card.title || '')}</div>
             ${tips ? `<div class="insight-action-tips">${tips}</div>` : ''}
+            ${refsHtml}
             <div class="insight-ai-badge">🤖 AI 分析</div>
           </div>`;
       }).join('');
