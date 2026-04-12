@@ -268,17 +268,26 @@ class PptxBuilder {
     }
 
     // ----------------------------------------------------------------------
-    // Slide 6: 未來優化方向建議
+    // Slide 6: 受歡迎內容特徵歸納 (AI Insights)
     // ----------------------------------------------------------------------
     let slide6 = pres.addSlide({ masterName: "MASTER_SLIDE" });
-    slide6.addText("未來優化方向建議", { x: 0.5, y: 0.4, w: 9, h: 0.6, fontSize: 24, bold: true, color: COLOR_PRIMARY });
+    slide6.addText("受歡迎內容特徵歸納", { x: 0.5, y: 0.4, w: 9, h: 0.6, fontSize: 24, bold: true, color: COLOR_PRIMARY });
 
-    let rawInsights = data.insights || [];
-    const insightCards = rawInsights.slice(0, 3).length > 0 ? rawInsights.slice(0, 3) : [
-        { label: '內容策略', description: '強化品牌與消費者的情感連結。' },
-        { label: '發文時間', description: '觀測受眾最活躍時間段進行發布。' },
-        { label: '互動引導', description: '在貼文末尾加入具體的 Call-to-Action。' }
-    ];
+    let insightCards = [];
+    if (data.aiInsights && data.aiInsights.source === 'gemini' && Array.isArray(data.aiInsights.insights) && data.aiInsights.insights.length > 0) {
+      insightCards = data.aiInsights.insights.slice(0, 3).map(card => ({
+        label: card.label || '洞察',
+        title: card.title || '洞察重點',
+        description: (card.actionTips || []).map(tip => `• ${tip}`).join('\n')
+      }));
+    } else {
+      let rawInsights = data.insights || [];
+      insightCards = rawInsights.slice(0, 3).length > 0 ? rawInsights.slice(0, 3) : [
+          { label: '內容策略', description: '強化品牌與消費者的情感連結。' },
+          { label: '發文時間', description: '觀測受眾最活躍時間段進行發布。' },
+          { label: '互動引導', description: '在貼文末尾加入具體的 Call-to-Action。' }
+      ];
+    }
 
     insightCards.forEach((c, idx) => {
       let cx = 0.5 + (idx * 3.1);
@@ -290,11 +299,51 @@ class PptxBuilder {
     });
 
     // ----------------------------------------------------------------------
-    // Slide 7: 未來活動策略佈局
+    // Slide 7: 用戶留言洞察與建議 (AI 版)
     // ----------------------------------------------------------------------
-    let slide7 = pres.addSlide({ masterName: "MASTER_SLIDE" });
-    slide7.addShape(pres.ShapeType.rect, { x: 0, y: 0, w: '100%', h: '100%', fill: isEcoco ? 'F8FAFF' : 'F7F9FF' }); // 特殊背景色
-    slide7.addText("未來活動策略佈局", { x: 0.5, y: 0.4, w: 9, h: 0.6, fontSize: 24, bold: true, color: COLOR_PRIMARY });
+    if (data.commentInsights && data.commentInsights.source === 'gemini' && data.commentInsights.categories && data.commentInsights.categories.length > 0) {
+      let slideComment = pres.addSlide({ masterName: "MASTER_SLIDE" });
+      slideComment.addText("用戶留言洞察與貼文建議", { x: 0.5, y: 0.4, w: 9, h: 0.6, fontSize: 24, bold: true, color: COLOR_PRIMARY });
+      
+      const categories = data.commentInsights.categories.slice(0, 3); // 拿前 3 名
+      categories.forEach((cat, idx) => {
+        let cx = 0.5 + (idx * 3.1);
+        // Card Background
+        slideComment.addShape(pres.ShapeType.roundRect, { x: cx, y: 1.3, w: 2.8, h: 3.2, fill: "F9FAFB", line: { color: "CBD5E1", width: 1 }, rectRadius: 0.1 });
+        
+        // Category Title
+        slideComment.addText(`${cat.emoji || '💬'} ${cat.category}`, { x: cx + 0.1, y: 1.4, w: 2.6, h: 0.4, fontSize: 14, bold: true, color: COLOR_PRIMARY });
+        
+        // Percentage Badge
+        if (cat.percentage) {
+          slideComment.addText(`${cat.percentage}%`, { x: cx + 2.2, y: 1.4, w: 0.5, h: 0.3, fontSize: 11, bold: true, color: COLOR_TEXT_LIGHT, align: 'right' });
+        }
+        
+        // Representative Comments
+        let quotes = (cat.representativeComments || []).slice(0, 2).map(q => `「${q}」`).join('\n');
+        if (quotes) {
+          slideComment.addText(quotes, { x: cx + 0.1, y: 1.8, w: 2.6, h: 0.8, fontSize: 11, color: "666666", valign: 'top', italic: true });
+        }
+        
+        // Suggestion
+        let suggestionText = cat.suggestion || cat.analysis || cat.action_tips || '';
+        if (suggestionText) {
+          slideComment.addText(`💡 建議行動：\n${suggestionText}`, { x: cx + 0.1, y: 2.7, w: 2.6, h: 1.7, fontSize: 12, color: COLOR_TEXT, valign: 'top', lineSpacing: 16 });
+        }
+      });
+      
+      // Summary text at the bottom
+      if (data.commentInsights.summary) {
+         slideComment.addText(`總結：${data.commentInsights.summary}`, { x: 0.5, y: 4.8, w: 9, h: 0.4, fontSize: 12, color: COLOR_TEXT_LIGHT, italic: true });
+      }
+    }
+
+    // ----------------------------------------------------------------------
+    // Slide 8: 未來活動策略佈局
+    // ----------------------------------------------------------------------
+    let slide8 = pres.addSlide({ masterName: "MASTER_SLIDE" });
+    slide8.addShape(pres.ShapeType.rect, { x: 0, y: 0, w: '100%', h: '100%', fill: isEcoco ? 'F8FAFF' : 'F7F9FF' }); // 特殊背景色
+    slide8.addText("未來活動策略佈局", { x: 0.5, y: 0.4, w: 9, h: 0.6, fontSize: 24, bold: true, color: COLOR_PRIMARY });
 
     let rowsPlan = [];
     rowsPlan.push([{ text: "時機點 (Timing)", options: { bold: true, fill: COLOR_PRIMARY, color: 'FFFFFF' } },
@@ -317,7 +366,8 @@ class PptxBuilder {
        rowsPlan.push(["次月第三週", "品牌核心價值傳遞", "系列知識圖卡", "強化品牌專業形象"]);
     }
 
-    slide7.addTable(rowsPlan, { x: 0.5, y: 1.3, w: 9, colW: [1.5, 3, 1.5, 3], border: { type: 'solid', color: "CCCCCC" }, fontSize: 13, rowH: 0.7, valign: 'middle' });
+    slide8.addTable(rowsPlan, { x: 0.5, y: 1.3, w: 9, colW: [1.5, 3, 1.5, 3], border: { type: 'solid', color: "CCCCCC" }, fontSize: 13, rowH: 0.7, valign: 'middle' });
+
 
     // Output file
     await pres.writeFile({ fileName: outputPath });
