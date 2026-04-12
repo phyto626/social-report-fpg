@@ -620,6 +620,59 @@ class ReportGenerator {
         line-height: 1.7;
       }
 
+      /* ===== AI Insight Cards 新增樣式 ===== */
+      .insight-card-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        margin-bottom: 12px;
+      }
+
+      .insight-highlight-badge {
+        background: #FF5000;
+        color: #fff;
+        font-size: 0.72em;
+        font-weight: 700;
+        padding: 3px 10px;
+        border-radius: 12px;
+        white-space: nowrap;
+        flex-shrink: 0;
+        align-self: flex-start;
+      }
+
+      .insight-action-tips {
+        margin-top: 14px;
+        padding-top: 14px;
+        border-top: 1px solid #f0f0f0;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+      }
+
+      .action-tip {
+        font-size: 0.87em;
+        color: #4a5568;
+        line-height: 1.55;
+        display: flex;
+        align-items: flex-start;
+        gap: 6px;
+      }
+
+      .action-tip::before {
+        content: '✅';
+        flex-shrink: 0;
+        font-size: 0.85em;
+        margin-top: 1px;
+      }
+
+      .insight-ai-badge {
+        margin-top: 14px;
+        text-align: right;
+        font-size: 0.75em;
+        color: #94a3b8;
+        font-weight: 500;
+      }
+
       /* ===== 活動策略表 ===== */
       .activity-table-wrapper {
         overflow-x: auto;
@@ -1071,13 +1124,56 @@ class ReportGenerator {
    * 6. 受歡迎內容特徵歸納（2×2 Insight Cards）
    */
   generateInsightCards() {
-    const { insights } = this.data;
+    const aiData        = this.data.aiInsights;
+    const staticInsights = this.data.insights;
 
+    // ── AI 版渲染（優先） ────────────────────────────────────
+    if (aiData && aiData.source === 'gemini' &&
+        Array.isArray(aiData.insights) && aiData.insights.length > 0) {
+
+      const borderColors = [
+        this.c.primary, this.c.secondary, this.c.primaryLight, this.c.accent
+      ];
+
+      const cards = aiData.insights.map((card, idx) => {
+        const color         = borderColors[idx % borderColors.length];
+        const highlightBadge = card.isNew
+          ? `<span class="insight-highlight-badge">本月亮點</span>`
+          : '';
+        const tips = (card.actionTips || []).slice(0, 3)
+          .map(tip => `<div class="action-tip">${this.escapeHtml(tip)}</div>`)
+          .join('');
+
+        return `
+          <div class="insight-card" style="border-color: ${color};">
+            <div class="insight-card-header">
+              <div>
+                <div class="insight-emoji">${card.emoji || '💡'}</div>
+                <div class="insight-label">${this.escapeHtml(card.label || '')}</div>
+              </div>
+              ${highlightBadge}
+            </div>
+            <div class="insight-title">${this.escapeHtml(card.title || '')}</div>
+            ${tips ? `<div class="insight-action-tips">${tips}</div>` : ''}
+            <div class="insight-ai-badge">🤖 AI 分析</div>
+          </div>`;
+      }).join('');
+
+      return `
+    <section id="sec-insights" class="report-section" aria-labelledby="title-insights">
+    <div class="section-title" id="title-insights"><span class="icon">💡</span> 受歡迎內容特徵歸納</div>
+    <div class="insight-grid">
+      ${cards}
+    </div>
+    </section>`;
+    }
+
+    // ── 静態 Fallback 版渲染 ─────────────────────────────────────
     return `
     <section id="sec-insights" class="report-section" aria-labelledby="title-insights">
     <div class="section-title" id="title-insights"><span class="icon">💡</span> 受歡迎內容特徵歸納</div>
     <div class="insight-grid">
-      ${insights.map(card => `
+      ${(staticInsights || []).map(card => `
         <div class="insight-card" style="border-color: ${card.borderColor};">
           <div class="insight-emoji">${card.emoji}</div>
           <div class="insight-label">${card.label}</div>

@@ -9,6 +9,7 @@ const ReportGenerator = require('./src/report-generator');
 const { exportToExcel } = require('./src/excel-export');
 const PptxBuilder = require('./src/pptx-builder');
 const { analyzeComments } = require('./src/comment-analyzer');
+const { analyzeInsights } = require('./src/insight-analyzer');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -168,6 +169,20 @@ app.post('/api/generate', async (req, res) => {
     } else {
       console.log('[Web API] 未設定 GEMINI_API_KEY，跳過 AI 留言分析。');
       analysisResult.commentInsights = null;
+    }
+
+    // AI 內容特徵分析（Gemini）
+    if (geminiApiKey) {
+      console.log('[Web API] 正在進行 AI 內容特徵分析...');
+      const aiInsights = await analyzeInsights(
+        analysisResult.posts,
+        brandConfig.name,
+        brandKey,
+        { geminiApiKey }
+      );
+      analysisResult.aiInsights = aiInsights;
+    } else {
+      analysisResult.aiInsights = null;
     }
 
     try {
