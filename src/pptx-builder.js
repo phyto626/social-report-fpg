@@ -275,27 +275,64 @@ class PptxBuilder {
 
     let insightCards = [];
     if (data.aiInsights && data.aiInsights.source === 'gemini' && Array.isArray(data.aiInsights.insights) && data.aiInsights.insights.length > 0) {
-      insightCards = data.aiInsights.insights.slice(0, 3).map(card => ({
+      insightCards = data.aiInsights.insights.slice(0, 4).map(card => ({
+        emoji: card.emoji || '💡',
         label: card.label || '洞察',
         title: card.title || '洞察重點',
-        description: (card.actionTips || []).map(tip => `• ${tip}`).join('\n')
+        isNew: card.isNew || false,
+        tips: (card.actionTips || []).slice(0, 3).map(tip => `✅ ${tip}`).join('\n')
       }));
     } else {
       let rawInsights = data.insights || [];
-      insightCards = rawInsights.slice(0, 3).length > 0 ? rawInsights.slice(0, 3) : [
-          { label: '內容策略', description: '強化品牌與消費者的情感連結。' },
-          { label: '發文時間', description: '觀測受眾最活躍時間段進行發布。' },
-          { label: '互動引導', description: '在貼文末尾加入具體的 Call-to-Action。' }
-      ];
+      insightCards = rawInsights.slice(0, 4).map(card => ({
+        emoji: card.emoji || '💡',
+        label: card.label || '內容策略',
+        title: card.title || '強化品牌與消費者連結',
+        isNew: false,
+        tips: card.description || ''
+      }));
+      // Fallback 確保有內容
+      if (insightCards.length === 0) {
+        insightCards = [
+          { emoji: '💡', label: '內容策略', title: '強化品牌與消費者的情感連結', isNew: false, tips: '✅ 鼓勵用戶留言分享經驗\n✅ 加入互動問答' },
+          { emoji: '⏰', label: '發文時間', title: '觀測受眾最活躍時間段進行發布', isNew: false, tips: '✅ 測試週末晚間發布\n✅ 善用排程工具' }
+        ];
+      }
     }
 
+    // 2x2 Grid Layout
+    const cardW = 4.3;
+    const cardH = 1.7;
+    const startX = 0.5;
+    const startY = 1.3;
+    const gapX = 0.4;
+    const gapY = 0.3;
+    const borderColors = [COLOR_PRIMARY, COLOR_SECONDARY, COLOR_ACCENT, "5CBEB2"];
+
     insightCards.forEach((c, idx) => {
-      let cx = 0.5 + (idx * 3.1);
+      let col = idx % 2;
+      let row = Math.floor(idx / 2);
+      let cx = startX + col * (cardW + gapX);
+      let cy = startY + row * (cardH + gapY);
+      let color = borderColors[idx % borderColors.length];
+
       // Card Main
-      slide6.addShape(pres.ShapeType.roundRect, { x: cx, y: 1.5, w: 2.8, h: 3, fill: COLOR_BG_WHITE, line: { color: COLOR_PRIMARY, width: 2 }, rectRadius: 0.1 });
-      slide6.addText(`0${idx + 1}`, { x: cx + 1.8, y: 1.6, w: 0.8, h: 0.6, fontSize: 32, bold: true, fontFace: "Impact", color: "F1F5F9", align: 'right' });
-      slide6.addText(c.label || c.title, { x: cx + 0.2, y: 1.9, w: 2.4, h: 0.4, fontSize: 18, bold: true, color: COLOR_PRIMARY });
-      slide6.addText(c.description, { x: cx + 0.2, y: 2.4, w: 2.4, h: 1.8, fontSize: 13, color: COLOR_TEXT, valign: 'top', lineSpacing: 20 });
+      slide6.addShape(pres.ShapeType.roundRect, { x: cx, y: cy, w: cardW, h: cardH, fill: COLOR_BG_WHITE, line: { color: color, width: 2 }, rectRadius: 0.1 });
+      
+      // Emoji + Label
+      slide6.addText(`${c.emoji} ${c.label}`, { x: cx + 0.1, y: cy + 0.1, w: 2.0, h: 0.3, fontSize: 12, bold: true, color: "666666" });
+      
+      // '本月亮點' Badge
+      if (c.isNew) {
+        slide6.addShape(pres.ShapeType.roundRect, { x: cx + cardW - 1.0, y: cy + 0.1, w: 0.9, h: 0.25, fill: COLOR_SECONDARY, rectRadius: 0.1 });
+        slide6.addText("本月亮點", { x: cx + cardW - 1.0, y: cy + 0.1, w: 0.9, h: 0.25, fontSize: 10, bold: true, color: COLOR_BG_WHITE, align: 'center' });
+      }
+
+      // Title
+      slide6.addText(c.title, { x: cx + 0.1, y: cy + 0.4, w: cardW - 0.2, h: 0.35, fontSize: 16, bold: true, color: COLOR_PRIMARY });
+      
+      // Action Tips
+      slide6.addText(c.tips, { x: cx + 0.1, y: cy + 0.8, w: cardW - 0.2, h: 0.8, fontSize: 11, color: COLOR_TEXT, valign: 'top', lineSpacing: 16 });
     });
 
     // ----------------------------------------------------------------------
