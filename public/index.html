@@ -1,0 +1,685 @@
+<!DOCTYPE html>
+<html class="light" lang="zh-TW">
+<head>
+    <meta charset="utf-8"/>
+    <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+    <title>社群成果報告產生器 — 多品牌整合平台</title>
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Work+Sans:wght@400;600;700;900&amp;family=Inter:wght@400;500;600&amp;family=Noto+Sans+TC:wght@400;500;700&amp;display=swap" rel="stylesheet"/>
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+    <script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "surface-tint": "#FF5000",
+                        "surface": "#ffffff",
+                        "surface-dim": "#f0d7af",
+                        "background": "#ffffff",
+                        "primary-container": "#FF5000",
+                        "surface-container-lowest": "#ffffff",
+                        "on-secondary": "#ffffff",
+                        "surface-container-low": "#ffffff",
+                        "on-primary-container": "#fffbff",
+                        "surface-bright": "#ffffff",
+                        "inverse-on-surface": "#ffeed8",
+                        "outline-variant": "#e5beb2",
+                        "on-tertiary-fixed-variant": "#574500",
+                        "surface-container": "#ffebcf",
+                        "on-tertiary-fixed": "#231a00",
+                        "surface-container-high": "#ffe5bc",
+                        "on-background": "#261902",
+                        "secondary-fixed": "#e0e0ff",
+                        "on-surface": "#261902",
+                        "tertiary": "#735c00",
+                        "tertiary-fixed": "#ffe086",
+                        "on-primary": "#ffffff",
+                        "tertiary-container": "#cfa600",
+                        "surface-variant": "#f9dfb7",
+                        "on-secondary-container": "#fffbff",
+                        "error": "#ba1a1a",
+                        "on-surface-variant": "#5c4037",
+                        "inverse-surface": "#3d2e13",
+                        "secondary-fixed-dim": "#bec2ff",
+                        "on-secondary-fixed": "#00036b",
+                        "surface-container-highest": "#f9dfb7",
+                        "error-container": "#ffdad6",
+                        "secondary-container": "#5d67e5",
+                        "secondary": "#434cca",
+                        "outline": "#917065",
+                        "on-primary-fixed": "#390b00",
+                        "inverse-primary": "#ffb59e",
+                        "on-error": "#ffffff",
+                        "on-tertiary": "#ffffff",
+                        "on-error-container": "#93000a",
+                        "primary-fixed-dim": "#ffb59e",
+                        "tertiary-fixed-dim": "#efc100",
+                        "on-tertiary-container": "#4e3d00",
+                        "primary": "#FF5000",
+                        "primary-fixed": "#ffdbd0",
+                        "on-secondary-fixed-variant": "#2b34b5",
+                        "on-primary-fixed-variant": "#842500"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "fontFamily": {
+                        "headline": ["Work Sans", "Noto Sans TC"],
+                        "body": ["Inter", "Noto Sans TC"],
+                        "label": ["Inter", "Noto Sans TC"]
+                    }
+                },
+            },
+        }
+    </script>
+    <style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+            vertical-align: middle;
+        }
+        body {
+            font-family: 'Inter', 'Noto Sans TC', sans-serif;
+            background-color: #ffffff;
+        }
+        .glass-nav {
+            background: rgba(255, 255, 255, 0.8);
+            backdrop-filter: blur(20px);
+        }
+        /* Spinner */
+        .loader {
+            display: none;
+            width: 22px; height: 22px;
+            border: 3px solid rgba(255,255,255,0.3);
+            border-radius: 50%;
+            border-top-color: #fff;
+            animation: spin 0.8s linear infinite;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        
+        #errorMsg, #statusContainer {
+            display: none;
+        }
+    </style>
+</head>
+<body class="bg-surface text-on-surface min-h-screen flex flex-col">
+    <!-- TopNavBar -->
+    <nav class="w-full top-0 sticky z-50 glass-nav border-b border-orange-100/20 shadow-sm shadow-orange-900/5">
+        <div class="flex justify-between items-center px-8 py-4 max-w-screen-2xl mx-auto">
+            <div class="font-headline font-bold text-2xl text-[#FF5000] tracking-tight">Social Report Tool</div>
+            <div class="hidden md:flex items-center space-x-8 font-headline font-semibold" role="tablist" aria-label="主選單">
+                <a id="navDashboard" href="#" role="tab" aria-selected="true" aria-controls="tabDashboard" class="border-b-2 pb-1 text-[#FF5000] border-[#FF5000] cursor-pointer" onclick="switchTab('dashboard'); return false;">Dashboard</a>
+                <a id="navReports" href="#" role="tab" aria-selected="false" aria-controls="tabReports" class="text-slate-600 hover:text-orange-600 transition-colors cursor-pointer" onclick="switchTab('reports'); return false;">Reports Archive</a>
+            </div>
+            <div class="flex items-center">
+                <span class="text-xs text-slate-400 hidden sm:inline" title="本工具無需登入，使用 .env 設定品牌權杖">內部工具</span>
+            </div>
+        </div>
+    </nav>
+    <main class="flex-grow flex items-center justify-center px-4 py-8 md:py-12">
+        <!-- Dashboard Tab -->
+        <div id="tabDashboard" class="max-w-4xl w-full flex flex-col">
+            <!-- Hero Header Section -->
+            <div class="mb-10 text-center md:text-left">
+                <h1 class="text-4xl md:text-5xl font-black font-headline text-on-surface mb-3 tracking-tight">
+                    Social Data Achievement <span class="text-[#FF5000]">Generation</span>
+                </h1>
+                <p class="text-base md:text-lg text-on-surface-variant font-body max-w-2xl leading-relaxed mx-auto md:mx-0">
+                    自動抓取 FB 貼文，一鍵產生精美分析報告與 Excel 統計。支援多品牌無縫切換。
+                </p>
+            </div>
+            
+            <!-- Centralized Selection Card -->
+            <div class="bg-surface-container-lowest rounded-xl p-6 md:p-10 shadow-[0_12px_40px_rgba(38,25,2,0.06)] relative overflow-hidden border border-orange-50">
+                <!-- Abstract Brand Pattern Bleed -->
+                <div class="absolute -top-24 -right-24 w-64 h-64 bg-surface-container rounded-full opacity-30 pointer-events-none"></div>
+                <div class="relative z-10 space-y-10">
+                    <!-- Brand Selection Zone（由 /api/brands 動態載入） -->
+                    <section>
+                        <h2 class="font-headline text-[13px] font-bold tracking-widest uppercase mb-4 text-[#FF5000]">Step 1: Select Brand Identity</h2>
+                        <p id="brandOptionsEmpty" class="hidden text-sm text-red-600 font-medium mb-2">目前沒有可用的品牌：請在伺服器 .env 設定 FPG／ECOCO 的 PAGE_ID 與 ACCESS_TOKEN。</p>
+                        <div id="brandOptions" class="grid grid-cols-1 md:grid-cols-2 gap-4" role="radiogroup" aria-label="選擇品牌"></div>
+                    </section>
+
+                    <!-- Date Selection Section -->
+                    <section>
+                        <h2 class="font-headline text-[13px] font-bold tracking-widest uppercase mb-4 text-[#FF5000]">Step 2: Define Report Scope</h2>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <!-- Start Date -->
+                            <div>
+                                <label class="block text-xs font-bold text-on-surface-variant mb-2 uppercase tracking-wider">Start Date</label>
+                                <input type="date" id="startDate" class="w-full bg-surface-container-low border border-surface-container-high rounded-xl py-3 px-4 focus:ring-2 focus:ring-[#FF5000] focus:border-[#FF5000] transition-all font-body text-sm text-on-surface cursor-pointer shadow-sm">
+                            </div>
+                            <!-- End Date -->
+                            <div>
+                                <label class="block text-xs font-bold text-on-surface-variant mb-2 uppercase tracking-wider">End Date</label>
+                                <input type="date" id="endDate" class="w-full bg-surface-container-low border border-surface-container-high rounded-xl py-3 px-4 focus:ring-2 focus:ring-[#FF5000] focus:border-[#FF5000] transition-all font-body text-sm text-on-surface cursor-pointer shadow-sm">
+                            </div>
+                        </div>
+
+                        <!-- Quick-Select Presets -->
+                        <div class="flex flex-wrap gap-2 mt-4">
+                            <button id="btnLast30" type="button" onclick="setPreset('last30', event)" class="px-4 py-2 rounded-lg bg-surface-container text-xs font-bold text-on-surface-variant hover:bg-[#FF5000] hover:text-white transition-all active:scale-95">LAST 30 DAYS</button>
+                            <button id="btnLastQuarter" type="button" onclick="setPreset('lastQuarter', event)" class="px-4 py-2 rounded-lg bg-surface-container text-xs font-bold text-on-surface-variant hover:bg-[#FF5000] hover:text-white transition-all active:scale-95">LAST QUARTER</button>
+                            <button id="btnYtd" type="button" onclick="setPreset('ytd', event)" class="px-4 py-2 rounded-lg bg-surface-container text-xs font-bold text-on-surface-variant hover:bg-[#FF5000] hover:text-white transition-all active:scale-95">YEAR TO DATE</button>
+                        </div>
+                        <p class="text-xs text-on-surface-variant mt-3 leading-relaxed">若日期區間較長，Facebook 資料抓取可能需要數分鐘，請耐心等候且勿重複點擊產生。</p>
+                        <p id="longRangeWarning" class="hidden text-xs text-amber-800 font-medium mt-2">目前區間超過 90 天，建議分段產報以降低逾時或 API 限制風險。</p>
+                    </section>
+
+                    <!-- Section Selection -->
+                    <section>
+                        <h2 class="font-headline text-[13px] font-bold tracking-widest uppercase mb-4 text-[#FF5000]">Step 3: Select Report Content</h2>
+                        <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+                            <label class="flex items-center space-x-2 cursor-pointer bg-white p-2 rounded border border-orange-100 hover:bg-orange-50/50 transition">
+                                <input type="checkbox" id="chkKpi" value="kpi" checked class="form-checkbox h-4 w-4 text-[#FF5000] rounded border-gray-300 focus:ring-[#FF5000]">
+                                <span class="text-sm text-on-surface">KPI 概覽</span>
+                            </label>
+                            <label class="flex items-center space-x-2 cursor-pointer bg-white p-2 rounded border border-orange-100 hover:bg-orange-50/50 transition">
+                                <input type="checkbox" id="chkTopPost" value="topPost" checked class="form-checkbox h-4 w-4 text-[#FF5000] rounded border-gray-300 focus:ring-[#FF5000]">
+                                <span class="text-sm text-on-surface">最高互動貼文</span>
+                            </label>
+                            <label class="flex items-center space-x-2 cursor-pointer bg-white p-2 rounded border border-orange-100 hover:bg-orange-50/50 transition">
+                                <input type="checkbox" id="chkContent" value="content" checked class="form-checkbox h-4 w-4 text-[#FF5000] rounded border-gray-300 focus:ring-[#FF5000]">
+                                <span class="text-sm text-on-surface">內容表現分析</span>
+                            </label>
+                            <label class="flex items-center space-x-2 cursor-pointer bg-white p-2 rounded border border-orange-100 hover:bg-orange-50/50 transition">
+                                <input type="checkbox" id="chkPosts" value="posts" checked class="form-checkbox h-4 w-4 text-[#FF5000] rounded border-gray-300 focus:ring-[#FF5000]">
+                                <span class="text-sm text-on-surface">全貼文表現明細表</span>
+                            </label>
+                            <label class="flex items-center space-x-2 cursor-pointer bg-white p-2 rounded border border-orange-100 hover:bg-orange-50/50 transition">
+                                <input type="checkbox" id="chkInsights" value="insights" checked class="form-checkbox h-4 w-4 text-[#FF5000] rounded border-gray-300 focus:ring-[#FF5000]">
+                                <span class="text-sm text-on-surface">受歡迎內容特徵</span>
+                            </label>
+                            <label class="flex items-center space-x-2 cursor-pointer bg-white p-2 rounded border border-orange-100 hover:bg-orange-50/50 transition">
+                                <input type="checkbox" id="chkComments" value="comments" checked class="form-checkbox h-4 w-4 text-[#FF5000] rounded border-gray-300 focus:ring-[#FF5000]">
+                                <span class="text-sm text-on-surface">留言洞察與建議</span>
+                            </label>
+                            <label class="flex items-center space-x-2 cursor-pointer bg-white p-2 rounded border border-orange-100 hover:bg-orange-50/50 transition">
+                                <input type="checkbox" id="chkPlan" value="plan" checked class="form-checkbox h-4 w-4 text-[#FF5000] rounded border-gray-300 focus:ring-[#FF5000]">
+                                <span class="text-sm text-on-surface">活動策略規劃</span>
+                            </label>
+                        </div>
+                    </section>
+
+                    <!-- Feedback Containers -->
+                    <!-- Error Message -->
+                    <div id="errorMsg" class="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-lg text-sm font-medium mt-4">
+                        <span class="material-symbols-outlined align-middle mr-1 text-base">error</span>
+                        <span id="errorMsgText"></span>
+                    </div>
+
+                    <!-- Success Result Container -->
+                    <div id="statusContainer" class="bg-green-50 border border-green-200 rounded-xl p-6 mt-4">
+                        <h3 class="text-green-700 font-headline font-bold text-lg mb-2 flex items-center">
+                            <span class="material-symbols-outlined mr-2">check_circle</span> 報告已產生
+                        </h3>
+                        <p id="successMeta" class="text-sm text-green-900/90 mb-4 font-medium"></p>
+                        <div class="grid grid-cols-3 gap-4 mb-4">
+                            <div class="bg-white p-3 rounded-lg border border-green-100 text-center">
+                                <div id="kpiPosts" class="text-xl font-bold text-green-800">-</div>
+                                <div class="text-[11px] font-bold text-green-600 tracking-wider uppercase mt-1">Posts Analyzed</div>
+                            </div>
+                            <div class="bg-white p-3 rounded-lg border border-green-100 text-center">
+                                <div id="kpiReach" class="text-xl font-bold text-green-800">-</div>
+                                <div class="text-[11px] font-bold text-green-600 tracking-wider uppercase mt-1">Total Reach</div>
+                            </div>
+                            <div class="bg-white p-3 rounded-lg border border-green-100 text-center">
+                                <div id="kpiEngage" class="text-xl font-bold text-green-800">-</div>
+                                <div class="text-[11px] font-bold text-green-600 tracking-wider uppercase mt-1">Avg Engagement</div>
+                            </div>
+                        </div>
+                        <div class="flex flex-col sm:flex-row gap-2 mb-3">
+                            <button type="button" id="copyHtmlUrl" class="flex-1 flex justify-center items-center gap-2 bg-white border border-green-200 text-green-900 py-2 rounded-lg font-bold text-xs hover:bg-green-100/50 transition-all">
+                                <span class="material-symbols-outlined text-[16px]">content_copy</span> 複製 HTML 連結
+                            </button>
+                            <button type="button" id="copyExcelUrl" class="flex-1 flex justify-center items-center gap-2 bg-white border border-green-200 text-green-900 py-2 rounded-lg font-bold text-xs hover:bg-green-100/50 transition-all">
+                                <span class="material-symbols-outlined text-[16px]">content_copy</span> 複製 Excel 連結
+                            </button>
+                        </div>
+                        <div class="flex flex-col sm:flex-row gap-3">
+                            <a href="#" id="linkHtml" target="_blank" class="flex-1 flex justify-center items-center gap-2 bg-[#060E9F] text-white py-3 rounded-lg font-bold text-sm hover:bg-[#04097a] hover:scale-[1.02] transition-all">
+                                <span class="material-symbols-outlined text-[18px]">visibility</span> 開啟 HTML
+                            </a>
+                            <a href="#" id="linkExcel" download class="flex-1 flex justify-center items-center gap-2 bg-white border border-slate-200 text-slate-700 py-3 rounded-lg font-bold text-sm hover:bg-slate-50 hover:border-slate-300 transition-all">
+                                <span class="material-symbols-outlined text-[18px]">download</span> 下載 Excel
+                            </a>
+                            <a href="#" id="linkPptx" class="flex-1 flex justify-center items-center gap-2 bg-[#FFEB3B] border border-[#FBC02D] text-yellow-900 py-3 rounded-lg font-bold text-sm hover:bg-[#FFF59D] transition-all cursor-pointer">
+                                <span class="material-symbols-outlined text-[18px]">slideshow</span> 下載 PPTX
+                            </a>
+                        </div>
+                        <p class="text-xs text-green-800/80 mt-3 leading-relaxed">PPTX 使用剛產生的分析資料；伺服器重啟後仍可下載（會讀取已儲存的分析快取）。若從未成功產報過該區間，請先按上方「產生報告」。</p>
+                    </div>
+
+                    <!-- Primary Action -->
+                    <div class="pt-6 flex flex-col md:flex-row items-center justify-between gap-6 border-t border-surface-container-high">
+                        <div class="flex flex-col text-on-surface-variant gap-1">
+                            <div class="flex items-center gap-3">
+                                <span class="material-symbols-outlined text-[#FF5000]" data-icon="auto_awesome">auto_awesome</span>
+                                <p class="text-[13px] font-body">透過 Meta Graph API 抓取貼文與洞察。</p>
+                            </div>
+                            <p id="jobElapsed" class="text-[12px] text-slate-500 pl-9 min-h-[1.25em]"></p>
+                        </div>
+                        <button id="generateBtn" class="w-full md:w-auto px-10 py-4 bg-[#060E9F] hover:bg-[#04097a] text-white font-headline font-bold text-lg rounded-xl shadow-lg hover:scale-[1.03] active:scale-95 transition-all duration-300 flex items-center justify-center gap-3 disabled:opacity-50 disabled:pointer-events-none">
+                            <span id="btnText">產生報告</span>
+                            <span id="btnIcon" class="material-symbols-outlined" data-icon="rocket_launch">rocket_launch</span>
+                            <div class="loader" id="loader"></div>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Supporting Features Bento -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mt-10">
+                <div class="p-6 bg-surface-container-lowest rounded-xl border border-orange-50 shadow-sm">
+                    <span class="material-symbols-outlined text-[#FF5000] mb-3 text-3xl" data-icon="insights">insights</span>
+                    <h3 class="font-headline font-bold text-[17px] mb-2 text-on-surface">Deep Insights</h3>
+                    <p class="text-[13px] text-on-surface-variant leading-relaxed">Granular sentiment analysis and engagement tracking automatically calculated.</p>
+                </div>
+                <div class="p-6 bg-surface-container-lowest rounded-xl border border-orange-50 shadow-sm">
+                    <span class="material-symbols-outlined text-[#FF5000] mb-3 text-3xl" data-icon="history">history</span>
+                    <h3 class="font-headline font-bold text-[17px] mb-2 text-on-surface">Audit History</h3>
+                    <p class="text-[13px] text-on-surface-variant leading-relaxed">Save HTML files directly and build your knowledge base easily over time.</p>
+                </div>
+                <div class="p-6 bg-surface-container-lowest rounded-xl border border-orange-50 shadow-sm">
+                    <span class="material-symbols-outlined text-[#FF5000] mb-3 text-3xl" data-icon="share">share</span>
+                    <h3 class="font-headline font-bold text-[17px] mb-2 text-on-surface">One-Click Export</h3>
+                    <p class="text-[13px] text-on-surface-variant leading-relaxed">Generate board-ready HTML and presentation Excel spreadsheets in a click.</p>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- Reports Archive Tab -->
+        <div id="tabReports" class="max-w-4xl w-full flex flex-col" style="display: none;">
+            <div class="mb-10 text-center md:text-left">
+                <h1 class="text-4xl md:text-5xl font-black font-headline text-on-surface mb-3 tracking-tight">
+                    Historical <span class="text-[#FF5000]">Archive</span>
+                </h1>
+                <p class="text-base md:text-lg text-on-surface-variant font-body max-w-2xl leading-relaxed mx-auto md:mx-0">
+                    存取所有過去產生的社群分析報告與試算表數據。
+                </p>
+            </div>
+            
+            <div class="bg-surface-container-lowest rounded-xl p-6 md:p-10 shadow-[0_12px_40px_rgba(38,25,2,0.06)] border border-orange-50 relative overflow-hidden min-h-[400px]">
+                <div class="absolute -top-24 -right-24 w-64 h-64 bg-surface-container rounded-full opacity-30 pointer-events-none"></div>
+                <div class="relative z-10">
+                    <div id="reportsLoader" class="loader !border-orange-500 !border-t-[#FF5000] mx-auto my-10" style="display: block;"></div>
+                    <div id="reportsList" class="flex flex-col gap-3">
+                        <!-- Dynamic reports go here -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+    
+    <!-- Footer -->
+    <footer class="w-full py-6 mt-auto border-t border-orange-100/10 font-['Inter'] text-[12px] text-slate-400 bg-white">
+        <div class="flex justify-center items-center px-8 max-w-screen-2xl mx-auto">
+            <p>© 2026 Social Media Analytics Tool</p>
+        </div>
+    </footer>
+
+    <script>
+        const BRAND_SUBTITLES = { fpg: '洗劑補充站粉專分析', ecoco: '智慧回收機綠色生態' };
+        let currentBrand = 'fpg';
+        let currentKpi = null;
+        let currentStartDate = null;
+        let currentEndDate = null;
+        let currentBrandDisplayName = '';
+        let lastReportUrl = '';
+        let lastExcelUrl = '';
+        let generateInFlight = false;
+        let jobElapsedTimer = null;
+
+        function fullUrl(path) {
+            if (!path) return '';
+            if (path.startsWith('http')) return path;
+            return window.location.origin + path;
+        }
+
+        function switchTab(tab) {
+            const activeClass = 'border-b-2 pb-1 text-[#FF5000] border-[#FF5000] cursor-pointer';
+            const inactiveClass = 'text-slate-600 hover:text-orange-600 transition-colors cursor-pointer';
+            const dash = document.getElementById('navDashboard');
+            const rep = document.getElementById('navReports');
+            if (tab === 'dashboard') {
+                dash.className = activeClass;
+                rep.className = inactiveClass;
+                dash.setAttribute('aria-selected', 'true');
+                rep.setAttribute('aria-selected', 'false');
+                document.getElementById('tabDashboard').style.display = 'flex';
+                document.getElementById('tabReports').style.display = 'none';
+            } else if (tab === 'reports') {
+                dash.className = inactiveClass;
+                rep.className = activeClass;
+                dash.setAttribute('aria-selected', 'false');
+                rep.setAttribute('aria-selected', 'true');
+                document.getElementById('tabDashboard').style.display = 'none';
+                document.getElementById('tabReports').style.display = 'flex';
+                loadReports();
+            }
+        }
+
+        async function loadBrands() {
+            const container = document.getElementById('brandOptions');
+            const empty = document.getElementById('brandOptionsEmpty');
+            const genBtn = document.getElementById('generateBtn');
+            try {
+                const res = await fetch('/api/brands');
+                const data = await res.json();
+                const brands = data.brands || [];
+                container.innerHTML = '';
+                if (brands.length === 0) {
+                    empty.classList.remove('hidden');
+                    genBtn.disabled = true;
+                    return;
+                }
+                empty.classList.add('hidden');
+                genBtn.disabled = false;
+                brands.forEach((b, idx) => {
+                    const id = 'radio_' + b.key;
+                    const sub = BRAND_SUBTITLES[b.key] || '社群粉專分析';
+                    const checked = idx === 0 ? 'checked' : '';
+                    container.innerHTML += `
+                        <label class="group cursor-pointer relative" onclick="selectBrand('${b.key}')">
+                            <input id="${id}" ${checked} class="peer sr-only" name="brand" type="radio" value="${b.key}"/>
+                            <div class="p-5 rounded-lg bg-surface-container-low border peer-checked:border-primary peer-checked:bg-primary/5 transition-all group-hover:scale-[1.02] duration-200 border-orange-50">
+                                <div class="flex items-center justify-between">
+                                    <div>
+                                        <p class="font-headline font-bold text-lg text-on-surface">${escapeHtml(b.name)}</p>
+                                        <p class="text-xs text-on-surface-variant mt-1">${escapeHtml(sub)}</p>
+                                    </div>
+                                    <div class="w-6 h-6 rounded-full border-2 border-outline-variant peer-checked:border-primary peer-checked:bg-primary flex items-center justify-center transition-colors">
+                                        <div class="w-2.5 h-2.5 bg-white rounded-full opacity-0 peer-checked:opacity-100 transition-opacity"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </label>`;
+                });
+                currentBrand = brands[0].key;
+                currentBrandDisplayName = brands[0].name;
+            } catch (e) {
+                empty.textContent = '無法載入品牌列表，請確認伺服器運作正常。';
+                empty.classList.remove('hidden');
+                genBtn.disabled = true;
+            }
+        }
+
+        function escapeHtml(s) {
+            const d = document.createElement('div');
+            d.textContent = s;
+            return d.innerHTML;
+        }
+
+        async function loadReports() {
+            const list = document.getElementById('reportsList');
+            const loader = document.getElementById('reportsLoader');
+            list.innerHTML = '';
+            loader.style.display = 'block';
+            try {
+                const res = await fetch('/api/reports');
+                const data = await res.json();
+                loader.style.display = 'none';
+                if (data.reports && data.reports.length > 0) {
+                    data.reports.forEach((report) => {
+                        const dateStr = new Date(report.time).toLocaleString('zh-TW');
+                        let icon = 'description';
+                        let color = 'text-blue-600';
+                        if (report.type === 'excel') {
+                            icon = 'table_view';
+                            color = 'text-green-600';
+                        } else if (report.type === 'pptx') {
+                            icon = 'slideshow';
+                            color = 'text-amber-600';
+                        }
+                        const target = report.type === 'html' ? 'target="_blank" rel="noopener"' : 'download';
+                        let sub = '最後修改：' + dateStr;
+                        if (report.brandLabel && report.startDate && report.endDate) {
+                            sub = report.brandLabel + ' · ' + report.startDate + ' ~ ' + report.endDate + ' · ' + sub;
+                        }
+                        list.innerHTML += `
+                            <a href="${report.url}" ${target} class="group p-4 bg-white border border-slate-200 rounded-lg shadow-sm hover:shadow-md transition-all flex items-center justify-between hover:border-orange-300">
+                                <div class="flex items-center gap-4 overflow-hidden">
+                                    <div class="h-10 w-10 bg-slate-50 flex items-center justify-center rounded-full flex-shrink-0 group-hover:bg-orange-50 transition-colors">
+                                        <span class="material-symbols-outlined ${color}">${icon}</span>
+                                    </div>
+                                    <div class="truncate">
+                                        <div class="font-bold text-sm text-slate-800 truncate">${escapeHtml(report.name)}</div>
+                                        <div class="text-xs text-slate-500 mt-0.5 truncate">${escapeHtml(sub)}</div>
+                                    </div>
+                                </div>
+                                <span class="material-symbols-outlined text-slate-300 group-hover:text-[#FF5000] ml-4 transition-colors shrink-0">download</span>
+                            </a>`;
+                    });
+                } else {
+                    list.innerHTML = '<div class="text-center py-10 text-slate-500 font-bold">目前尚無歷史報告，請先至 Dashboard 產生。</div>';
+                }
+            } catch (e) {
+                loader.style.display = 'none';
+                list.innerHTML = '<div class="text-center py-10 text-red-500 font-bold">無法載入歷史報告，請稍後再試。</div>';
+            }
+        }
+
+        function selectBrand(brand) {
+            currentBrand = brand;
+            document.querySelectorAll('input[name="brand"]').forEach((el) => {
+                el.checked = el.value === brand;
+            });
+            document.getElementById('statusContainer').style.display = 'none';
+            document.getElementById('errorMsg').style.display = 'none';
+            const labels = document.querySelectorAll('#brandOptions label');
+            /* sync display name from selected radio */
+            const sel = document.querySelector('input[name="brand"]:checked');
+            if (sel) {
+                const nameEl = sel.closest('label').querySelector('.font-headline.font-bold');
+                if (nameEl) currentBrandDisplayName = nameEl.textContent;
+            }
+        }
+
+        function refreshLongRangeWarning() {
+            const s = document.getElementById('startDate').value;
+            const e = document.getElementById('endDate').value;
+            const warn = document.getElementById('longRangeWarning');
+            if (!s || !e) {
+                warn.classList.add('hidden');
+                return;
+            }
+            const days = (new Date(e) - new Date(s)) / (86400000);
+            warn.classList.toggle('hidden', days <= 90);
+        }
+
+        function setPreset(type, evt) {
+            const dEnd = new Date();
+            const dStart = new Date();
+            if (type === 'last30') dStart.setDate(dStart.getDate() - 30);
+            else if (type === 'lastQuarter') dStart.setMonth(dStart.getMonth() - 3);
+            else if (type === 'ytd') {
+                dStart.setMonth(0);
+                dStart.setDate(1);
+            }
+            document.getElementById('endDate').value = dEnd.toISOString().split('T')[0];
+            document.getElementById('startDate').value = dStart.toISOString().split('T')[0];
+            refreshLongRangeWarning();
+            document.querySelectorAll('button[onclick^="setPreset"]').forEach((btn) => {
+                btn.className = 'px-4 py-2 rounded-lg bg-surface-container text-xs font-bold text-on-surface-variant hover:bg-[#FF5000] hover:text-white transition-all active:scale-95';
+            });
+            if (evt && evt.currentTarget) {
+                evt.currentTarget.className = 'px-4 py-2 rounded-lg bg-[#FF5000] text-white text-xs font-bold shadow-md active:scale-95 transition-all';
+            }
+        }
+
+        document.getElementById('startDate').addEventListener('change', refreshLongRangeWarning);
+        document.getElementById('endDate').addEventListener('change', refreshLongRangeWarning);
+
+        setPreset('last30');
+        if (document.getElementById('btnLast30')) {
+            document.getElementById('btnLast30').className = 'px-4 py-2 rounded-lg bg-[#FF5000] text-white text-xs font-bold shadow-md active:scale-95 transition-all';
+        }
+
+        document.getElementById('generateBtn').addEventListener('click', async () => {
+            if (generateInFlight) return;
+            const startDate = document.getElementById('startDate').value;
+            const endDate = document.getElementById('endDate').value;
+            if (!startDate || !endDate) return alert('請選擇完整日期區間。');
+            if (new Date(startDate) > new Date(endDate)) return alert('起始日不可晚於結束日。');
+
+            generateInFlight = true;
+            const btn = document.getElementById('generateBtn');
+            const btnText = document.getElementById('btnText');
+            const loader = document.getElementById('loader');
+            const icon = document.getElementById('btnIcon');
+            const errorMsg = document.getElementById('errorMsg');
+            const errorMsgText = document.getElementById('errorMsgText');
+            const statusContainer = document.getElementById('statusContainer');
+            const jobElapsed = document.getElementById('jobElapsed');
+            const t0 = Date.now();
+            jobElapsed.textContent = '已進行 0 秒…';
+            if (jobElapsedTimer) clearInterval(jobElapsedTimer);
+            jobElapsedTimer = setInterval(() => {
+                const sec = Math.floor((Date.now() - t0) / 1000);
+                jobElapsed.textContent = '已進行 ' + sec + ' 秒，仍與 Facebook 同步資料中…';
+            }, 1000);
+
+            btn.disabled = true;
+            btnText.textContent = '產生中…';
+            icon.style.display = 'none';
+            loader.style.display = 'block';
+            errorMsg.style.display = 'none';
+            statusContainer.style.display = 'none';
+
+            const selectedSections = {
+                kpi: document.getElementById('chkKpi').checked,
+                topPost: document.getElementById('chkTopPost').checked,
+                content: document.getElementById('chkContent').checked,
+                posts: document.getElementById('chkPosts').checked,
+                insights: document.getElementById('chkInsights').checked,
+                comments: document.getElementById('chkComments').checked,
+                plan: document.getElementById('chkPlan').checked
+            };
+
+            try {
+                const response = await fetch('/api/generate', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ startDate, endDate, brand: currentBrand, selectedSections }),
+                });
+                let data;
+                try {
+                    data = await response.json();
+                } catch (parseErr) {
+                    throw new Error('伺服器回應異常，請稍後再試。');
+                }
+                if (data.success) {
+                    currentKpi = data.kpi;
+                    currentStartDate = startDate;
+                    currentEndDate = endDate;
+                    if (data.brandName) currentBrandDisplayName = data.brandName;
+
+                    document.getElementById('kpiPosts').textContent = data.kpi.totalPosts;
+                    document.getElementById('kpiReach').textContent = data.kpi.totalReach.toLocaleString();
+                    document.getElementById('kpiEngage').textContent = data.kpi.avgEngagement;
+
+                    lastReportUrl = data.reportUrl;
+                    lastExcelUrl = data.excelUrl || '';
+                    document.getElementById('linkHtml').href = data.reportUrl;
+                    const excelEl = document.getElementById('linkExcel');
+                    const copyEx = document.getElementById('copyExcelUrl');
+                    if (data.excelUrl) {
+                        excelEl.href = data.excelUrl;
+                        excelEl.style.display = 'flex';
+                        copyEx.style.display = 'flex';
+                    } else {
+                        excelEl.style.display = 'none';
+                        copyEx.style.display = 'none';
+                    }
+
+                    document.getElementById('successMeta').textContent =
+                        currentBrandDisplayName + ' · ' + startDate + ' ~ ' + endDate;
+                    statusContainer.style.display = 'block';
+                } else {
+                    errorMsgText.textContent = data.message || '產生失敗';
+                    errorMsg.style.display = 'block';
+                }
+            } catch (err) {
+                errorMsgText.textContent = err.message || '無法連線伺服器，請確認服務已啟動。';
+                errorMsg.style.display = 'block';
+            } finally {
+                clearInterval(jobElapsedTimer);
+                jobElapsedTimer = null;
+                jobElapsed.textContent = '';
+                generateInFlight = false;
+                btn.disabled = false;
+                btnText.textContent = '產生報告';
+                icon.style.display = 'inline-block';
+                loader.style.display = 'none';
+            }
+        });
+
+        document.getElementById('copyHtmlUrl').addEventListener('click', async () => {
+            if (!lastReportUrl) return;
+            try {
+                await navigator.clipboard.writeText(fullUrl(lastReportUrl));
+                alert('已複製 HTML 完整連結');
+            } catch (e) {
+                alert('複製失敗，請手動從「開啟 HTML」複製網址列。');
+            }
+        });
+
+        document.getElementById('copyExcelUrl').addEventListener('click', async () => {
+            if (!lastExcelUrl) return;
+            try {
+                await navigator.clipboard.writeText(fullUrl(lastExcelUrl));
+                alert('已複製 Excel 完整連結');
+            } catch (e) {
+                alert('複製失敗。');
+            }
+        });
+
+        document.getElementById('linkPptx').addEventListener('click', async (e) => {
+            e.preventDefault();
+            if (!currentKpi || !currentStartDate || !currentEndDate) {
+                alert('請先成功產生報告，再下載 PPTX。');
+                return;
+            }
+            const btn = e.currentTarget;
+            const originalText = btn.innerHTML;
+            btn.innerHTML = '<div class="loader !border-yellow-700 !border-t-yellow-900" style="display:block; width:16px; height:16px;"></div>';
+            btn.style.pointerEvents = 'none';
+            try {
+                const response = await fetch('/api/generate-pptx', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        startDate: currentStartDate,
+                        endDate: currentEndDate,
+                        brand: currentBrand,
+                        kpi: currentKpi,
+                    }),
+                });
+                const data = await response.json();
+                if (data.success) {
+                    const downloadLink = document.createElement('a');
+                    downloadLink.href = data.pptxUrl;
+                    downloadLink.download = '';
+                    document.body.appendChild(downloadLink);
+                    downloadLink.click();
+                    downloadLink.remove();
+                } else {
+                    alert('PPTX 產生失敗：' + (data.message || ''));
+                }
+            } catch (err) {
+                alert('伺服器無回應，產生失敗。');
+            } finally {
+                btn.innerHTML = originalText;
+                btn.style.pointerEvents = 'auto';
+            }
+        });
+
+        loadBrands();
+    </script>
+</body>
+</html>
