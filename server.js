@@ -269,6 +269,103 @@ app.post('/api/generate-pptx', async (req, res) => {
   }
 });
 
+// ===== 趨勢總覽 API：近 N 個月真實數據 =====
+app.get('/api/trends', async (req, res) => {
+  try {
+    const monthCount = parseInt(req.query.months) || 6;
+    const now = new Date();
+    const months = [];
+    for (let i = monthCount - 1; i >= 0; i--) {
+      const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+      months.push({
+        label: `${d.getFullYear()}/${String(d.getMonth() + 1).padStart(2, '0')}`,
+        start: `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-01`,
+        end: new Date(d.getFullYear(), d.getMonth() + 1, 0).toISOString().split('T')[0],
+      });
+    }
+
+    const result = { months: months.map(m => m.label), brands: {} };
+
+    // 逐品牌逐月抓取
+    for (const [bKey, bCfg] of Object.entries(BRANDS)) {
+      if (!bCfg.pageId || !bCfg.accessToken) {
+        // 品牌未設定，回傳空資料
+        result.brands[bKey] = {
+          name: bCfg.name,
+          reach: months.map(() => 0),
+          engagement: months.map(() => 0),
+        };
+        continue;
+      }
+
+      const fbApi = new FacebookAPI({
+        pageId: bCfg.pageId,
+        accessToken: bCfg.accessToken,
+        apiVersion: process.env.FB_API_VERSION || 'v21.0',
+      });
+
+      const reachArr = [];
+      const engArr = [];
+
+      for (const m of months) {
+        // 先檢查磁碟快取
+        const cached = loadAnalysisFromDisk(bKey, m.start, m.end);
+        if (cached && cached.kpi) {
+          reachArr.push(cached.kpi.totalReach || 0);
+          const rate = cached.kpi.totalReach > 0
+            ? ((cached.kpi.totalEngagement / cached.kpi.totalReach) * 100)
+            : 0;
+          engArr.push(parseFloat(rate.toFixed(1)));
+          console.log(`[Trends] ${bCfg.name} ${m.label} → 使用快取 (reach: ${cached.kpi.totalReach})`);
+          continue;
+        }
+
+        // 快取不存在，呼叫 Meta Graph API 即時抓取
+        try {
+          console.log(`[Trends] ${bCfg.name} ${m.label} → 從 Meta API 抓取...`);
+          const rawData = await fbApi.fetchAllData(m.start, m.end);
+          if (rawData.pageInfo) rawData.pageInfo.name = bCfg.name;
+
+          const analyzer = new DataAnalyzer(rawData, bKey);
+          const analysis = analyzer.analyze();
+
+          // 寫入快取供下次使用
+          try {
+            fs.writeFileSync(
+              analysisCacheFilePath(bKey, m.start, m.end),
+              JSON.stringify(analysis),
+              'utf-8'
+            );
+          } catch (e) {
+            console.error('[Trends] 寫入快取失敗:', e.message);
+          }
+
+          reachArr.push(analysis.kpi.totalReach || 0);
+          const rate = analysis.kpi.totalReach > 0
+            ? ((analysis.kpi.totalEngagement / analysis.kpi.totalReach) * 100)
+            : 0;
+          engArr.push(parseFloat(rate.toFixed(1)));
+        } catch (apiErr) {
+          console.error(`[Trends] ${bCfg.name} ${m.label} API 錯誤:`, apiErr.message);
+          reachArr.push(0);
+          engArr.push(0);
+        }
+      }
+
+      result.brands[bKey] = {
+        name: bCfg.name,
+        reach: reachArr,
+        engagement: engArr,
+      };
+    }
+
+    res.json({ success: true, ...result });
+  } catch (err) {
+    console.error('[Trends API] 錯誤:', err.message);
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
 app.listen(PORT, () => {
   console.log('='.repeat(50));
   console.log(`🌐 Web Server 啟動成功！`);

@@ -422,7 +422,7 @@
             <div class="bg-surface-container-lowest rounded-xl border border-orange-50 shadow-sm overflow-hidden mb-4">
                 <div class="px-6 py-4 border-b border-orange-50">
                     <h2 class="font-headline font-bold text-[15px] text-on-surface">數據明細</h2>
-                    <p class="text-[11px] text-on-surface-variant mt-0.5">各月份完整數據紀錄（示範資料）</p>
+                    <p class="text-[11px] text-on-surface-variant mt-0.5">各月份完整數據紀錄（來源：Meta Graph API）</p>
                 </div>
                 <div class="overflow-x-auto">
                     <table class="w-full text-sm">
@@ -809,30 +809,29 @@
         loadBrands();
 
         // ── Trends Dashboard ───────────────────────────────────
-        const TREND_MONTHS  = ['2025/11','2025/12','2026/01','2026/02','2026/03','2026/04'];
-        const TREND_MOCK = {
-            fpg:   { reach:[48200,55600,41800,63400,57200,49800], engagement:[3.2,4.1,2.8,5.3,4.7,3.9] },
-            ecoco: { reach:[31500,28900,42300,37800,45600,52100], engagement:[2.1,1.9,3.4,2.8,3.7,4.2] }
-        };
+        let TREND_MONTHS = [];
+        let TREND_DATA = { fpg: { reach:[], engagement:[] }, ecoco: { reach:[], engagement:[] } };
         let trendFilter = 'all';
         let reachChartInst = null;
         let engChartInst   = null;
         let trendsInitialized = false;
+        let trendsLoading = false;
 
         function tFmt(n) { return n.toLocaleString('zh-TW'); }
-        function tAvg(a) { return (a.reduce((s,v)=>s+v,0)/a.length).toFixed(1); }
+        function tAvg(a) { if (!a.length) return '0.0'; return (a.reduce((s,v)=>s+v,0)/a.length).toFixed(1); }
         function tSum(a) { return a.reduce((s,v)=>s+v,0); }
         function tMoM(a) {
+            if (a.length < 2) return '— ';
             const last = a[a.length-1], prev = a[a.length-2];
-            const pct  = ((last-prev)/prev*100).toFixed(1);
+            if (prev === 0) return last > 0 ? '↑ ∞' : '— ';
+            const pct = ((last-prev)/prev*100).toFixed(1);
             return (pct >= 0 ? '↑ ' : '↓ ') + Math.abs(pct) + '%';
         }
 
         function filterPlatform(p) {
             trendFilter = p;
             ['filterAll','filterFpg','filterEcoco'].forEach(id => {
-                const el = document.getElementById(id);
-                el.classList.remove('active');
+                document.getElementById(id).classList.remove('active');
             });
             document.getElementById(p==='all'?'filterAll':p==='fpg'?'filterFpg':'filterEcoco').classList.add('active');
             const showFpg   = p !== 'ecoco';
@@ -858,10 +857,10 @@
             const tbody = document.getElementById('trendsTableBody');
             tbody.innerHTML = '';
             TREND_MONTHS.forEach((m,i) => {
-                const fpgR = TREND_MOCK.fpg.reach[i];
-                const fpgE = TREND_MOCK.fpg.engagement[i];
-                const ecR  = TREND_MOCK.ecoco.reach[i];
-                const ecE  = TREND_MOCK.ecoco.engagement[i];
+                const fpgR = TREND_DATA.fpg.reach[i] || 0;
+                const fpgE = TREND_DATA.fpg.engagement[i] || 0;
+                const ecR  = TREND_DATA.ecoco.reach[i] || 0;
+                const ecE  = TREND_DATA.ecoco.engagement[i] || 0;
                 const dimF = !showFpg  ? 'opacity:0.25;' : '';
                 const dimE = !showEcoco ? 'opacity:0.25;' : '';
                 tbody.innerHTML += `<tr class="border-t border-orange-50 hover:bg-orange-50/30 transition-colors">
@@ -874,20 +873,36 @@
             });
         }
 
-        function initTrendsDashboard() {
-            if (trendsInitialized) return;
-            trendsInitialized = true;
+        function populateKPIs() {
+            document.getElementById('kpiFpgReach').textContent    = tFmt(tSum(TREND_DATA.fpg.reach));
+            document.getElementById('kpiEcocoReach').textContent  = tFmt(tSum(TREND_DATA.ecoco.reach));
+            document.getElementById('kpiFpgEng').textContent      = tAvg(TREND_DATA.fpg.engagement) + '%';
+            document.getElementById('kpiEcocoEng').textContent    = tAvg(TREND_DATA.ecoco.engagement) + '%';
 
-            // KPI values
-            document.getElementById('kpiFpgReach').textContent    = tFmt(tSum(TREND_MOCK.fpg.reach));
-            document.getElementById('kpiEcocoReach').textContent  = tFmt(tSum(TREND_MOCK.ecoco.reach));
-            document.getElementById('kpiFpgEng').textContent      = tAvg(TREND_MOCK.fpg.engagement) + '%';
-            document.getElementById('kpiEcocoEng').textContent    = tAvg(TREND_MOCK.ecoco.engagement) + '%';
-            document.getElementById('kpiFpgReachDelta').textContent   = tMoM(TREND_MOCK.fpg.reach)   + ' vs 上月';
-            document.getElementById('kpiEcocoReachDelta').textContent = tMoM(TREND_MOCK.ecoco.reach) + ' vs 上月';
-            document.getElementById('kpiFpgEngDelta').textContent     = tMoM(TREND_MOCK.fpg.engagement)   + ' vs 上月';
-            document.getElementById('kpiEcocoEngDelta').textContent   = tMoM(TREND_MOCK.ecoco.engagement) + ' vs 上月';
+            const fpgReachDelta = tMoM(TREND_DATA.fpg.reach);
+            const ecocoReachDelta = tMoM(TREND_DATA.ecoco.reach);
+            const fpgEngDelta = tMoM(TREND_DATA.fpg.engagement);
+            const ecocoEngDelta = tMoM(TREND_DATA.ecoco.engagement);
 
+            document.getElementById('kpiFpgReachDelta').textContent   = fpgReachDelta + ' vs 上月';
+            document.getElementById('kpiEcocoReachDelta').textContent = ecocoReachDelta + ' vs 上月';
+            document.getElementById('kpiFpgEngDelta').textContent     = fpgEngDelta + ' vs 上月';
+            document.getElementById('kpiEcocoEngDelta').textContent   = ecocoEngDelta + ' vs 上月';
+
+            // 設定 delta 文字顏色
+            function setDeltaColor(elId, val) {
+                const el = document.getElementById(elId);
+                if (val.startsWith('↑')) el.className = 'text-xs font-bold text-emerald-600';
+                else if (val.startsWith('↓')) el.className = 'text-xs font-bold text-red-500';
+                else el.className = 'text-xs font-bold text-slate-400';
+            }
+            setDeltaColor('kpiFpgReachDelta', fpgReachDelta);
+            setDeltaColor('kpiEcocoReachDelta', ecocoReachDelta);
+            setDeltaColor('kpiFpgEngDelta', fpgEngDelta);
+            setDeltaColor('kpiEcocoEngDelta', ecocoEngDelta);
+        }
+
+        function buildCharts() {
             const FPG_COLOR  = '#FF5000';
             const ECO_COLOR  = '#059669';
             const chartDefaults = {
@@ -896,67 +911,135 @@
                 plugins: { legend: { display: false } }
             };
 
-            // Reach trend line chart
-            reachChartInst = new Chart(
-                document.getElementById('reachChart').getContext('2d'),
-                {
-                    type: 'line',
-                    data: {
-                        labels: TREND_MONTHS,
-                        datasets: [
-                            { label:'台塑便利家', data: TREND_MOCK.fpg.reach,
-                              borderColor: FPG_COLOR, backgroundColor:'rgba(255,80,0,0.07)',
-                              borderWidth:2.5, fill:true, tension:0.4,
-                              pointBackgroundColor: FPG_COLOR, pointRadius:4, pointHoverRadius:6 },
-                            { label:'ECOCO社群',  data: TREND_MOCK.ecoco.reach,
-                              borderColor: ECO_COLOR, backgroundColor:'rgba(5,150,105,0.07)',
-                              borderWidth:2.5, fill:true, tension:0.4,
-                              pointBackgroundColor: ECO_COLOR, pointRadius:4, pointHoverRadius:6 }
-                        ]
-                    },
-                    options: {
-                        ...chartDefaults,
-                        plugins: { ...chartDefaults.plugins,
-                            tooltip: { callbacks: { label: c => ` ${c.dataset.label}: ${tFmt(c.parsed.y)}` } }
+            // 如果圖表已存在，更新資料即可
+            if (reachChartInst) {
+                reachChartInst.data.labels = TREND_MONTHS;
+                reachChartInst.data.datasets[0].data = TREND_DATA.fpg.reach;
+                reachChartInst.data.datasets[1].data = TREND_DATA.ecoco.reach;
+                reachChartInst.update();
+            } else {
+                reachChartInst = new Chart(
+                    document.getElementById('reachChart').getContext('2d'),
+                    {
+                        type: 'line',
+                        data: {
+                            labels: TREND_MONTHS,
+                            datasets: [
+                                { label:'台塑便利家', data: TREND_DATA.fpg.reach,
+                                  borderColor: FPG_COLOR, backgroundColor:'rgba(255,80,0,0.07)',
+                                  borderWidth:2.5, fill:true, tension:0.4,
+                                  pointBackgroundColor: FPG_COLOR, pointRadius:4, pointHoverRadius:6 },
+                                { label:'ECOCO社群',  data: TREND_DATA.ecoco.reach,
+                                  borderColor: ECO_COLOR, backgroundColor:'rgba(5,150,105,0.07)',
+                                  borderWidth:2.5, fill:true, tension:0.4,
+                                  pointBackgroundColor: ECO_COLOR, pointRadius:4, pointHoverRadius:6 }
+                            ]
                         },
-                        scales: {
-                            x: { grid:{display:false}, ticks:{font:{size:11}} },
-                            y: { grid:{color:'rgba(0,0,0,0.04)'}, ticks:{font:{size:11},
-                                 callback: v => v>=1000 ? (v/1000).toFixed(0)+'K' : v } }
+                        options: {
+                            ...chartDefaults,
+                            plugins: { ...chartDefaults.plugins,
+                                tooltip: { callbacks: { label: c => ` ${c.dataset.label}: ${tFmt(c.parsed.y)}` } }
+                            },
+                            scales: {
+                                x: { grid:{display:false}, ticks:{font:{size:11}} },
+                                y: { grid:{color:'rgba(0,0,0,0.04)'}, ticks:{font:{size:11},
+                                     callback: v => v>=1000 ? (v/1000).toFixed(0)+'K' : v } }
+                            }
                         }
                     }
-                }
-            );
+                );
+            }
 
-            // Engagement grouped bar chart
-            engChartInst = new Chart(
-                document.getElementById('engagementChart').getContext('2d'),
-                {
-                    type: 'bar',
-                    data: {
-                        labels: TREND_MONTHS,
-                        datasets: [
-                            { label:'台塑便利家', data: TREND_MOCK.fpg.engagement,
-                              backgroundColor:'rgba(255,80,0,0.78)', borderRadius:4, borderSkipped:false },
-                            { label:'ECOCO社群',  data: TREND_MOCK.ecoco.engagement,
-                              backgroundColor:'rgba(5,150,105,0.78)', borderRadius:4, borderSkipped:false }
-                        ]
-                    },
-                    options: {
-                        ...chartDefaults,
-                        plugins: { ...chartDefaults.plugins,
-                            tooltip: { callbacks: { label: c => ` ${c.dataset.label}: ${c.parsed.y}%` } }
+            if (engChartInst) {
+                engChartInst.data.labels = TREND_MONTHS;
+                engChartInst.data.datasets[0].data = TREND_DATA.fpg.engagement;
+                engChartInst.data.datasets[1].data = TREND_DATA.ecoco.engagement;
+                engChartInst.update();
+            } else {
+                engChartInst = new Chart(
+                    document.getElementById('engagementChart').getContext('2d'),
+                    {
+                        type: 'bar',
+                        data: {
+                            labels: TREND_MONTHS,
+                            datasets: [
+                                { label:'台塑便利家', data: TREND_DATA.fpg.engagement,
+                                  backgroundColor:'rgba(255,80,0,0.78)', borderRadius:4, borderSkipped:false },
+                                { label:'ECOCO社群',  data: TREND_DATA.ecoco.engagement,
+                                  backgroundColor:'rgba(5,150,105,0.78)', borderRadius:4, borderSkipped:false }
+                            ]
                         },
-                        scales: {
-                            x: { grid:{display:false}, ticks:{font:{size:11}} },
-                            y: { grid:{color:'rgba(0,0,0,0.04)'}, ticks:{font:{size:11},
-                                 callback: v => v+'%' } }
+                        options: {
+                            ...chartDefaults,
+                            plugins: { ...chartDefaults.plugins,
+                                tooltip: { callbacks: { label: c => ` ${c.dataset.label}: ${c.parsed.y}%` } }
+                            },
+                            scales: {
+                                x: { grid:{display:false}, ticks:{font:{size:11}} },
+                                y: { grid:{color:'rgba(0,0,0,0.04)'}, ticks:{font:{size:11},
+                                     callback: v => v+'%' } }
+                            }
                         }
                     }
-                }
-            );
+                );
+            }
+        }
 
-            renderTrendsTable(true, true);
+        async function initTrendsDashboard() {
+            if (trendsLoading) return;
+            trendsLoading = true;
+
+            // 顯示載入中狀態
+            const kpiIds = ['kpiFpgReach','kpiEcocoReach','kpiFpgEng','kpiEcocoEng'];
+            const deltaIds = ['kpiFpgReachDelta','kpiEcocoReachDelta','kpiFpgEngDelta','kpiEcocoEngDelta'];
+            if (!trendsInitialized) {
+                kpiIds.forEach(id => { document.getElementById(id).textContent = '載入中…'; });
+                deltaIds.forEach(id => { document.getElementById(id).textContent = ''; });
+            }
+
+            try {
+                const res = await fetch('/api/trends');
+                const data = await res.json();
+
+                if (!data.success) {
+                    kpiIds.forEach(id => { document.getElementById(id).textContent = '錯誤'; });
+                    deltaIds.forEach(id => { document.getElementById(id).textContent = data.message || '無法載入'; });
+                    trendsLoading = false;
+                    return;
+                }
+
+                // 更新全域資料
+                TREND_MONTHS = data.months || [];
+                if (data.brands.fpg) {
+                    TREND_DATA.fpg.reach = data.brands.fpg.reach || [];
+                    TREND_DATA.fpg.engagement = data.brands.fpg.engagement || [];
+                }
+                if (data.brands.ecoco) {
+                    TREND_DATA.ecoco.reach = data.brands.ecoco.reach || [];
+                    TREND_DATA.ecoco.engagement = data.brands.ecoco.engagement || [];
+                }
+
+                // 更新日期區間標示
+                if (TREND_MONTHS.length > 0) {
+                    const rangeText = `資料區間：${TREND_MONTHS[0]} — ${TREND_MONTHS[TREND_MONTHS.length-1]}`;
+                    const rangeEl = document.querySelector('#tabTrends .text-xs.text-slate-400');
+                    if (rangeEl) rangeEl.textContent = rangeText;
+                    // 更新表格說明
+                    const tableDesc = document.querySelector('#tabTrends .text-\\[11px\\].text-on-surface-variant');
+                }
+
+                populateKPIs();
+                buildCharts();
+                renderTrendsTable(trendFilter !== 'ecoco', trendFilter !== 'fpg');
+                trendsInitialized = true;
+
+            } catch (err) {
+                console.error('[Trends] 載入失敗:', err);
+                kpiIds.forEach(id => { document.getElementById(id).textContent = '連線失敗'; });
+                deltaIds.forEach(id => { document.getElementById(id).textContent = '請檢查伺服器'; });
+            } finally {
+                trendsLoading = false;
+            }
         }
     </script>
 </body>
