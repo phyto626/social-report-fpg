@@ -301,23 +301,23 @@ class PptxBuilder {
     }
 
     // 2x2 Grid Layout
-    const cardW = 4.3;
-    const cardH = 1.7;
-    const startX = 0.5;
-    const startY = 1.3;
-    const gapX = 0.4;
-    const gapY = 0.3;
+    const insCardW = 4.3;
+    const insCardH = 1.7;
+    const insStartX = 0.5;
+    const insStartY = 1.3;
+    const insGapX = 0.4;
+    const insGapY = 0.3;
     const borderColors = [COLOR_PRIMARY, COLOR_SECONDARY, COLOR_ACCENT, "5CBEB2"];
 
     insightCards.forEach((c, idx) => {
       let col = idx % 2;
       let row = Math.floor(idx / 2);
-      let cx = startX + col * (cardW + gapX);
-      let cy = startY + row * (cardH + gapY);
+      let cx = insStartX + col * (insCardW + insGapX);
+      let cy = insStartY + row * (insCardH + insGapY);
       let color = borderColors[idx % borderColors.length];
 
       // Card Main
-      slide6.addShape(pres.ShapeType.roundRect, { x: cx, y: cy, w: cardW, h: cardH, fill: COLOR_BG_WHITE, line: { color: color, width: 2 }, rectRadius: 0.1 });
+      slide6.addShape(pres.ShapeType.roundRect, { x: cx, y: cy, w: insCardW, h: insCardH, fill: COLOR_BG_WHITE, line: { color: color, width: 2 }, rectRadius: 0.1 });
       
       // Emoji + Label
       slide6.addText(`${c.emoji} ${c.label}`, { x: cx + 0.1, y: cy + 0.1, w: 2.0, h: 0.3, fontSize: 12, bold: true, color: "666666" });
