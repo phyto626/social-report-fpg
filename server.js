@@ -273,18 +273,24 @@ app.post('/api/generate-pptx', async (req, res) => {
 app.get('/api/trends', async (req, res) => {
   try {
     const monthCount = parseInt(req.query.months) || 6;
+    const totalMonths = monthCount * 2;
     const now = new Date();
-    const months = [];
-    for (let i = monthCount - 1; i >= 0; i--) {
+    
+    // 建立月份陣列 (由舊到新)
+    const allMonths = [];
+    for (let i = totalMonths - 1; i >= 0; i--) {
       const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
-      months.push({
+      allMonths.push({
         label: `${d.getFullYear()}/${String(d.getMonth() + 1).padStart(2, '0')}`,
         start: `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-01`,
         end: new Date(d.getFullYear(), d.getMonth() + 1, 0).toISOString().split('T')[0],
       });
     }
 
-    const result = { months: months.map(m => m.label), brands: {} };
+    const currentMonths = allMonths.slice(monthCount);
+    
+    // result.months 僅回傳「本期」的標籤，供圖表顯示
+    const result = { months: currentMonths.map(m => m.label), brands: {} };
 
     // 逐品牌逐月抓取
     for (const [bKey, bCfg] of Object.entries(BRANDS)) {
@@ -292,8 +298,12 @@ app.get('/api/trends', async (req, res) => {
         // 品牌未設定，回傳空資料
         result.brands[bKey] = {
           name: bCfg.name,
-          reach: months.map(() => 0),
-          engagement: months.map(() => 0),
+          reach: currentMonths.map(() => 0),
+          engagement: currentMonths.map(() => 0),
+          previous: {
+            reach: currentMonths.map(() => 0),
+            engagement: currentMonths.map(() => 0)
+          }
         };
         continue;
       }
@@ -307,7 +317,7 @@ app.get('/api/trends', async (req, res) => {
       const reachArr = [];
       const engArr = [];
 
-      for (const m of months) {
+      for (const m of allMonths) {
         // 先檢查磁碟快取
         const cached = loadAnalysisFromDisk(bKey, m.start, m.end);
         if (cached && cached.kpi) {
@@ -352,10 +362,20 @@ app.get('/api/trends', async (req, res) => {
         }
       }
 
+      // 將抓取到的 totalMonths 切分為 prev (上一期) 與 curr (本期)
+      const prevReach = reachArr.slice(0, monthCount);
+      const prevEng = engArr.slice(0, monthCount);
+      const currReach = reachArr.slice(monthCount);
+      const currEng = engArr.slice(monthCount);
+
       result.brands[bKey] = {
         name: bCfg.name,
-        reach: reachArr,
-        engagement: engArr,
+        reach: currReach,
+        engagement: currEng,
+        previous: {
+          reach: prevReach,
+          engagement: prevEng
+        }
       };
     }
 

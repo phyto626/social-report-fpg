@@ -345,10 +345,15 @@
                     <h1 class="text-4xl md:text-5xl font-black font-headline text-on-surface mb-2 tracking-tight">
                         Trend <span class="text-[#FF5000]">Overview</span>
                     </h1>
-                    <p class="text-base text-on-surface-variant font-body">近六個月社群數據表現 · 台塑便利家 × ECOCO社群</p>
-                    <p class="text-xs text-slate-400 mt-1">資料區間：2025/11 — 2026/04</p>
+                    <p class="text-base text-on-surface-variant font-body">社群數據表現 · 台塑便利家 × ECOCO社群</p>
+                    <p class="text-xs text-slate-400 mt-1" id="trendDateRange">資料區間：載入中...</p>
                 </div>
                 <div class="flex items-center gap-2 flex-wrap mt-2 md:mt-1">
+                    <select id="trendTimeSelect" onchange="initTrendsDashboard(parseInt(this.value))" class="bg-surface-container-low border border-surface-container-high rounded-lg py-1.5 px-3 text-xs font-bold text-[#FF5000] focus:ring-[#FF5000] focus:border-[#FF5000] cursor-pointer mr-3 shadow-sm">
+                        <option value="3">最近 3 個月</option>
+                        <option value="6" selected>最近 6 個月</option>
+                        <option value="12">最近 12 個月</option>
+                    </select>
                     <span class="text-xs font-bold text-on-surface-variant uppercase tracking-widest mr-1">篩選品牌</span>
                     <button id="filterAll"   onclick="filterPlatform('all')"   class="trend-filter-btn active px-4 py-2 rounded-full text-xs font-bold">全部</button>
                     <button id="filterFpg"   onclick="filterPlatform('fpg')"   class="trend-filter-btn px-4 py-2 rounded-full text-xs font-bold">台塑便利家</button>
@@ -360,30 +365,30 @@
             <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
                 <div id="kpiCardFpgReach" class="trend-kpi-card rounded-xl p-5 border relative overflow-hidden" style="background:linear-gradient(135deg,#fff7f5,#ffe8df);border-color:#ffd0c0;">
                     <div class="text-[10px] font-bold uppercase tracking-widest text-[#FF5000] mb-1">台塑便利家</div>
-                    <div class="text-[11px] text-slate-500 mb-2">六個月累計觸及</div>
+                    <div class="text-[11px] text-slate-500 mb-2">本期累計觸及</div>
                     <div class="text-3xl font-black text-slate-800 font-headline" id="kpiFpgReach">—</div>
-                    <div class="flex items-center gap-1 mt-2"><span class="text-xs font-bold text-emerald-600" id="kpiFpgReachDelta">—</span></div>
+                    <div class="flex items-center gap-1 mt-2"><span class="px-2 py-0.5 rounded-full text-[11px] font-bold" id="kpiFpgReachDelta">—</span></div>
                     <div class="absolute -bottom-3 -right-3 w-16 h-16 rounded-full opacity-10" style="background:#FF5000;"></div>
                 </div>
                 <div id="kpiCardEcocoReach" class="trend-kpi-card rounded-xl p-5 border relative overflow-hidden" style="background:linear-gradient(135deg,#f0fdf4,#dcfce7);border-color:#a7f3d0;">
                     <div class="text-[10px] font-bold uppercase tracking-widest text-emerald-600 mb-1">ECOCO社群</div>
-                    <div class="text-[11px] text-slate-500 mb-2">六個月累計觸及</div>
+                    <div class="text-[11px] text-slate-500 mb-2">本期累計觸及</div>
                     <div class="text-3xl font-black text-slate-800 font-headline" id="kpiEcocoReach">—</div>
-                    <div class="flex items-center gap-1 mt-2"><span class="text-xs font-bold text-emerald-600" id="kpiEcocoReachDelta">—</span></div>
+                    <div class="flex items-center gap-1 mt-2"><span class="px-2 py-0.5 rounded-full text-[11px] font-bold" id="kpiEcocoReachDelta">—</span></div>
                     <div class="absolute -bottom-3 -right-3 w-16 h-16 rounded-full opacity-10" style="background:#059669;"></div>
                 </div>
                 <div id="kpiCardFpgEng" class="trend-kpi-card rounded-xl p-5 border relative overflow-hidden" style="background:linear-gradient(135deg,#fff7f5,#ffe8df);border-color:#ffd0c0;">
                     <div class="text-[10px] font-bold uppercase tracking-widest text-[#FF5000] mb-1">台塑便利家</div>
-                    <div class="text-[11px] text-slate-500 mb-2">六個月平均互動率</div>
+                    <div class="text-[11px] text-slate-500 mb-2">本期平均互動率</div>
                     <div class="text-3xl font-black text-slate-800 font-headline" id="kpiFpgEng">—</div>
-                    <div class="flex items-center gap-1 mt-2"><span class="text-xs font-bold text-slate-400" id="kpiFpgEngDelta">—</span></div>
+                    <div class="flex items-center gap-1 mt-2"><span class="px-2 py-0.5 rounded-full text-[11px] font-bold" id="kpiFpgEngDelta">—</span></div>
                     <div class="absolute -bottom-3 -right-3 w-16 h-16 rounded-full opacity-10" style="background:#FF5000;"></div>
                 </div>
                 <div id="kpiCardEcocoEng" class="trend-kpi-card rounded-xl p-5 border relative overflow-hidden" style="background:linear-gradient(135deg,#f0fdf4,#dcfce7);border-color:#a7f3d0;">
                     <div class="text-[10px] font-bold uppercase tracking-widest text-emerald-600 mb-1">ECOCO社群</div>
-                    <div class="text-[11px] text-slate-500 mb-2">六個月平均互動率</div>
+                    <div class="text-[11px] text-slate-500 mb-2">本期平均互動率</div>
                     <div class="text-3xl font-black text-slate-800 font-headline" id="kpiEcocoEng">—</div>
-                    <div class="flex items-center gap-1 mt-2"><span class="text-xs font-bold text-slate-400" id="kpiEcocoEngDelta">—</span></div>
+                    <div class="flex items-center gap-1 mt-2"><span class="px-2 py-0.5 rounded-full text-[11px] font-bold" id="kpiEcocoEngDelta">—</span></div>
                     <div class="absolute -bottom-3 -right-3 w-16 h-16 rounded-full opacity-10" style="background:#059669;"></div>
                 </div>
             </div>
@@ -394,7 +399,7 @@
                     <div class="flex items-start justify-between mb-4">
                         <div>
                             <h2 class="font-headline font-bold text-[15px] text-on-surface">觸及數趨勢</h2>
-                            <p class="text-[11px] text-on-surface-variant mt-0.5">近六個月每月觸及人數</p>
+                            <p class="text-[11px] text-on-surface-variant mt-0.5">每月觸及人數</p>
                         </div>
                         <div class="flex gap-3 text-[10px] font-bold text-slate-500">
                             <span class="flex items-center gap-1"><span class="inline-block w-3 h-1.5 rounded" style="background:#FF5000;"></span>台塑便利家</span>
@@ -810,22 +815,24 @@
 
         // ── Trends Dashboard ───────────────────────────────────
         let TREND_MONTHS = [];
-        let TREND_DATA = { fpg: { reach:[], engagement:[] }, ecoco: { reach:[], engagement:[] } };
+        let TREND_DATA = { 
+            fpg: { reach:[], engagement:[], prevReach:[], prevEng:[] }, 
+            ecoco: { reach:[], engagement:[], prevReach:[], prevEng:[] } 
+        };
         let trendFilter = 'all';
         let reachChartInst = null;
         let engChartInst   = null;
         let trendsInitialized = false;
         let trendsLoading = false;
+        let currentMonthsCount = 6;
 
         function tFmt(n) { return n.toLocaleString('zh-TW'); }
         function tAvg(a) { if (!a.length) return '0.0'; return (a.reduce((s,v)=>s+v,0)/a.length).toFixed(1); }
         function tSum(a) { return a.reduce((s,v)=>s+v,0); }
-        function tMoM(a) {
-            if (a.length < 2) return '— ';
-            const last = a[a.length-1], prev = a[a.length-2];
-            if (prev === 0) return last > 0 ? '↑ ∞' : '— ';
-            const pct = ((last-prev)/prev*100).toFixed(1);
-            return (pct >= 0 ? '↑ ' : '↓ ') + Math.abs(pct) + '%';
+        function calcDelta(currVal, prevVal) {
+            if (prevVal === 0) return currVal > 0 ? '↑ ∞' : '— ';
+            const pct = ((currVal - prevVal) / prevVal * 100).toFixed(1);
+            return (pct >= 0 ? '↑ ' : '↓ ') + Math.abs(pct) + '% vs 上一期';
         }
 
         function filterPlatform(p) {
@@ -874,27 +881,33 @@
         }
 
         function populateKPIs() {
-            document.getElementById('kpiFpgReach').textContent    = tFmt(tSum(TREND_DATA.fpg.reach));
-            document.getElementById('kpiEcocoReach').textContent  = tFmt(tSum(TREND_DATA.ecoco.reach));
-            document.getElementById('kpiFpgEng').textContent      = tAvg(TREND_DATA.fpg.engagement) + '%';
-            document.getElementById('kpiEcocoEng').textContent    = tAvg(TREND_DATA.ecoco.engagement) + '%';
+            const fpgReach = tSum(TREND_DATA.fpg.reach);
+            const ecocoReach = tSum(TREND_DATA.ecoco.reach);
+            const fpgEng = parseFloat(tAvg(TREND_DATA.fpg.engagement));
+            const ecocoEng = parseFloat(tAvg(TREND_DATA.ecoco.engagement));
 
-            const fpgReachDelta = tMoM(TREND_DATA.fpg.reach);
-            const ecocoReachDelta = tMoM(TREND_DATA.ecoco.reach);
-            const fpgEngDelta = tMoM(TREND_DATA.fpg.engagement);
-            const ecocoEngDelta = tMoM(TREND_DATA.ecoco.engagement);
+            document.getElementById('kpiFpgReach').textContent    = tFmt(fpgReach);
+            document.getElementById('kpiEcocoReach').textContent  = tFmt(ecocoReach);
+            document.getElementById('kpiFpgEng').textContent      = fpgEng.toFixed(1) + '%';
+            document.getElementById('kpiEcocoEng').textContent    = ecocoEng.toFixed(1) + '%';
 
-            document.getElementById('kpiFpgReachDelta').textContent   = fpgReachDelta + ' vs 上月';
-            document.getElementById('kpiEcocoReachDelta').textContent = ecocoReachDelta + ' vs 上月';
-            document.getElementById('kpiFpgEngDelta').textContent     = fpgEngDelta + ' vs 上月';
-            document.getElementById('kpiEcocoEngDelta').textContent   = ecocoEngDelta + ' vs 上月';
+            const fpgReachDelta = calcDelta(fpgReach, tSum(TREND_DATA.fpg.prevReach));
+            const ecocoReachDelta = calcDelta(ecocoReach, tSum(TREND_DATA.ecoco.prevReach));
+            const fpgEngDelta = calcDelta(fpgEng, parseFloat(tAvg(TREND_DATA.fpg.prevEng)));
+            const ecocoEngDelta = calcDelta(ecocoEng, parseFloat(tAvg(TREND_DATA.ecoco.prevEng)));
 
-            // 設定 delta 文字顏色
+            document.getElementById('kpiFpgReachDelta').textContent   = fpgReachDelta;
+            document.getElementById('kpiEcocoReachDelta').textContent = ecocoReachDelta;
+            document.getElementById('kpiFpgEngDelta').textContent     = fpgEngDelta;
+            document.getElementById('kpiEcocoEngDelta').textContent   = ecocoEngDelta;
+
+            // 設定 delta 膠囊標籤樣式
             function setDeltaColor(elId, val) {
                 const el = document.getElementById(elId);
-                if (val.startsWith('↑')) el.className = 'text-xs font-bold text-emerald-600';
-                else if (val.startsWith('↓')) el.className = 'text-xs font-bold text-red-500';
-                else el.className = 'text-xs font-bold text-slate-400';
+                const base = "px-2 py-0.5 rounded-full text-[11px] font-bold shadow-sm ";
+                if (val.startsWith('↑')) el.className = base + 'bg-emerald-100 text-emerald-700 border border-emerald-200';
+                else if (val.startsWith('↓')) el.className = base + 'bg-red-100 text-red-700 border border-red-200';
+                else el.className = base + 'bg-slate-100 text-slate-500 border border-slate-200';
             }
             setDeltaColor('kpiFpgReachDelta', fpgReachDelta);
             setDeltaColor('kpiEcocoReachDelta', ecocoReachDelta);
@@ -985,25 +998,32 @@
             }
         }
 
-        async function initTrendsDashboard() {
+        async function initTrendsDashboard(months = null) {
+            if (months !== null) currentMonthsCount = months;
             if (trendsLoading) return;
             trendsLoading = true;
 
             // 顯示載入中狀態
             const kpiIds = ['kpiFpgReach','kpiEcocoReach','kpiFpgEng','kpiEcocoEng'];
             const deltaIds = ['kpiFpgReachDelta','kpiEcocoReachDelta','kpiFpgEngDelta','kpiEcocoEngDelta'];
-            if (!trendsInitialized) {
+            if (!trendsInitialized || months !== null) {
                 kpiIds.forEach(id => { document.getElementById(id).textContent = '載入中…'; });
-                deltaIds.forEach(id => { document.getElementById(id).textContent = ''; });
+                deltaIds.forEach(id => { 
+                    document.getElementById(id).textContent = ''; 
+                    document.getElementById(id).className = 'hidden'; 
+                });
             }
 
             try {
-                const res = await fetch('/api/trends');
+                const res = await fetch(`/api/trends?months=${currentMonthsCount}`);
                 const data = await res.json();
 
                 if (!data.success) {
                     kpiIds.forEach(id => { document.getElementById(id).textContent = '錯誤'; });
-                    deltaIds.forEach(id => { document.getElementById(id).textContent = data.message || '無法載入'; });
+                    deltaIds.forEach(id => { 
+                        document.getElementById(id).textContent = data.message || '無法載入';
+                        document.getElementById(id).className = 'text-xs font-bold text-red-500';
+                    });
                     trendsLoading = false;
                     return;
                 }
@@ -1013,19 +1033,21 @@
                 if (data.brands.fpg) {
                     TREND_DATA.fpg.reach = data.brands.fpg.reach || [];
                     TREND_DATA.fpg.engagement = data.brands.fpg.engagement || [];
+                    TREND_DATA.fpg.prevReach = data.brands.fpg.previous?.reach || [];
+                    TREND_DATA.fpg.prevEng = data.brands.fpg.previous?.engagement || [];
                 }
                 if (data.brands.ecoco) {
                     TREND_DATA.ecoco.reach = data.brands.ecoco.reach || [];
                     TREND_DATA.ecoco.engagement = data.brands.ecoco.engagement || [];
+                    TREND_DATA.ecoco.prevReach = data.brands.ecoco.previous?.reach || [];
+                    TREND_DATA.ecoco.prevEng = data.brands.ecoco.previous?.engagement || [];
                 }
 
                 // 更新日期區間標示
                 if (TREND_MONTHS.length > 0) {
                     const rangeText = `資料區間：${TREND_MONTHS[0]} — ${TREND_MONTHS[TREND_MONTHS.length-1]}`;
-                    const rangeEl = document.querySelector('#tabTrends .text-xs.text-slate-400');
+                    const rangeEl = document.getElementById('trendDateRange');
                     if (rangeEl) rangeEl.textContent = rangeText;
-                    // 更新表格說明
-                    const tableDesc = document.querySelector('#tabTrends .text-\\[11px\\].text-on-surface-variant');
                 }
 
                 populateKPIs();
