@@ -386,6 +386,178 @@ app.get('/api/trends', async (req, res) => {
   }
 });
 
+// ===== 比較模式 API =====
+
+/**
+ * 將貼文依週分組，回傳每週的觸及與互動率
+ */
+function groupPostsByWeek(posts, startStr, endStr) {
+  const start = new Date(startStr + 'T00:00:00');
+  const end = new Date(endStr + 'T23:59:59');
+  const totalDays = Math.ceil((end - start) / 86400000) + 1;
+  const weekCount = Math.ceil(totalDays / 7);
+
+  const weeks = [];
+  for (let w = 0; w < weekCount; w++) {
+    weeks.push({ reach: 0, engagement: 0, posts: 0 });
+  }
+
+  posts.forEach(p => {
+    const d = new Date(p.createdTime);
+    const dayOffset = Math.floor((d - start) / 86400000);
+    const weekIdx = Math.min(Math.floor(dayOffset / 7), weekCount - 1);
+    if (weekIdx >= 0 && weekIdx < weekCount) {
+      weeks[weekIdx].reach += p.reach || 0;
+      weeks[weekIdx].engagement += p.totalEngagement || 0;
+      weeks[weekIdx].posts++;
+    }
+  });
+
+  return {
+    labels: weeks.map((_, i) => `第${i + 1}週`),
+    reach: weeks.map(w => w.reach),
+    engagement: weeks.map(w => w.reach > 0 ? parseFloat(((w.engagement / w.reach) * 100).toFixed(1)) : 0),
+  };
+}
+
+function padArray(arr, len) {
+  const result = [...arr];
+  while (result.length < len) result.push(0);
+  return result.slice(0, len);
+}
+
+app.get('/api/trends/compare', async (req, res) => {
+  try {
+    const { startA, endA, startB, endB, brand } = req.query;
+    if (!startA || !endA || !startB || !endB) {
+      return res.status(400).json({ success: false, message: '請提供完整的兩個期間日期 (startA, endA, startB, endB)' });
+    }
+
+    const brandFilter = (brand || 'all').toLowerCase();
+    const brandsToFetch = brandFilter === 'all'
+      ? Object.entries(BRANDS).filter(([, b]) => b.pageId && b.accessToken)
+      : Object.entries(BRANDS).filter(([k, b]) => k === brandFilter && b.pageId && b.accessToken);
+
+    if (brandsToFetch.length === 0) {
+      return res.status(400).json({ success: false, message: '無可用品牌或指定品牌未設定' });
+    }
+
+    async function fetchPeriodData(start, end) {
+      let allPosts = [];
+      let totalReach = 0;
+      let totalEngagement = 0;
+
+      for (const [bKey, bCfg] of brandsToFetch) {
+        // 先檢查快取
+        const cached = loadAnalysisFromDisk(bKey, start, end);
+        if (cached && cached.kpi) {
+          totalReach += cached.kpi.totalReach || 0;
+          totalEngagement += cached.kpi.totalEngagement || 0;
+          if (cached.posts) allPosts = allPosts.concat(cached.posts);
+          console.log(`[Compare] ${bCfg.name} ${start}~${end} → 使用快取`);
+          continue;
+        }
+
+        // 呼叫 Meta Graph API
+        console.log(`[Compare] ${bCfg.name} ${start}~${end} → 從 Meta API 抓取...`);
+        const fbApi = new FacebookAPI({
+          pageId: bCfg.pageId,
+          accessToken: bCfg.accessToken,
+          apiVersion: process.env.FB_API_VERSION || 'v21.0',
+        });
+
+        const rawData = await fbApi.fetchAllData(start, end);
+        if (rawData.pageInfo) rawData.pageInfo.name = bCfg.name;
+
+        const analyzer = new DataAnalyzer(rawData, bKey);
+        const analysis = analyzer.analyze();
+
+        // 寫入快取
+        try {
+          fs.writeFileSync(
+            analysisCacheFilePath(bKey, start, end),
+            JSON.stringify(analysis),
+            'utf-8'
+          );
+        } catch (e) {
+          console.error('[Compare] 寫入快取失敗:', e.message);
+        }
+
+        totalReach += analysis.kpi.totalReach || 0;
+        totalEngagement += analysis.kpi.totalEngagement || 0;
+        if (analysis.posts) allPosts = allPosts.concat(analysis.posts);
+      }
+
+      const totalPosts = allPosts.length;
+      const avgEngagement = totalReach > 0 ? ((totalEngagement / totalReach) * 100) : 0;
+      const avgReachPerPost = totalPosts > 0 ? Math.round(totalReach / totalPosts) : 0;
+      const weekly = groupPostsByWeek(allPosts, start, end);
+
+      // Top 3 posts by reach
+      const topPosts = [...allPosts]
+        .sort((a, b) => (b.reach || 0) - (a.reach || 0))
+        .slice(0, 3)
+        .map(p => ({
+          title: (p.title || (p.message || '').substring(0, 40) || '(無文字)'),
+          reach: p.reach || 0,
+          engagementRate: p.reach > 0 ? parseFloat(((p.totalEngagement || 0) / p.reach * 100).toFixed(1)) : 0,
+          permalink: p.permalink || '',
+        }));
+
+      return { totalReach, totalEngagement, totalPosts, avgEngagement: parseFloat(avgEngagement.toFixed(1)), avgReachPerPost, topPosts, weekly };
+    }
+
+    const [dataA, dataB] = await Promise.all([
+      fetchPeriodData(startA, endA),
+      fetchPeriodData(startB, endB),
+    ]);
+
+    function calcDeltaObj(curr, prev) {
+      if (prev === 0) return { value: curr > 0 ? 999 : 0, direction: curr > 0 ? 'up' : 'flat' };
+      const pct = ((curr - prev) / Math.abs(prev)) * 100;
+      return { value: parseFloat(pct.toFixed(1)), direction: pct > 0.5 ? 'up' : pct < -0.5 ? 'down' : 'flat' };
+    }
+
+    const maxWeeks = Math.max(dataA.weekly.labels.length, dataB.weekly.labels.length);
+    const weekLabels = [];
+    for (let i = 0; i < maxWeeks; i++) weekLabels.push(`第${i + 1}週`);
+
+    res.json({
+      success: true,
+      periodA: {
+        label: `${startA} — ${endA}`,
+        totalReach: dataA.totalReach,
+        avgEngagement: dataA.avgEngagement,
+        totalPosts: dataA.totalPosts,
+        avgReachPerPost: dataA.avgReachPerPost,
+        topPosts: dataA.topPosts,
+      },
+      periodB: {
+        label: `${startB} — ${endB}`,
+        totalReach: dataB.totalReach,
+        avgEngagement: dataB.avgEngagement,
+        totalPosts: dataB.totalPosts,
+        avgReachPerPost: dataB.avgReachPerPost,
+        topPosts: dataB.topPosts,
+      },
+      delta: {
+        reach: calcDeltaObj(dataB.totalReach, dataA.totalReach),
+        engagement: calcDeltaObj(dataB.avgEngagement, dataA.avgEngagement),
+        posts: calcDeltaObj(dataB.totalPosts, dataA.totalPosts),
+        avgReachPerPost: calcDeltaObj(dataB.avgReachPerPost, dataA.avgReachPerPost),
+      },
+      weeklyBreakdown: {
+        labels: weekLabels,
+        periodA: { reach: padArray(dataA.weekly.reach, maxWeeks), engagement: padArray(dataA.weekly.engagement, maxWeeks) },
+        periodB: { reach: padArray(dataB.weekly.reach, maxWeeks), engagement: padArray(dataB.weekly.engagement, maxWeeks) },
+      },
+    });
+  } catch (err) {
+    console.error('[Compare API] 錯誤:', err.message);
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
 app.listen(PORT, () => {
   console.log('='.repeat(50));
   console.log(`🌐 Web Server 啟動成功！`);

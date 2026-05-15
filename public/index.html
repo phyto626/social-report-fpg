@@ -124,6 +124,55 @@
             transform: translateY(-3px);
             box-shadow: 0 8px 24px rgba(38,25,2,0.10);
         }
+        /* Compare mode styles */
+        .mode-switch{display:flex;border:1.5px solid rgba(0,0,0,0.08);border-radius:10px;overflow:hidden;background:#fff;}
+        .mode-btn{font-size:12px;font-weight:700;padding:7px 18px;background:transparent;border:none;cursor:pointer;color:#6b5e52;transition:background .2s,color .2s;}
+        .mode-btn.active{background:#060E9F;color:#fff;}
+        .period-row{display:grid;grid-template-columns:1fr 50px 1fr;gap:0;align-items:stretch;margin-bottom:1rem;}
+        .period-card{background:#fff;border:1px solid rgba(0,0,0,0.08);padding:14px 16px;}
+        .period-card:first-child{border-radius:12px 0 0 12px;border-right:none;border-left:3px solid #FF5000;}
+        .period-card:last-child{border-radius:0 12px 12px 0;border-left:3px solid #185FA5;}
+        .period-label{font-size:10px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;margin-bottom:6px;}
+        .period-label.a{color:#FF5000;} .period-label.b{color:#185FA5;}
+        .date-row{display:flex;align-items:center;gap:6px;}
+        .date-row input[type=date]{flex:1;font-size:13px;font-weight:600;padding:6px 8px;border:1px solid rgba(0,0,0,0.08);border-radius:7px;background:#f9f7f4;font-family:inherit;}
+        .date-sep{font-size:11px;color:#a89b90;}
+        .vs-col{display:flex;align-items:center;justify-content:center;background:#fff;border-top:1px solid rgba(0,0,0,0.08);border-bottom:1px solid rgba(0,0,0,0.08);}
+        .vs-badge{font-size:11px;font-weight:700;color:#a89b90;background:#f9f7f4;border:1px solid rgba(0,0,0,0.08);border-radius:99px;padding:4px 10px;}
+        .cmp-kpi-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:1.25rem;}
+        .cmp-kpi-card{background:#fff;border:1px solid rgba(0,0,0,0.08);border-radius:12px;padding:14px 16px;position:relative;overflow:hidden;}
+        .cmp-kpi-name{font-size:10px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:#a89b90;margin-bottom:8px;}
+        .cmp-kpi-pair{display:flex;flex-direction:column;gap:4px;margin-bottom:8px;}
+        .cmp-kpi-row{display:flex;align-items:baseline;gap:6px;}
+        .cmp-kpi-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
+        .cmp-kpi-num{font-size:20px;font-weight:900;letter-spacing:-0.03em;line-height:1;}
+        .cmp-kpi-sub{font-size:10px;color:#a89b90;margin-left:14px;}
+        .cmp-kpi-divider{border:none;border-top:1px solid rgba(0,0,0,0.08);margin:8px 0;}
+        .delta-row{display:flex;align-items:center;justify-content:space-between;}
+        .delta-pill{font-size:11px;font-weight:700;padding:3px 10px;border-radius:99px;}
+        .d-up{background:#dcfce7;color:#166534;} .d-down{background:#fee2e2;color:#991b1b;} .d-flat{background:#f5f5f5;color:#a89b90;}
+        .delta-note{font-size:10px;color:#a89b90;}
+        .cmp-kpi-bg{position:absolute;bottom:-10px;right:-10px;width:48px;height:48px;border-radius:50%;opacity:.08;}
+        .insight-banner{background:linear-gradient(135deg,#fff8f5,#fff);border:1px solid rgba(255,80,0,.15);border-radius:12px;padding:14px 18px;margin-bottom:1.25rem;display:flex;align-items:flex-start;gap:12px;}
+        .insight-icon{font-size:18px;flex-shrink:0;margin-top:1px;}
+        .insight-title{font-size:12px;font-weight:700;color:#FF5000;margin-bottom:4px;}
+        .insight-text{font-size:12px;color:#6b5e52;line-height:1.6;}
+        .cmp-config-row{display:flex;align-items:center;gap:8px;margin-bottom:1.25rem;flex-wrap:wrap;}
+        .cmp-brand-pill{font-size:12px;font-weight:700;padding:6px 16px;border-radius:99px;border:1px solid rgba(0,0,0,0.08);cursor:pointer;background:#fff;color:#6b5e52;transition:all .15s;}
+        .cmp-brand-pill.active{background:#FF5000;color:#fff;border-color:#FF5000;}
+        .cmp-quick-btn{font-size:11px;font-weight:700;padding:5px 12px;border-radius:7px;border:1px solid rgba(0,0,0,0.08);cursor:pointer;background:#fff;color:#6b5e52;transition:all .15s;}
+        .cmp-quick-btn:hover{background:#f9f7f4;color:#1a1108;}
+        .cmp-run-btn{margin-left:auto;font-size:13px;font-weight:700;padding:9px 24px;background:#060E9F;color:#fff;border:none;border-radius:9px;cursor:pointer;display:flex;align-items:center;gap:8px;transition:opacity .15s;}
+        .cmp-run-btn:hover{opacity:.85;}
+        .cmp-run-btn:disabled{opacity:.5;cursor:not-allowed;}
+        .cmp-section-label{font-size:10px;font-weight:700;color:#a89b90;text-transform:uppercase;letter-spacing:0.1em;margin-bottom:10px;}
+        @media(max-width:720px){
+          .cmp-kpi-grid{grid-template-columns:1fr 1fr;}
+          .period-row{grid-template-columns:1fr;gap:8px;}
+          .period-card:first-child,.period-card:last-child{border-radius:12px;border:1px solid rgba(0,0,0,0.08);}
+          .period-card:first-child{border-left:3px solid #FF5000;} .period-card:last-child{border-left:3px solid #185FA5;}
+          .vs-col{display:none;}
+        }
     </style>
 </head>
 <body class="bg-surface text-on-surface min-h-screen flex flex-col">
@@ -343,24 +392,32 @@
             <div class="mb-8 flex flex-col md:flex-row md:items-start justify-between gap-4">
                 <div>
                     <h1 class="text-4xl md:text-5xl font-black font-headline text-on-surface mb-2 tracking-tight">
-                        Trend <span class="text-[#FF5000]">Overview</span>
+                        Trend <span class="text-[#FF5000]" id="trendTitleSpan">Overview</span>
                     </h1>
-                    <p class="text-base text-on-surface-variant font-body">社群數據表現 · 台塑便利家 × ECOCO社群</p>
+                    <p class="text-base text-on-surface-variant font-body" id="trendSubtitle">社群數據表現 · 台塑便利家 × ECOCO社群</p>
                     <p class="text-xs text-slate-400 mt-1" id="trendDateRange">資料區間：載入中...</p>
                 </div>
-                <div class="flex items-center gap-2 flex-wrap mt-2 md:mt-1">
-                    <select id="trendTimeSelect" onchange="initTrendsDashboard(parseInt(this.value))" class="bg-surface-container-low border border-surface-container-high rounded-lg py-1.5 px-3 text-xs font-bold text-[#FF5000] focus:ring-[#FF5000] focus:border-[#FF5000] cursor-pointer mr-3 shadow-sm">
-                        <option value="3">最近 3 個月</option>
-                        <option value="6" selected>最近 6 個月</option>
-                        <option value="12">最近 12 個月</option>
-                    </select>
-                    <span class="text-xs font-bold text-on-surface-variant uppercase tracking-widest mr-1">篩選品牌</span>
-                    <button id="filterAll"   onclick="filterPlatform('all')"   class="trend-filter-btn active px-4 py-2 rounded-full text-xs font-bold">全部</button>
-                    <button id="filterFpg"   onclick="filterPlatform('fpg')"   class="trend-filter-btn px-4 py-2 rounded-full text-xs font-bold">台塑便利家</button>
-                    <button id="filterEcoco" onclick="filterPlatform('ecoco')" class="trend-filter-btn px-4 py-2 rounded-full text-xs font-bold">ECOCO社群</button>
+                <div class="flex flex-col items-end gap-3 mt-2 md:mt-1">
+                    <div class="mode-switch">
+                        <button class="mode-btn active" id="modeTrend" onclick="switchTrendMode('trend')">趨勢折線</button>
+                        <button class="mode-btn" id="modeCompare" onclick="switchTrendMode('compare')">比較模式</button>
+                    </div>
+                    <div id="trendModeControls" class="flex items-center gap-2 flex-wrap">
+                        <select id="trendTimeSelect" onchange="initTrendsDashboard(parseInt(this.value))" class="bg-surface-container-low border border-surface-container-high rounded-lg py-1.5 px-3 text-xs font-bold text-[#FF5000] focus:ring-[#FF5000] focus:border-[#FF5000] cursor-pointer mr-3 shadow-sm">
+                            <option value="3">最近 3 個月</option>
+                            <option value="6" selected>最近 6 個月</option>
+                            <option value="12">最近 12 個月</option>
+                        </select>
+                        <span class="text-xs font-bold text-on-surface-variant uppercase tracking-widest mr-1">篩選品牌</span>
+                        <button id="filterAll"   onclick="filterPlatform('all')"   class="trend-filter-btn active px-4 py-2 rounded-full text-xs font-bold">全部</button>
+                        <button id="filterFpg"   onclick="filterPlatform('fpg')"   class="trend-filter-btn px-4 py-2 rounded-full text-xs font-bold">台塑便利家</button>
+                        <button id="filterEcoco" onclick="filterPlatform('ecoco')" class="trend-filter-btn px-4 py-2 rounded-full text-xs font-bold">ECOCO社群</button>
+                    </div>
                 </div>
             </div>
 
+            <!-- ===== TREND MODE PANEL (existing) ===== -->
+            <div id="trendModePanel">
             <!-- KPI Cards -->
             <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
                 <div id="kpiCardFpgReach" class="trend-kpi-card rounded-xl p-5 border relative overflow-hidden" style="background:linear-gradient(135deg,#fff7f5,#ffe8df);border-color:#ffd0c0;">
@@ -392,15 +449,11 @@
                     <div class="absolute -bottom-3 -right-3 w-16 h-16 rounded-full opacity-10" style="background:#059669;"></div>
                 </div>
             </div>
-
             <!-- Charts -->
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
                 <div class="bg-surface-container-lowest rounded-xl p-6 border border-orange-50 shadow-sm">
                     <div class="flex items-start justify-between mb-4">
-                        <div>
-                            <h2 class="font-headline font-bold text-[15px] text-on-surface">觸及數趨勢</h2>
-                            <p class="text-[11px] text-on-surface-variant mt-0.5">每月觸及人數</p>
-                        </div>
+                        <div><h2 class="font-headline font-bold text-[15px] text-on-surface">觸及數趨勢</h2><p class="text-[11px] text-on-surface-variant mt-0.5">每月觸及人數</p></div>
                         <div class="flex gap-3 text-[10px] font-bold text-slate-500">
                             <span class="flex items-center gap-1"><span class="inline-block w-3 h-1.5 rounded" style="background:#FF5000;"></span>台塑便利家</span>
                             <span class="flex items-center gap-1"><span class="inline-block w-3 h-1.5 rounded" style="background:#059669;"></span>ECOCO</span>
@@ -410,10 +463,7 @@
                 </div>
                 <div class="bg-surface-container-lowest rounded-xl p-6 border border-orange-50 shadow-sm">
                     <div class="flex items-start justify-between mb-4">
-                        <div>
-                            <h2 class="font-headline font-bold text-[15px] text-on-surface">互動率比較</h2>
-                            <p class="text-[11px] text-on-surface-variant mt-0.5">每月互動率（%）對比分析</p>
-                        </div>
+                        <div><h2 class="font-headline font-bold text-[15px] text-on-surface">互動率比較</h2><p class="text-[11px] text-on-surface-variant mt-0.5">每月互動率（%）對比分析</p></div>
                         <div class="flex gap-3 text-[10px] font-bold text-slate-500">
                             <span class="flex items-center gap-1"><span class="inline-block w-3 h-1.5 rounded" style="background:#FF5000;"></span>台塑便利家</span>
                             <span class="flex items-center gap-1"><span class="inline-block w-3 h-1.5 rounded" style="background:#059669;"></span>ECOCO</span>
@@ -422,7 +472,6 @@
                     <div style="height:240px;position:relative;"><canvas id="engagementChart"></canvas></div>
                 </div>
             </div>
-
             <!-- Data Table -->
             <div class="bg-surface-container-lowest rounded-xl border border-orange-50 shadow-sm overflow-hidden mb-4">
                 <div class="px-6 py-4 border-b border-orange-50">
@@ -431,19 +480,105 @@
                 </div>
                 <div class="overflow-x-auto">
                     <table class="w-full text-sm">
-                        <thead>
-                            <tr class="bg-surface-container-low text-[11px] font-bold uppercase tracking-wider">
-                                <th class="px-5 py-3 text-left text-on-surface-variant">月份</th>
-                                <th class="px-5 py-3 text-right" style="color:#FF5000;">台塑 觸及數</th>
-                                <th class="px-5 py-3 text-right" style="color:#FF5000;">台塑 互動率</th>
-                                <th class="px-5 py-3 text-right" style="color:#059669;">ECOCO 觸及數</th>
-                                <th class="px-5 py-3 text-right" style="color:#059669;">ECOCO 互動率</th>
-                            </tr>
-                        </thead>
+                        <thead><tr class="bg-surface-container-low text-[11px] font-bold uppercase tracking-wider">
+                            <th class="px-5 py-3 text-left text-on-surface-variant">月份</th>
+                            <th class="px-5 py-3 text-right" style="color:#FF5000;">台塑 觸及數</th>
+                            <th class="px-5 py-3 text-right" style="color:#FF5000;">台塑 互動率</th>
+                            <th class="px-5 py-3 text-right" style="color:#059669;">ECOCO 觸及數</th>
+                            <th class="px-5 py-3 text-right" style="color:#059669;">ECOCO 互動率</th>
+                        </tr></thead>
                         <tbody id="trendsTableBody"></tbody>
                     </table>
                 </div>
             </div>
+            </div><!-- /trendModePanel -->
+
+            <!-- ===== COMPARE MODE PANEL (new) ===== -->
+            <div id="compareModePanel" style="display:none;">
+            <!-- Period pickers -->
+            <div class="period-row">
+                <div class="period-card">
+                    <div class="period-label a">▪ 期間 A（基準期）</div>
+                    <div class="date-row">
+                        <input type="date" id="cmpStartA"> <span class="date-sep">—</span> <input type="date" id="cmpEndA">
+                    </div>
+                </div>
+                <div class="vs-col"><span class="vs-badge">vs</span></div>
+                <div class="period-card">
+                    <div class="period-label b">▪ 期間 B（比較期）</div>
+                    <div class="date-row">
+                        <input type="date" id="cmpStartB"> <span class="date-sep">—</span> <input type="date" id="cmpEndB">
+                    </div>
+                </div>
+            </div>
+            <!-- Config row -->
+            <div class="cmp-config-row">
+                <span class="cmp-section-label" style="margin-bottom:0;">品牌</span>
+                <button class="cmp-brand-pill active" onclick="setCmpBrand(this,'all')">全部品牌</button>
+                <button class="cmp-brand-pill" onclick="setCmpBrand(this,'fpg')">台塑便利家</button>
+                <button class="cmp-brand-pill" onclick="setCmpBrand(this,'ecoco')">ECOCO</button>
+                <span class="cmp-section-label" style="margin-bottom:0;margin-left:12px;">快選</span>
+                <button class="cmp-quick-btn" onclick="setCmpQuick('mom')">本月 vs 上月</button>
+                <button class="cmp-quick-btn" onclick="setCmpQuick('qoq')">本季 vs 上季</button>
+                <button class="cmp-quick-btn" onclick="setCmpQuick('yoy')">今年 vs 去年同期</button>
+                <button class="cmp-run-btn" id="cmpRunBtn" onclick="runCompare()"><span>▶</span> 產生比較報告</button>
+            </div>
+            <!-- Compare error/loading -->
+            <div id="cmpError" style="display:none;" class="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-lg text-sm font-medium mb-4"></div>
+            <div id="cmpLoading" style="display:none;" class="text-center py-10 text-slate-500 font-bold mb-4">
+                <div class="loader !border-orange-500 !border-t-[#FF5000] mx-auto mb-3" style="display:block;"></div>正在載入比較數據…
+            </div>
+            <!-- Compare results (hidden until data loaded) -->
+            <div id="cmpResults" style="display:none;">
+            <!-- KPI Grid -->
+            <p class="cmp-section-label">關鍵指標對比 · 期間 A vs 期間 B</p>
+            <div class="cmp-kpi-grid" id="cmpKpiGrid"></div>
+            <!-- Insight banner -->
+            <div class="insight-banner" id="cmpInsight" style="display:none;">
+                <div class="insight-icon">💡</div>
+                <div><div class="insight-title">AI 洞察摘要</div><div class="insight-text" id="cmpInsightText"></div></div>
+            </div>
+            <!-- Charts -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                <div class="bg-white rounded-xl p-5 border" style="border-color:rgba(0,0,0,0.08);">
+                    <div class="flex items-start justify-between mb-3">
+                        <div><div class="font-headline font-bold text-[13px]">每週觸及數對比</div><div class="text-[11px] text-slate-400 mt-0.5">週為單位 · 兩期間同步顯示</div></div>
+                        <div class="flex flex-col gap-1 items-end text-[10px] font-bold text-slate-500">
+                            <span class="flex items-center gap-1"><span class="inline-block w-2 h-2 rounded-full" style="background:#FF5000;"></span>期間 A</span>
+                            <span class="flex items-center gap-1"><span class="inline-block w-4 h-0 border-t-2 border-dashed" style="border-color:#185FA5;"></span>期間 B</span>
+                        </div>
+                    </div>
+                    <div style="height:200px;position:relative;"><canvas id="cmpReachChart"></canvas></div>
+                </div>
+                <div class="bg-white rounded-xl p-5 border" style="border-color:rgba(0,0,0,0.08);">
+                    <div class="flex items-start justify-between mb-3">
+                        <div><div class="font-headline font-bold text-[13px]">每週互動率對比</div><div class="text-[11px] text-slate-400 mt-0.5">週為單位 · 兩期間同步顯示</div></div>
+                        <div class="flex flex-col gap-1 items-end text-[10px] font-bold text-slate-500">
+                            <span class="flex items-center gap-1"><span class="inline-block w-2 h-2 rounded-full" style="background:#FF5000;"></span>期間 A</span>
+                            <span class="flex items-center gap-1"><span class="inline-block w-4 h-0 border-t-2 border-dashed" style="border-color:#185FA5;"></span>期間 B</span>
+                        </div>
+                    </div>
+                    <div style="height:200px;position:relative;"><canvas id="cmpEngChart"></canvas></div>
+                </div>
+            </div>
+            <!-- Top Posts Table -->
+            <div class="bg-white rounded-xl border overflow-hidden mb-4" style="border-color:rgba(0,0,0,0.08);">
+                <div class="flex items-center justify-between px-5 py-3 border-b" style="border-color:rgba(0,0,0,0.08);">
+                    <span class="font-headline font-bold text-[13px]">各期間最高觸及貼文 Top 3</span>
+                    <span class="text-[11px] text-slate-400">點擊貼文名稱可開啟原文</span>
+                </div>
+                <table class="w-full text-sm" style="border-collapse:collapse;">
+                    <thead><tr style="background:#f9f7f4;">
+                        <th class="px-5 py-2 text-left text-[10px] font-bold uppercase tracking-wider text-slate-400">期間</th>
+                        <th class="px-5 py-2 text-left text-[10px] font-bold uppercase tracking-wider text-slate-400">貼文摘要</th>
+                        <th class="px-5 py-2 text-right text-[10px] font-bold uppercase tracking-wider text-slate-400">觸及數</th>
+                        <th class="px-5 py-2 text-right text-[10px] font-bold uppercase tracking-wider text-slate-400">互動率</th>
+                    </tr></thead>
+                    <tbody id="cmpTopPostsBody"></tbody>
+                </table>
+            </div>
+            </div><!-- /cmpResults -->
+            </div><!-- /compareModePanel -->
         </div>
     </main>
     
@@ -1061,6 +1196,194 @@
                 deltaIds.forEach(id => { document.getElementById(id).textContent = '請檢查伺服器'; });
             } finally {
                 trendsLoading = false;
+            }
+        }
+
+        // ── Compare Mode ───────────────────────────────────
+        let cmpBrand = 'all';
+        let cmpReachChartInst = null;
+        let cmpEngChartInst = null;
+        let cmpRunning = false;
+
+        function switchTrendMode(mode) {
+            document.getElementById('modeTrend').classList.toggle('active', mode === 'trend');
+            document.getElementById('modeCompare').classList.toggle('active', mode === 'compare');
+            document.getElementById('trendModePanel').style.display = mode === 'trend' ? '' : 'none';
+            document.getElementById('trendModeControls').style.display = mode === 'trend' ? '' : 'none';
+            document.getElementById('compareModePanel').style.display = mode === 'compare' ? '' : 'none';
+            if (mode === 'trend') {
+                document.getElementById('trendTitleSpan').textContent = 'Overview';
+                document.getElementById('trendSubtitle').textContent = '社群數據表現 · 台塑便利家 × ECOCO社群';
+                if (!trendsInitialized) initTrendsDashboard();
+            } else {
+                document.getElementById('trendTitleSpan').textContent = '比較模式';
+                document.getElementById('trendSubtitle').textContent = '選擇兩段日期區間，一次產生對比報告';
+                document.getElementById('trendDateRange').textContent = '';
+                if (!document.getElementById('cmpStartA').value) setCmpQuick('mom');
+            }
+        }
+
+        function setCmpBrand(btn, brand) {
+            cmpBrand = brand;
+            document.querySelectorAll('.cmp-brand-pill').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+        }
+
+        function setCmpQuick(type) {
+            const now = new Date();
+            let sA, eA, sB, eB;
+            if (type === 'mom') {
+                const pm = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+                sA = `${pm.getFullYear()}-${String(pm.getMonth()+1).padStart(2,'0')}-01`;
+                eA = new Date(pm.getFullYear(), pm.getMonth()+1, 0).toISOString().split('T')[0];
+                const cm = new Date(now.getFullYear(), now.getMonth(), 1);
+                sB = `${cm.getFullYear()}-${String(cm.getMonth()+1).padStart(2,'0')}-01`;
+                eB = now.toISOString().split('T')[0];
+            } else if (type === 'qoq') {
+                const cq = Math.floor(now.getMonth() / 3);
+                const pqStart = new Date(now.getFullYear(), (cq-1)*3, 1);
+                const pqEnd = new Date(now.getFullYear(), cq*3, 0);
+                const cqStart = new Date(now.getFullYear(), cq*3, 1);
+                sA = pqStart.toISOString().split('T')[0]; eA = pqEnd.toISOString().split('T')[0];
+                sB = cqStart.toISOString().split('T')[0]; eB = now.toISOString().split('T')[0];
+            } else if (type === 'yoy') {
+                const ly = now.getFullYear() - 1;
+                sA = `${ly}-${String(now.getMonth()+1).padStart(2,'0')}-01`;
+                eA = new Date(ly, now.getMonth()+1, 0).toISOString().split('T')[0];
+                sB = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-01`;
+                eB = now.toISOString().split('T')[0];
+            }
+            document.getElementById('cmpStartA').value = sA;
+            document.getElementById('cmpEndA').value = eA;
+            document.getElementById('cmpStartB').value = sB;
+            document.getElementById('cmpEndB').value = eB;
+        }
+
+        function fmtN(n) { return n >= 1000 ? (n/1000).toFixed(1).replace(/\.0$/,'') + 'K' : n.toLocaleString(); }
+
+        function renderCmpKpis(data) {
+            const metrics = [
+                { name:'總觸及人數', aVal:data.periodA.totalReach, bVal:data.periodB.totalReach, delta:data.delta.reach, bg:'#FF5000', fmt:fmtN },
+                { name:'平均互動率', aVal:data.periodA.avgEngagement, bVal:data.periodB.avgEngagement, delta:data.delta.engagement, bg:'#059669', fmt:v=>v.toFixed(1)+'%' },
+                { name:'貼文總數', aVal:data.periodA.totalPosts, bVal:data.periodB.totalPosts, delta:data.delta.posts, bg:'#d4a017', fmt:v=>v },
+                { name:'單貼文平均觸及', aVal:data.periodA.avgReachPerPost, bVal:data.periodB.avgReachPerPost, delta:data.delta.avgReachPerPost, bg:'#060E9F', fmt:fmtN },
+            ];
+            const grid = document.getElementById('cmpKpiGrid');
+            grid.innerHTML = metrics.map(m => {
+                const dCls = m.delta.direction === 'up' ? 'd-up' : m.delta.direction === 'down' ? 'd-down' : 'd-flat';
+                const dTxt = m.delta.direction === 'flat' ? '— 持平'
+                    : (m.delta.direction === 'up' ? '↑ ' : '↓ ') + Math.abs(m.delta.value).toFixed(1) + '%';
+                return `<div class="cmp-kpi-card">
+                    <div class="cmp-kpi-bg" style="background:${m.bg};"></div>
+                    <div class="cmp-kpi-name">${m.name}</div>
+                    <div class="cmp-kpi-pair">
+                        <div class="cmp-kpi-row"><span class="cmp-kpi-dot" style="background:#FF5000;"></span><span class="cmp-kpi-num">${m.fmt(m.aVal)}</span></div>
+                        <div class="cmp-kpi-sub">期間 A</div>
+                        <div class="cmp-kpi-row" style="margin-top:2px;"><span class="cmp-kpi-dot" style="background:transparent;border:1.5px dashed #185FA5;"></span><span class="cmp-kpi-num" style="color:#185FA5;">${m.fmt(m.bVal)}</span></div>
+                        <div class="cmp-kpi-sub">期間 B</div>
+                    </div>
+                    <hr class="cmp-kpi-divider">
+                    <div class="delta-row"><span class="delta-pill ${dCls}">${dTxt}</span><span class="delta-note">B vs A</span></div>
+                </div>`;
+            }).join('');
+        }
+
+        function renderCmpInsight(data) {
+            const el = document.getElementById('cmpInsight');
+            const txt = document.getElementById('cmpInsightText');
+            const parts = [];
+            const rd = data.delta.reach, ed = data.delta.engagement;
+            if (rd.direction === 'up') parts.push(`期間 B 的觸及數成長 +${rd.value.toFixed(1)}%`);
+            else if (rd.direction === 'down') parts.push(`期間 B 的觸及數下滑 ${rd.value.toFixed(1)}%`);
+            if (ed.direction === 'up') parts.push(`互動率上升 +${ed.value.toFixed(1)}%`);
+            else if (ed.direction === 'down') parts.push(`互動率下滑 ${ed.value.toFixed(1)}%`);
+            if (parts.length === 0) { el.style.display = 'none'; return; }
+            let insight = parts.join('，');
+            if (rd.direction === 'up' && ed.direction === 'down') insight += '。顯示內容觸及更廣泛但深度互動減少，建議在廣觸及貼文中加入互動誘因（留言抽獎、問答）以同步提升互動率。';
+            else if (rd.direction === 'up' && ed.direction === 'up') insight += '。觸及與互動雙雙成長，本期內容策略表現優異，建議持續此方向。';
+            else if (rd.direction === 'down') insight += '。建議檢視貼文發佈頻率與內容類型，嘗試加入更多視覺素材或互動型貼文。';
+            else insight += '。';
+            txt.textContent = insight;
+            el.style.display = 'flex';
+        }
+
+        function buildCmpCharts(data) {
+            const labels = data.weeklyBreakdown.labels;
+            const cDef = { responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}} };
+            const mkDs = (label, d, color, dashed) => ({
+                label, data:d, borderColor:color, backgroundColor: dashed ? 'rgba(24,95,165,0.06)' : 'rgba(255,80,0,0.06)',
+                borderWidth:2, fill:true, tension:0.4, pointBackgroundColor:color, pointRadius:4, pointHoverRadius:6,
+                ...(dashed ? {borderDash:[5,4]} : {})
+            });
+            if (cmpReachChartInst) { cmpReachChartInst.destroy(); cmpReachChartInst = null; }
+            if (cmpEngChartInst) { cmpEngChartInst.destroy(); cmpEngChartInst = null; }
+            cmpReachChartInst = new Chart(document.getElementById('cmpReachChart').getContext('2d'), {
+                type:'line', data:{ labels, datasets:[
+                    mkDs('期間A', data.weeklyBreakdown.periodA.reach, '#FF5000', false),
+                    mkDs('期間B', data.weeklyBreakdown.periodB.reach, '#185FA5', true),
+                ]}, options:{...cDef, scales:{ x:{grid:{display:false},ticks:{font:{size:11}}}, y:{grid:{color:'rgba(0,0,0,0.04)'},ticks:{font:{size:11},callback:v=>v>=1000?(v/1000).toFixed(0)+'K':v}} }}
+            });
+            cmpEngChartInst = new Chart(document.getElementById('cmpEngChart').getContext('2d'), {
+                type:'line', data:{ labels, datasets:[
+                    mkDs('期間A', data.weeklyBreakdown.periodA.engagement, '#FF5000', false),
+                    mkDs('期間B', data.weeklyBreakdown.periodB.engagement, '#185FA5', true),
+                ]}, options:{...cDef, scales:{ x:{grid:{display:false},ticks:{font:{size:11}}}, y:{grid:{color:'rgba(0,0,0,0.04)'},ticks:{font:{size:11},callback:v=>v.toFixed(1)+'%'}} }}
+            });
+        }
+
+        function renderCmpTopPosts(data) {
+            const tbody = document.getElementById('cmpTopPostsBody');
+            let html = '';
+            const render = (posts, label, cls) => posts.forEach((p,i) => {
+                const best = i === 0 ? 'background:#fffdf0;' : '';
+                const star = i === 0 ? '<span style="color:#d4a017;font-size:11px;margin-right:2px;">★</span>' : '';
+                const link = p.permalink ? `<a href="${p.permalink}" target="_blank" style="color:inherit;text-decoration:none;font-weight:700;">${star}${escapeHtml(p.title)}</a>` : `<span style="font-weight:700;">${star}${escapeHtml(p.title)}</span>`;
+                html += `<tr style="border-top:1px solid rgba(0,0,0,0.06);${best}">
+                    <td class="px-5 py-2"><span style="display:inline-block;font-size:10px;font-weight:700;padding:2px 9px;border-radius:99px;" class="${cls}">${label}</span></td>
+                    <td class="px-5 py-2 text-[12px]">${link}</td>
+                    <td class="px-5 py-2 text-right text-[12px] font-mono">${p.reach.toLocaleString()}</td>
+                    <td class="px-5 py-2 text-right text-[12px] font-mono">${p.engagementRate}%</td>
+                </tr>`;
+            });
+            render(data.periodA.topPosts || [], 'A', 'bg-orange-50 text-[#FF5000]');
+            render(data.periodB.topPosts || [], 'B', 'bg-blue-50 text-[#185FA5]');
+            tbody.innerHTML = html;
+        }
+
+        async function runCompare() {
+            if (cmpRunning) return;
+            const sA = document.getElementById('cmpStartA').value;
+            const eA = document.getElementById('cmpEndA').value;
+            const sB = document.getElementById('cmpStartB').value;
+            const eB = document.getElementById('cmpEndB').value;
+            if (!sA || !eA || !sB || !eB) return alert('請完整填入兩個期間的起訖日期');
+            if (new Date(sA) > new Date(eA) || new Date(sB) > new Date(eB)) return alert('起始日不可晚於結束日');
+            cmpRunning = true;
+            const btn = document.getElementById('cmpRunBtn');
+            btn.disabled = true; btn.innerHTML = '<div class="loader" style="display:block;width:16px;height:16px;border-color:rgba(255,255,255,0.3);border-top-color:#fff;"></div> 載入中…';
+            document.getElementById('cmpError').style.display = 'none';
+            document.getElementById('cmpResults').style.display = 'none';
+            document.getElementById('cmpLoading').style.display = 'block';
+            try {
+                const url = `/api/trends/compare?startA=${sA}&endA=${eA}&startB=${sB}&endB=${eB}&brand=${cmpBrand}`;
+                const res = await fetch(url);
+                const data = await res.json();
+                document.getElementById('cmpLoading').style.display = 'none';
+                if (!data.success) throw new Error(data.message || '比較失敗');
+                document.getElementById('trendDateRange').textContent = `期間 A：${sA} — ${eA}　|　期間 B：${sB} — ${eB}`;
+                renderCmpKpis(data);
+                renderCmpInsight(data);
+                buildCmpCharts(data);
+                renderCmpTopPosts(data);
+                document.getElementById('cmpResults').style.display = '';
+            } catch (err) {
+                document.getElementById('cmpLoading').style.display = 'none';
+                const errEl = document.getElementById('cmpError');
+                errEl.textContent = '❌ ' + (err.message || '無法連線伺服器');
+                errEl.style.display = 'block';
+            } finally {
+                cmpRunning = false; btn.disabled = false;
+                btn.innerHTML = '<span>▶</span> 產生比較報告';
             }
         }
     </script>
