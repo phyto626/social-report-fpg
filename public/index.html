@@ -1,0 +1,1391 @@
+<!DOCTYPE html>
+<html class="light" lang="zh-TW">
+<head>
+    <meta charset="utf-8"/>
+    <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+    <title>社群成果報告產生器 — 多品牌整合平台</title>
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Work+Sans:wght@400;600;700;900&amp;family=Inter:wght@400;500;600&amp;family=Noto+Sans+TC:wght@400;500;700&amp;display=swap" rel="stylesheet"/>
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "surface-tint": "#FF5000",
+                        "surface": "#ffffff",
+                        "surface-dim": "#f0d7af",
+                        "background": "#ffffff",
+                        "primary-container": "#FF5000",
+                        "surface-container-lowest": "#ffffff",
+                        "on-secondary": "#ffffff",
+                        "surface-container-low": "#ffffff",
+                        "on-primary-container": "#fffbff",
+                        "surface-bright": "#ffffff",
+                        "inverse-on-surface": "#ffeed8",
+                        "outline-variant": "#e5beb2",
+                        "on-tertiary-fixed-variant": "#574500",
+                        "surface-container": "#ffebcf",
+                        "on-tertiary-fixed": "#231a00",
+                        "surface-container-high": "#ffe5bc",
+                        "on-background": "#261902",
+                        "secondary-fixed": "#e0e0ff",
+                        "on-surface": "#261902",
+                        "tertiary": "#735c00",
+                        "tertiary-fixed": "#ffe086",
+                        "on-primary": "#ffffff",
+                        "tertiary-container": "#cfa600",
+                        "surface-variant": "#f9dfb7",
+                        "on-secondary-container": "#fffbff",
+                        "error": "#ba1a1a",
+                        "on-surface-variant": "#5c4037",
+                        "inverse-surface": "#3d2e13",
+                        "secondary-fixed-dim": "#bec2ff",
+                        "on-secondary-fixed": "#00036b",
+                        "surface-container-highest": "#f9dfb7",
+                        "error-container": "#ffdad6",
+                        "secondary-container": "#5d67e5",
+                        "secondary": "#434cca",
+                        "outline": "#917065",
+                        "on-primary-fixed": "#390b00",
+                        "inverse-primary": "#ffb59e",
+                        "on-error": "#ffffff",
+                        "on-tertiary": "#ffffff",
+                        "on-error-container": "#93000a",
+                        "primary-fixed-dim": "#ffb59e",
+                        "tertiary-fixed-dim": "#efc100",
+                        "on-tertiary-container": "#4e3d00",
+                        "primary": "#FF5000",
+                        "primary-fixed": "#ffdbd0",
+                        "on-secondary-fixed-variant": "#2b34b5",
+                        "on-primary-fixed-variant": "#842500"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "fontFamily": {
+                        "headline": ["Work Sans", "Noto Sans TC"],
+                        "body": ["Inter", "Noto Sans TC"],
+                        "label": ["Inter", "Noto Sans TC"]
+                    }
+                },
+            },
+        }
+    </script>
+    <style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+            vertical-align: middle;
+        }
+        body {
+            font-family: 'Inter', 'Noto Sans TC', sans-serif;
+            background-color: #ffffff;
+        }
+        .glass-nav {
+            background: rgba(255, 255, 255, 0.8);
+            backdrop-filter: blur(20px);
+        }
+        .loader {
+            display: none;
+            width: 22px; height: 22px;
+            border: 3px solid rgba(255,255,255,0.3);
+            border-radius: 50%;
+            border-top-color: #fff;
+            animation: spin 0.8s linear infinite;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        #errorMsg, #statusContainer { display: none; }
+        /* Trend filter buttons */
+        .trend-filter-btn {
+            background: #f5f5f5;
+            color: #5c4037;
+            border: 1.5px solid transparent;
+            cursor: pointer;
+        }
+        .trend-filter-btn:hover {
+            background: #ffe8df;
+            color: #FF5000;
+        }
+        .trend-filter-btn.active {
+            background: #FF5000;
+            color: #fff;
+            box-shadow: 0 2px 8px rgba(255,80,0,0.25);
+        }
+        /* KPI card hover */
+        .trend-kpi-card {
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .trend-kpi-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 24px rgba(38,25,2,0.10);
+        }
+        /* Compare mode styles */
+        .mode-switch{display:flex;border:1.5px solid rgba(0,0,0,0.08);border-radius:10px;overflow:hidden;background:#fff;}
+        .mode-btn{font-size:12px;font-weight:700;padding:7px 18px;background:transparent;border:none;cursor:pointer;color:#6b5e52;transition:background .2s,color .2s;}
+        .mode-btn.active{background:#060E9F;color:#fff;}
+        .period-row{display:grid;grid-template-columns:1fr 50px 1fr;gap:0;align-items:stretch;margin-bottom:1rem;}
+        .period-card{background:#fff;border:1px solid rgba(0,0,0,0.08);padding:14px 16px;}
+        .period-card:first-child{border-radius:12px 0 0 12px;border-right:none;border-left:3px solid #FF5000;}
+        .period-card:last-child{border-radius:0 12px 12px 0;border-left:3px solid #185FA5;}
+        .period-label{font-size:10px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;margin-bottom:6px;}
+        .period-label.a{color:#FF5000;} .period-label.b{color:#185FA5;}
+        .date-row{display:flex;align-items:center;gap:6px;}
+        .date-row input[type=date]{flex:1;font-size:13px;font-weight:600;padding:6px 8px;border:1px solid rgba(0,0,0,0.08);border-radius:7px;background:#f9f7f4;font-family:inherit;}
+        .date-sep{font-size:11px;color:#a89b90;}
+        .vs-col{display:flex;align-items:center;justify-content:center;background:#fff;border-top:1px solid rgba(0,0,0,0.08);border-bottom:1px solid rgba(0,0,0,0.08);}
+        .vs-badge{font-size:11px;font-weight:700;color:#a89b90;background:#f9f7f4;border:1px solid rgba(0,0,0,0.08);border-radius:99px;padding:4px 10px;}
+        .cmp-kpi-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:1.25rem;}
+        .cmp-kpi-card{background:#fff;border:1px solid rgba(0,0,0,0.08);border-radius:12px;padding:14px 16px;position:relative;overflow:hidden;}
+        .cmp-kpi-name{font-size:10px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:#a89b90;margin-bottom:8px;}
+        .cmp-kpi-pair{display:flex;flex-direction:column;gap:4px;margin-bottom:8px;}
+        .cmp-kpi-row{display:flex;align-items:baseline;gap:6px;}
+        .cmp-kpi-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
+        .cmp-kpi-num{font-size:20px;font-weight:900;letter-spacing:-0.03em;line-height:1;}
+        .cmp-kpi-sub{font-size:10px;color:#a89b90;margin-left:14px;}
+        .cmp-kpi-divider{border:none;border-top:1px solid rgba(0,0,0,0.08);margin:8px 0;}
+        .delta-row{display:flex;align-items:center;justify-content:space-between;}
+        .delta-pill{font-size:11px;font-weight:700;padding:3px 10px;border-radius:99px;}
+        .d-up{background:#dcfce7;color:#166534;} .d-down{background:#fee2e2;color:#991b1b;} .d-flat{background:#f5f5f5;color:#a89b90;}
+        .delta-note{font-size:10px;color:#a89b90;}
+        .cmp-kpi-bg{position:absolute;bottom:-10px;right:-10px;width:48px;height:48px;border-radius:50%;opacity:.08;}
+        .insight-banner{background:linear-gradient(135deg,#fff8f5,#fff);border:1px solid rgba(255,80,0,.15);border-radius:12px;padding:14px 18px;margin-bottom:1.25rem;display:flex;align-items:flex-start;gap:12px;}
+        .insight-icon{font-size:18px;flex-shrink:0;margin-top:1px;}
+        .insight-title{font-size:12px;font-weight:700;color:#FF5000;margin-bottom:4px;}
+        .insight-text{font-size:12px;color:#6b5e52;line-height:1.6;}
+        .cmp-config-row{display:flex;align-items:center;gap:8px;margin-bottom:1.25rem;flex-wrap:wrap;}
+        .cmp-brand-pill{font-size:12px;font-weight:700;padding:6px 16px;border-radius:99px;border:1px solid rgba(0,0,0,0.08);cursor:pointer;background:#fff;color:#6b5e52;transition:all .15s;}
+        .cmp-brand-pill.active{background:#FF5000;color:#fff;border-color:#FF5000;}
+        .cmp-quick-btn{font-size:11px;font-weight:700;padding:5px 12px;border-radius:7px;border:1px solid rgba(0,0,0,0.08);cursor:pointer;background:#fff;color:#6b5e52;transition:all .15s;}
+        .cmp-quick-btn:hover{background:#f9f7f4;color:#1a1108;}
+        .cmp-run-btn{margin-left:auto;font-size:13px;font-weight:700;padding:9px 24px;background:#060E9F;color:#fff;border:none;border-radius:9px;cursor:pointer;display:flex;align-items:center;gap:8px;transition:opacity .15s;}
+        .cmp-run-btn:hover{opacity:.85;}
+        .cmp-run-btn:disabled{opacity:.5;cursor:not-allowed;}
+        .cmp-section-label{font-size:10px;font-weight:700;color:#a89b90;text-transform:uppercase;letter-spacing:0.1em;margin-bottom:10px;}
+        @media(max-width:720px){
+          .cmp-kpi-grid{grid-template-columns:1fr 1fr;}
+          .period-row{grid-template-columns:1fr;gap:8px;}
+          .period-card:first-child,.period-card:last-child{border-radius:12px;border:1px solid rgba(0,0,0,0.08);}
+          .period-card:first-child{border-left:3px solid #FF5000;} .period-card:last-child{border-left:3px solid #185FA5;}
+          .vs-col{display:none;}
+        }
+    </style>
+</head>
+<body class="bg-surface text-on-surface min-h-screen flex flex-col">
+    <!-- TopNavBar -->
+    <nav class="w-full top-0 sticky z-50 glass-nav border-b border-orange-100/20 shadow-sm shadow-orange-900/5">
+        <div class="flex justify-between items-center px-8 py-4 max-w-screen-2xl mx-auto">
+            <div class="font-headline font-bold text-2xl text-[#FF5000] tracking-tight">Social Report Tool</div>
+            <div class="hidden md:flex items-center space-x-8 font-headline font-semibold" role="tablist" aria-label="主選單">
+                <a id="navDashboard" href="#" role="tab" aria-selected="true" aria-controls="tabDashboard" class="border-b-2 pb-1 text-[#FF5000] border-[#FF5000] cursor-pointer" onclick="switchTab('dashboard'); return false;">Dashboard</a>
+                <a id="navReports" href="#" role="tab" aria-selected="false" aria-controls="tabReports" class="text-slate-600 hover:text-orange-600 transition-colors cursor-pointer" onclick="switchTab('reports'); return false;">Reports Archive</a>
+                <a id="navTrends" href="#" role="tab" aria-selected="false" aria-controls="tabTrends" class="text-slate-600 hover:text-orange-600 transition-colors cursor-pointer" onclick="switchTab('trends'); return false;">趨勢總覽</a>
+            </div>
+            <div class="flex items-center">
+                <span class="text-xs text-slate-400 hidden sm:inline" title="本工具無需登入，使用 .env 設定品牌權杖">內部工具</span>
+            </div>
+        </div>
+    </nav>
+    <main class="flex-grow flex items-center justify-center px-4 py-8 md:py-12">
+        <!-- Dashboard Tab -->
+        <div id="tabDashboard" class="max-w-4xl w-full flex flex-col">
+            <!-- Hero Header Section -->
+            <div class="mb-10 text-center md:text-left">
+                <h1 class="text-4xl md:text-5xl font-black font-headline text-on-surface mb-3 tracking-tight">
+                    Social Data Achievement <span class="text-[#FF5000]">Generation</span>
+                </h1>
+                <p class="text-base md:text-lg text-on-surface-variant font-body max-w-2xl leading-relaxed mx-auto md:mx-0">
+                    自動抓取 FB 貼文，一鍵產生精美分析報告與 Excel 統計。支援多品牌無縫切換。
+                </p>
+            </div>
+            
+            <!-- Centralized Selection Card -->
+            <div class="bg-surface-container-lowest rounded-xl p-6 md:p-10 shadow-[0_12px_40px_rgba(38,25,2,0.06)] relative overflow-hidden border border-orange-50">
+                <!-- Abstract Brand Pattern Bleed -->
+                <div class="absolute -top-24 -right-24 w-64 h-64 bg-surface-container rounded-full opacity-30 pointer-events-none"></div>
+                <div class="relative z-10 space-y-10">
+                    <!-- Brand Selection Zone（由 /api/brands 動態載入） -->
+                    <section>
+                        <h2 class="font-headline text-[13px] font-bold tracking-widest uppercase mb-4 text-[#FF5000]">Step 1: Select Brand Identity</h2>
+                        <p id="brandOptionsEmpty" class="hidden text-sm text-red-600 font-medium mb-2">目前沒有可用的品牌：請在伺服器 .env 設定 FPG／ECOCO 的 PAGE_ID 與 ACCESS_TOKEN。</p>
+                        <div id="brandOptions" class="grid grid-cols-1 md:grid-cols-2 gap-4" role="radiogroup" aria-label="選擇品牌"></div>
+                    </section>
+
+                    <!-- Date Selection Section -->
+                    <section>
+                        <h2 class="font-headline text-[13px] font-bold tracking-widest uppercase mb-4 text-[#FF5000]">Step 2: Define Report Scope</h2>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <!-- Start Date -->
+                            <div>
+                                <label class="block text-xs font-bold text-on-surface-variant mb-2 uppercase tracking-wider">Start Date</label>
+                                <input type="date" id="startDate" class="w-full bg-surface-container-low border border-surface-container-high rounded-xl py-3 px-4 focus:ring-2 focus:ring-[#FF5000] focus:border-[#FF5000] transition-all font-body text-sm text-on-surface cursor-pointer shadow-sm">
+                            </div>
+                            <!-- End Date -->
+                            <div>
+                                <label class="block text-xs font-bold text-on-surface-variant mb-2 uppercase tracking-wider">End Date</label>
+                                <input type="date" id="endDate" class="w-full bg-surface-container-low border border-surface-container-high rounded-xl py-3 px-4 focus:ring-2 focus:ring-[#FF5000] focus:border-[#FF5000] transition-all font-body text-sm text-on-surface cursor-pointer shadow-sm">
+                            </div>
+                        </div>
+
+                        <!-- Quick-Select Presets -->
+                        <div class="flex flex-wrap gap-2 mt-4">
+                            <button id="btnLast30" type="button" onclick="setPreset('last30', event)" class="px-4 py-2 rounded-lg bg-surface-container text-xs font-bold text-on-surface-variant hover:bg-[#FF5000] hover:text-white transition-all active:scale-95">LAST 30 DAYS</button>
+                            <button id="btnLastQuarter" type="button" onclick="setPreset('lastQuarter', event)" class="px-4 py-2 rounded-lg bg-surface-container text-xs font-bold text-on-surface-variant hover:bg-[#FF5000] hover:text-white transition-all active:scale-95">LAST QUARTER</button>
+                            <button id="btnYtd" type="button" onclick="setPreset('ytd', event)" class="px-4 py-2 rounded-lg bg-surface-container text-xs font-bold text-on-surface-variant hover:bg-[#FF5000] hover:text-white transition-all active:scale-95">YEAR TO DATE</button>
+                        </div>
+                        <p class="text-xs text-on-surface-variant mt-3 leading-relaxed">若日期區間較長，Facebook 資料抓取可能需要數分鐘，請耐心等候且勿重複點擊產生。</p>
+                        <p id="longRangeWarning" class="hidden text-xs text-amber-800 font-medium mt-2">目前區間超過 90 天，建議分段產報以降低逾時或 API 限制風險。</p>
+                    </section>
+
+                    <!-- Section Selection -->
+                    <section>
+                        <h2 class="font-headline text-[13px] font-bold tracking-widest uppercase mb-4 text-[#FF5000]">Step 3: Select Report Content</h2>
+                        <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+                            <label class="flex items-center space-x-2 cursor-pointer bg-white p-2 rounded border border-orange-100 hover:bg-orange-50/50 transition">
+                                <input type="checkbox" id="chkKpi" value="kpi" checked class="form-checkbox h-4 w-4 text-[#FF5000] rounded border-gray-300 focus:ring-[#FF5000]">
+                                <span class="text-sm text-on-surface">KPI 概覽</span>
+                            </label>
+                            <label class="flex items-center space-x-2 cursor-pointer bg-white p-2 rounded border border-orange-100 hover:bg-orange-50/50 transition">
+                                <input type="checkbox" id="chkTopPost" value="topPost" checked class="form-checkbox h-4 w-4 text-[#FF5000] rounded border-gray-300 focus:ring-[#FF5000]">
+                                <span class="text-sm text-on-surface">最高互動貼文</span>
+                            </label>
+                            <label class="flex items-center space-x-2 cursor-pointer bg-white p-2 rounded border border-orange-100 hover:bg-orange-50/50 transition">
+                                <input type="checkbox" id="chkContent" value="content" checked class="form-checkbox h-4 w-4 text-[#FF5000] rounded border-gray-300 focus:ring-[#FF5000]">
+                                <span class="text-sm text-on-surface">內容表現分析</span>
+                            </label>
+                            <label class="flex items-center space-x-2 cursor-pointer bg-white p-2 rounded border border-orange-100 hover:bg-orange-50/50 transition">
+                                <input type="checkbox" id="chkPosts" value="posts" checked class="form-checkbox h-4 w-4 text-[#FF5000] rounded border-gray-300 focus:ring-[#FF5000]">
+                                <span class="text-sm text-on-surface">全貼文表現明細表</span>
+                            </label>
+                            <label class="flex items-center space-x-2 cursor-pointer bg-white p-2 rounded border border-orange-100 hover:bg-orange-50/50 transition">
+                                <input type="checkbox" id="chkInsights" value="insights" checked class="form-checkbox h-4 w-4 text-[#FF5000] rounded border-gray-300 focus:ring-[#FF5000]">
+                                <span class="text-sm text-on-surface">受歡迎內容特徵</span>
+                            </label>
+                            <label class="flex items-center space-x-2 cursor-pointer bg-white p-2 rounded border border-orange-100 hover:bg-orange-50/50 transition">
+                                <input type="checkbox" id="chkComments" value="comments" checked class="form-checkbox h-4 w-4 text-[#FF5000] rounded border-gray-300 focus:ring-[#FF5000]">
+                                <span class="text-sm text-on-surface">留言洞察與建議</span>
+                            </label>
+                            <label class="flex items-center space-x-2 cursor-pointer bg-white p-2 rounded border border-orange-100 hover:bg-orange-50/50 transition">
+                                <input type="checkbox" id="chkPlan" value="plan" checked class="form-checkbox h-4 w-4 text-[#FF5000] rounded border-gray-300 focus:ring-[#FF5000]">
+                                <span class="text-sm text-on-surface">活動策略規劃</span>
+                            </label>
+                        </div>
+                    </section>
+
+                    <!-- Feedback Containers -->
+                    <!-- Error Message -->
+                    <div id="errorMsg" class="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-lg text-sm font-medium mt-4">
+                        <span class="material-symbols-outlined align-middle mr-1 text-base">error</span>
+                        <span id="errorMsgText"></span>
+                    </div>
+
+                    <!-- Success Result Container -->
+                    <div id="statusContainer" class="bg-green-50 border border-green-200 rounded-xl p-6 mt-4">
+                        <h3 class="text-green-700 font-headline font-bold text-lg mb-2 flex items-center">
+                            <span class="material-symbols-outlined mr-2">check_circle</span> 報告已產生
+                        </h3>
+                        <p id="successMeta" class="text-sm text-green-900/90 mb-4 font-medium"></p>
+                        <div class="grid grid-cols-3 gap-4 mb-4">
+                            <div class="bg-white p-3 rounded-lg border border-green-100 text-center">
+                                <div id="kpiPosts" class="text-xl font-bold text-green-800">-</div>
+                                <div class="text-[11px] font-bold text-green-600 tracking-wider uppercase mt-1">Posts Analyzed</div>
+                            </div>
+                            <div class="bg-white p-3 rounded-lg border border-green-100 text-center">
+                                <div id="kpiReach" class="text-xl font-bold text-green-800">-</div>
+                                <div class="text-[11px] font-bold text-green-600 tracking-wider uppercase mt-1">Total Reach</div>
+                            </div>
+                            <div class="bg-white p-3 rounded-lg border border-green-100 text-center">
+                                <div id="kpiEngage" class="text-xl font-bold text-green-800">-</div>
+                                <div class="text-[11px] font-bold text-green-600 tracking-wider uppercase mt-1">Avg Engagement</div>
+                            </div>
+                        </div>
+                        <div class="flex flex-col sm:flex-row gap-2 mb-3">
+                            <button type="button" id="copyHtmlUrl" class="flex-1 flex justify-center items-center gap-2 bg-white border border-green-200 text-green-900 py-2 rounded-lg font-bold text-xs hover:bg-green-100/50 transition-all">
+                                <span class="material-symbols-outlined text-[16px]">content_copy</span> 複製 HTML 連結
+                            </button>
+                            <button type="button" id="copyExcelUrl" class="flex-1 flex justify-center items-center gap-2 bg-white border border-green-200 text-green-900 py-2 rounded-lg font-bold text-xs hover:bg-green-100/50 transition-all">
+                                <span class="material-symbols-outlined text-[16px]">content_copy</span> 複製 Excel 連結
+                            </button>
+                        </div>
+                        <div class="flex flex-col sm:flex-row gap-3">
+                            <a href="#" id="linkHtml" target="_blank" class="flex-1 flex justify-center items-center gap-2 bg-[#060E9F] text-white py-3 rounded-lg font-bold text-sm hover:bg-[#04097a] hover:scale-[1.02] transition-all">
+                                <span class="material-symbols-outlined text-[18px]">visibility</span> 開啟 HTML
+                            </a>
+                            <a href="#" id="linkExcel" download class="flex-1 flex justify-center items-center gap-2 bg-white border border-slate-200 text-slate-700 py-3 rounded-lg font-bold text-sm hover:bg-slate-50 hover:border-slate-300 transition-all">
+                                <span class="material-symbols-outlined text-[18px]">download</span> 下載 Excel
+                            </a>
+                            <a href="#" id="linkPptx" class="flex-1 flex justify-center items-center gap-2 bg-[#FFEB3B] border border-[#FBC02D] text-yellow-900 py-3 rounded-lg font-bold text-sm hover:bg-[#FFF59D] transition-all cursor-pointer">
+                                <span class="material-symbols-outlined text-[18px]">slideshow</span> 下載 PPTX
+                            </a>
+                        </div>
+                        <p class="text-xs text-green-800/80 mt-3 leading-relaxed">PPTX 使用剛產生的分析資料；伺服器重啟後仍可下載（會讀取已儲存的分析快取）。若從未成功產報過該區間，請先按上方「產生報告」。</p>
+                    </div>
+
+                    <!-- Primary Action -->
+                    <div class="pt-6 flex flex-col md:flex-row items-center justify-between gap-6 border-t border-surface-container-high">
+                        <div class="flex flex-col text-on-surface-variant gap-1">
+                            <div class="flex items-center gap-3">
+                                <span class="material-symbols-outlined text-[#FF5000]" data-icon="auto_awesome">auto_awesome</span>
+                                <p class="text-[13px] font-body">透過 Meta Graph API 抓取貼文與洞察。</p>
+                            </div>
+                            <p id="jobElapsed" class="text-[12px] text-slate-500 pl-9 min-h-[1.25em]"></p>
+                        </div>
+                        <button id="generateBtn" class="w-full md:w-auto px-10 py-4 bg-[#060E9F] hover:bg-[#04097a] text-white font-headline font-bold text-lg rounded-xl shadow-lg hover:scale-[1.03] active:scale-95 transition-all duration-300 flex items-center justify-center gap-3 disabled:opacity-50 disabled:pointer-events-none">
+                            <span id="btnText">產生報告</span>
+                            <span id="btnIcon" class="material-symbols-outlined" data-icon="rocket_launch">rocket_launch</span>
+                            <div class="loader" id="loader"></div>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Supporting Features Bento -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mt-10">
+                <div class="p-6 bg-surface-container-lowest rounded-xl border border-orange-50 shadow-sm">
+                    <span class="material-symbols-outlined text-[#FF5000] mb-3 text-3xl" data-icon="insights">insights</span>
+                    <h3 class="font-headline font-bold text-[17px] mb-2 text-on-surface">Deep Insights</h3>
+                    <p class="text-[13px] text-on-surface-variant leading-relaxed">Granular sentiment analysis and engagement tracking automatically calculated.</p>
+                </div>
+                <div class="p-6 bg-surface-container-lowest rounded-xl border border-orange-50 shadow-sm">
+                    <span class="material-symbols-outlined text-[#FF5000] mb-3 text-3xl" data-icon="history">history</span>
+                    <h3 class="font-headline font-bold text-[17px] mb-2 text-on-surface">Audit History</h3>
+                    <p class="text-[13px] text-on-surface-variant leading-relaxed">Save HTML files directly and build your knowledge base easily over time.</p>
+                </div>
+                <div class="p-6 bg-surface-container-lowest rounded-xl border border-orange-50 shadow-sm">
+                    <span class="material-symbols-outlined text-[#FF5000] mb-3 text-3xl" data-icon="share">share</span>
+                    <h3 class="font-headline font-bold text-[17px] mb-2 text-on-surface">One-Click Export</h3>
+                    <p class="text-[13px] text-on-surface-variant leading-relaxed">Generate board-ready HTML and presentation Excel spreadsheets in a click.</p>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- Reports Archive Tab -->
+        <div id="tabReports" class="max-w-4xl w-full flex flex-col" style="display: none;">
+            <div class="mb-10 text-center md:text-left">
+                <h1 class="text-4xl md:text-5xl font-black font-headline text-on-surface mb-3 tracking-tight">
+                    Historical <span class="text-[#FF5000]">Archive</span>
+                </h1>
+                <p class="text-base md:text-lg text-on-surface-variant font-body max-w-2xl leading-relaxed mx-auto md:mx-0">
+                    存取所有過去產生的社群分析報告與試算表數據。
+                </p>
+            </div>
+            
+            <div class="bg-surface-container-lowest rounded-xl p-6 md:p-10 shadow-[0_12px_40px_rgba(38,25,2,0.06)] border border-orange-50 relative overflow-hidden min-h-[400px]">
+                <div class="absolute -top-24 -right-24 w-64 h-64 bg-surface-container rounded-full opacity-30 pointer-events-none"></div>
+                <div class="relative z-10">
+                    <div id="reportsLoader" class="loader !border-orange-500 !border-t-[#FF5000] mx-auto my-10" style="display: block;"></div>
+                    <div id="reportsList" class="flex flex-col gap-3">
+                        <!-- Dynamic reports go here -->
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Trends Tab -->
+        <div id="tabTrends" class="max-w-7xl w-full flex flex-col" style="display: none;">
+            <!-- Header -->
+            <div class="mb-8 flex flex-col md:flex-row md:items-start justify-between gap-4">
+                <div>
+                    <h1 class="text-4xl md:text-5xl font-black font-headline text-on-surface mb-2 tracking-tight">
+                        Trend <span class="text-[#FF5000]" id="trendTitleSpan">Overview</span>
+                    </h1>
+                    <p class="text-base text-on-surface-variant font-body" id="trendSubtitle">社群數據表現 · 台塑便利家 × ECOCO社群</p>
+                    <p class="text-xs text-slate-400 mt-1" id="trendDateRange">資料區間：載入中...</p>
+                </div>
+                <div class="flex flex-col items-end gap-3 mt-2 md:mt-1">
+                    <div class="mode-switch">
+                        <button class="mode-btn active" id="modeTrend" onclick="switchTrendMode('trend')">趨勢折線</button>
+                        <button class="mode-btn" id="modeCompare" onclick="switchTrendMode('compare')">比較模式</button>
+                    </div>
+                    <div id="trendModeControls" class="flex items-center gap-2 flex-wrap">
+                        <select id="trendTimeSelect" onchange="initTrendsDashboard(parseInt(this.value))" class="bg-surface-container-low border border-surface-container-high rounded-lg py-1.5 px-3 text-xs font-bold text-[#FF5000] focus:ring-[#FF5000] focus:border-[#FF5000] cursor-pointer mr-3 shadow-sm">
+                            <option value="3">最近 3 個月</option>
+                            <option value="6" selected>最近 6 個月</option>
+                            <option value="12">最近 12 個月</option>
+                        </select>
+                        <span class="text-xs font-bold text-on-surface-variant uppercase tracking-widest mr-1">篩選品牌</span>
+                        <button id="filterAll"   onclick="filterPlatform('all')"   class="trend-filter-btn active px-4 py-2 rounded-full text-xs font-bold">全部</button>
+                        <button id="filterFpg"   onclick="filterPlatform('fpg')"   class="trend-filter-btn px-4 py-2 rounded-full text-xs font-bold">台塑便利家</button>
+                        <button id="filterEcoco" onclick="filterPlatform('ecoco')" class="trend-filter-btn px-4 py-2 rounded-full text-xs font-bold">ECOCO社群</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ===== TREND MODE PANEL (existing) ===== -->
+            <div id="trendModePanel">
+            <!-- KPI Cards -->
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+                <div id="kpiCardFpgReach" class="trend-kpi-card rounded-xl p-5 border relative overflow-hidden" style="background:linear-gradient(135deg,#fff7f5,#ffe8df);border-color:#ffd0c0;">
+                    <div class="text-[10px] font-bold uppercase tracking-widest text-[#FF5000] mb-1">台塑便利家</div>
+                    <div class="text-[11px] text-slate-500 mb-2">本期累計觸及</div>
+                    <div class="text-3xl font-black text-slate-800 font-headline" id="kpiFpgReach">—</div>
+                    <div class="flex items-center gap-1 mt-2"><span class="px-2 py-0.5 rounded-full text-[11px] font-bold" id="kpiFpgReachDelta">—</span></div>
+                    <div class="absolute -bottom-3 -right-3 w-16 h-16 rounded-full opacity-10" style="background:#FF5000;"></div>
+                </div>
+                <div id="kpiCardEcocoReach" class="trend-kpi-card rounded-xl p-5 border relative overflow-hidden" style="background:linear-gradient(135deg,#f0fdf4,#dcfce7);border-color:#a7f3d0;">
+                    <div class="text-[10px] font-bold uppercase tracking-widest text-emerald-600 mb-1">ECOCO社群</div>
+                    <div class="text-[11px] text-slate-500 mb-2">本期累計觸及</div>
+                    <div class="text-3xl font-black text-slate-800 font-headline" id="kpiEcocoReach">—</div>
+                    <div class="flex items-center gap-1 mt-2"><span class="px-2 py-0.5 rounded-full text-[11px] font-bold" id="kpiEcocoReachDelta">—</span></div>
+                    <div class="absolute -bottom-3 -right-3 w-16 h-16 rounded-full opacity-10" style="background:#059669;"></div>
+                </div>
+                <div id="kpiCardFpgEng" class="trend-kpi-card rounded-xl p-5 border relative overflow-hidden" style="background:linear-gradient(135deg,#fff7f5,#ffe8df);border-color:#ffd0c0;">
+                    <div class="text-[10px] font-bold uppercase tracking-widest text-[#FF5000] mb-1">台塑便利家</div>
+                    <div class="text-[11px] text-slate-500 mb-2">本期平均互動率</div>
+                    <div class="text-3xl font-black text-slate-800 font-headline" id="kpiFpgEng">—</div>
+                    <div class="flex items-center gap-1 mt-2"><span class="px-2 py-0.5 rounded-full text-[11px] font-bold" id="kpiFpgEngDelta">—</span></div>
+                    <div class="absolute -bottom-3 -right-3 w-16 h-16 rounded-full opacity-10" style="background:#FF5000;"></div>
+                </div>
+                <div id="kpiCardEcocoEng" class="trend-kpi-card rounded-xl p-5 border relative overflow-hidden" style="background:linear-gradient(135deg,#f0fdf4,#dcfce7);border-color:#a7f3d0;">
+                    <div class="text-[10px] font-bold uppercase tracking-widest text-emerald-600 mb-1">ECOCO社群</div>
+                    <div class="text-[11px] text-slate-500 mb-2">本期平均互動率</div>
+                    <div class="text-3xl font-black text-slate-800 font-headline" id="kpiEcocoEng">—</div>
+                    <div class="flex items-center gap-1 mt-2"><span class="px-2 py-0.5 rounded-full text-[11px] font-bold" id="kpiEcocoEngDelta">—</span></div>
+                    <div class="absolute -bottom-3 -right-3 w-16 h-16 rounded-full opacity-10" style="background:#059669;"></div>
+                </div>
+            </div>
+            <!-- Charts -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+                <div class="bg-surface-container-lowest rounded-xl p-6 border border-orange-50 shadow-sm">
+                    <div class="flex items-start justify-between mb-4">
+                        <div><h2 class="font-headline font-bold text-[15px] text-on-surface">觸及數趨勢</h2><p class="text-[11px] text-on-surface-variant mt-0.5">每月觸及人數</p></div>
+                        <div class="flex gap-3 text-[10px] font-bold text-slate-500">
+                            <span class="flex items-center gap-1"><span class="inline-block w-3 h-1.5 rounded" style="background:#FF5000;"></span>台塑便利家</span>
+                            <span class="flex items-center gap-1"><span class="inline-block w-3 h-1.5 rounded" style="background:#059669;"></span>ECOCO</span>
+                        </div>
+                    </div>
+                    <div style="height:240px;position:relative;"><canvas id="reachChart"></canvas></div>
+                </div>
+                <div class="bg-surface-container-lowest rounded-xl p-6 border border-orange-50 shadow-sm">
+                    <div class="flex items-start justify-between mb-4">
+                        <div><h2 class="font-headline font-bold text-[15px] text-on-surface">互動率比較</h2><p class="text-[11px] text-on-surface-variant mt-0.5">每月互動率（%）對比分析</p></div>
+                        <div class="flex gap-3 text-[10px] font-bold text-slate-500">
+                            <span class="flex items-center gap-1"><span class="inline-block w-3 h-1.5 rounded" style="background:#FF5000;"></span>台塑便利家</span>
+                            <span class="flex items-center gap-1"><span class="inline-block w-3 h-1.5 rounded" style="background:#059669;"></span>ECOCO</span>
+                        </div>
+                    </div>
+                    <div style="height:240px;position:relative;"><canvas id="engagementChart"></canvas></div>
+                </div>
+            </div>
+            <!-- Data Table -->
+            <div class="bg-surface-container-lowest rounded-xl border border-orange-50 shadow-sm overflow-hidden mb-4">
+                <div class="px-6 py-4 border-b border-orange-50">
+                    <h2 class="font-headline font-bold text-[15px] text-on-surface">數據明細</h2>
+                    <p class="text-[11px] text-on-surface-variant mt-0.5">各月份完整數據紀錄（來源：Meta Graph API）</p>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-sm">
+                        <thead><tr class="bg-surface-container-low text-[11px] font-bold uppercase tracking-wider">
+                            <th class="px-5 py-3 text-left text-on-surface-variant">月份</th>
+                            <th class="px-5 py-3 text-right" style="color:#FF5000;">台塑 觸及數</th>
+                            <th class="px-5 py-3 text-right" style="color:#FF5000;">台塑 互動率</th>
+                            <th class="px-5 py-3 text-right" style="color:#059669;">ECOCO 觸及數</th>
+                            <th class="px-5 py-3 text-right" style="color:#059669;">ECOCO 互動率</th>
+                        </tr></thead>
+                        <tbody id="trendsTableBody"></tbody>
+                    </table>
+                </div>
+            </div>
+            </div><!-- /trendModePanel -->
+
+            <!-- ===== COMPARE MODE PANEL (new) ===== -->
+            <div id="compareModePanel" style="display:none;">
+            <!-- Period pickers -->
+            <div class="period-row">
+                <div class="period-card">
+                    <div class="period-label a">▪ 期間 A（基準期）</div>
+                    <div class="date-row">
+                        <input type="date" id="cmpStartA"> <span class="date-sep">—</span> <input type="date" id="cmpEndA">
+                    </div>
+                </div>
+                <div class="vs-col"><span class="vs-badge">vs</span></div>
+                <div class="period-card">
+                    <div class="period-label b">▪ 期間 B（比較期）</div>
+                    <div class="date-row">
+                        <input type="date" id="cmpStartB"> <span class="date-sep">—</span> <input type="date" id="cmpEndB">
+                    </div>
+                </div>
+            </div>
+            <!-- Config row -->
+            <div class="cmp-config-row">
+                <span class="cmp-section-label" style="margin-bottom:0;">品牌</span>
+                <button class="cmp-brand-pill active" onclick="setCmpBrand(this,'all')">全部品牌</button>
+                <button class="cmp-brand-pill" onclick="setCmpBrand(this,'fpg')">台塑便利家</button>
+                <button class="cmp-brand-pill" onclick="setCmpBrand(this,'ecoco')">ECOCO</button>
+                <span class="cmp-section-label" style="margin-bottom:0;margin-left:12px;">快選</span>
+                <button class="cmp-quick-btn" onclick="setCmpQuick('mom')">本月 vs 上月</button>
+                <button class="cmp-quick-btn" onclick="setCmpQuick('qoq')">本季 vs 上季</button>
+                <button class="cmp-quick-btn" onclick="setCmpQuick('yoy')">今年 vs 去年同期</button>
+                <button class="cmp-run-btn" id="cmpRunBtn" onclick="runCompare()"><span>▶</span> 產生比較報告</button>
+            </div>
+            <!-- Compare error/loading -->
+            <div id="cmpError" style="display:none;" class="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-lg text-sm font-medium mb-4"></div>
+            <div id="cmpLoading" style="display:none;" class="text-center py-10 text-slate-500 font-bold mb-4">
+                <div class="loader !border-orange-500 !border-t-[#FF5000] mx-auto mb-3" style="display:block;"></div>正在載入比較數據…
+            </div>
+            <!-- Compare results (hidden until data loaded) -->
+            <div id="cmpResults" style="display:none;">
+            <!-- KPI Grid -->
+            <p class="cmp-section-label">關鍵指標對比 · 期間 A vs 期間 B</p>
+            <div class="cmp-kpi-grid" id="cmpKpiGrid"></div>
+            <!-- Insight banner -->
+            <div class="insight-banner" id="cmpInsight" style="display:none;">
+                <div class="insight-icon">💡</div>
+                <div><div class="insight-title">AI 洞察摘要</div><div class="insight-text" id="cmpInsightText"></div></div>
+            </div>
+            <!-- Charts -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                <div class="bg-white rounded-xl p-5 border" style="border-color:rgba(0,0,0,0.08);">
+                    <div class="flex items-start justify-between mb-3">
+                        <div><div class="font-headline font-bold text-[13px]">每週觸及數對比</div><div class="text-[11px] text-slate-400 mt-0.5">週為單位 · 兩期間同步顯示</div></div>
+                        <div class="flex flex-col gap-1 items-end text-[10px] font-bold text-slate-500">
+                            <span class="flex items-center gap-1"><span class="inline-block w-2 h-2 rounded-full" style="background:#FF5000;"></span>期間 A</span>
+                            <span class="flex items-center gap-1"><span class="inline-block w-4 h-0 border-t-2 border-dashed" style="border-color:#185FA5;"></span>期間 B</span>
+                        </div>
+                    </div>
+                    <div style="height:200px;position:relative;"><canvas id="cmpReachChart"></canvas></div>
+                </div>
+                <div class="bg-white rounded-xl p-5 border" style="border-color:rgba(0,0,0,0.08);">
+                    <div class="flex items-start justify-between mb-3">
+                        <div><div class="font-headline font-bold text-[13px]">每週互動率對比</div><div class="text-[11px] text-slate-400 mt-0.5">週為單位 · 兩期間同步顯示</div></div>
+                        <div class="flex flex-col gap-1 items-end text-[10px] font-bold text-slate-500">
+                            <span class="flex items-center gap-1"><span class="inline-block w-2 h-2 rounded-full" style="background:#FF5000;"></span>期間 A</span>
+                            <span class="flex items-center gap-1"><span class="inline-block w-4 h-0 border-t-2 border-dashed" style="border-color:#185FA5;"></span>期間 B</span>
+                        </div>
+                    </div>
+                    <div style="height:200px;position:relative;"><canvas id="cmpEngChart"></canvas></div>
+                </div>
+            </div>
+            <!-- Top Posts Table -->
+            <div class="bg-white rounded-xl border overflow-hidden mb-4" style="border-color:rgba(0,0,0,0.08);">
+                <div class="flex items-center justify-between px-5 py-3 border-b" style="border-color:rgba(0,0,0,0.08);">
+                    <span class="font-headline font-bold text-[13px]">各期間最高觸及貼文 Top 3</span>
+                    <span class="text-[11px] text-slate-400">點擊貼文名稱可開啟原文</span>
+                </div>
+                <table class="w-full text-sm" style="border-collapse:collapse;">
+                    <thead><tr style="background:#f9f7f4;">
+                        <th class="px-5 py-2 text-left text-[10px] font-bold uppercase tracking-wider text-slate-400">期間</th>
+                        <th class="px-5 py-2 text-left text-[10px] font-bold uppercase tracking-wider text-slate-400">貼文摘要</th>
+                        <th class="px-5 py-2 text-right text-[10px] font-bold uppercase tracking-wider text-slate-400">觸及數</th>
+                        <th class="px-5 py-2 text-right text-[10px] font-bold uppercase tracking-wider text-slate-400">互動率</th>
+                    </tr></thead>
+                    <tbody id="cmpTopPostsBody"></tbody>
+                </table>
+            </div>
+            </div><!-- /cmpResults -->
+            </div><!-- /compareModePanel -->
+        </div>
+    </main>
+    
+    <!-- Footer -->
+    <footer class="w-full py-6 mt-auto border-t border-orange-100/10 font-['Inter'] text-[12px] text-slate-400 bg-white">
+        <div class="flex justify-center items-center px-8 max-w-screen-2xl mx-auto">
+            <p>© 2026 Social Media Analytics Tool</p>
+        </div>
+    </footer>
+
+    <script>
+        const BRAND_SUBTITLES = { fpg: '洗劑補充站粉專分析', ecoco: '智慧回收機綠色生態' };
+        let currentBrand = 'fpg';
+        let currentKpi = null;
+        let currentStartDate = null;
+        let currentEndDate = null;
+        let currentBrandDisplayName = '';
+        let lastReportUrl = '';
+        let lastExcelUrl = '';
+        let generateInFlight = false;
+        let jobElapsedTimer = null;
+
+        function fullUrl(path) {
+            if (!path) return '';
+            if (path.startsWith('http')) return path;
+            return window.location.origin + path;
+        }
+
+        function switchTab(tab) {
+            const activeClass = 'border-b-2 pb-1 text-[#FF5000] border-[#FF5000] cursor-pointer';
+            const inactiveClass = 'text-slate-600 hover:text-orange-600 transition-colors cursor-pointer';
+            const dash = document.getElementById('navDashboard');
+            const rep  = document.getElementById('navReports');
+            const trnd = document.getElementById('navTrends');
+            [dash, rep, trnd].forEach(el => { el.className = inactiveClass; el.setAttribute('aria-selected','false'); });
+            document.getElementById('tabDashboard').style.display = 'none';
+            document.getElementById('tabReports').style.display   = 'none';
+            document.getElementById('tabTrends').style.display    = 'none';
+            if (tab === 'dashboard') {
+                dash.className = activeClass; dash.setAttribute('aria-selected','true');
+                document.getElementById('tabDashboard').style.display = 'flex';
+            } else if (tab === 'reports') {
+                rep.className = activeClass; rep.setAttribute('aria-selected','true');
+                document.getElementById('tabReports').style.display = 'flex';
+                loadReports();
+            } else if (tab === 'trends') {
+                trnd.className = activeClass; trnd.setAttribute('aria-selected','true');
+                document.getElementById('tabTrends').style.display = 'flex';
+                initTrendsDashboard();
+            }
+        }
+
+        async function loadBrands() {
+            const container = document.getElementById('brandOptions');
+            const empty = document.getElementById('brandOptionsEmpty');
+            const genBtn = document.getElementById('generateBtn');
+            try {
+                const res = await fetch('/api/brands');
+                const data = await res.json();
+                const brands = data.brands || [];
+                container.innerHTML = '';
+                if (brands.length === 0) {
+                    empty.classList.remove('hidden');
+                    genBtn.disabled = true;
+                    return;
+                }
+                empty.classList.add('hidden');
+                genBtn.disabled = false;
+                brands.forEach((b, idx) => {
+                    const id = 'radio_' + b.key;
+                    const sub = BRAND_SUBTITLES[b.key] || '社群粉專分析';
+                    const checked = idx === 0 ? 'checked' : '';
+                    container.innerHTML += `
+                        <label class="group cursor-pointer relative" onclick="selectBrand('${b.key}')">
+                            <input id="${id}" ${checked} class="peer sr-only" name="brand" type="radio" value="${b.key}"/>
+                            <div class="p-5 rounded-lg bg-surface-container-low border peer-checked:border-primary peer-checked:bg-primary/5 transition-all group-hover:scale-[1.02] duration-200 border-orange-50">
+                                <div class="flex items-center justify-between">
+                                    <div>
+                                        <p class="font-headline font-bold text-lg text-on-surface">${escapeHtml(b.name)}</p>
+                                        <p class="text-xs text-on-surface-variant mt-1">${escapeHtml(sub)}</p>
+                                    </div>
+                                    <div class="w-6 h-6 rounded-full border-2 border-outline-variant peer-checked:border-primary peer-checked:bg-primary flex items-center justify-center transition-colors">
+                                        <div class="w-2.5 h-2.5 bg-white rounded-full opacity-0 peer-checked:opacity-100 transition-opacity"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </label>`;
+                });
+                currentBrand = brands[0].key;
+                currentBrandDisplayName = brands[0].name;
+            } catch (e) {
+                empty.textContent = '無法載入品牌列表，請確認伺服器運作正常。';
+                empty.classList.remove('hidden');
+                genBtn.disabled = true;
+            }
+        }
+
+        function escapeHtml(s) {
+            const d = document.createElement('div');
+            d.textContent = s;
+            return d.innerHTML;
+        }
+
+        async function loadReports() {
+            const list = document.getElementById('reportsList');
+            const loader = document.getElementById('reportsLoader');
+            list.innerHTML = '';
+            loader.style.display = 'block';
+            try {
+                const res = await fetch('/api/reports');
+                const data = await res.json();
+                loader.style.display = 'none';
+                if (data.reports && data.reports.length > 0) {
+                    data.reports.forEach((report) => {
+                        const dateStr = new Date(report.time).toLocaleString('zh-TW');
+                        let icon = 'description';
+                        let color = 'text-blue-600';
+                        if (report.type === 'excel') {
+                            icon = 'table_view';
+                            color = 'text-green-600';
+                        } else if (report.type === 'pptx') {
+                            icon = 'slideshow';
+                            color = 'text-amber-600';
+                        }
+                        const target = report.type === 'html' ? 'target="_blank" rel="noopener"' : 'download';
+                        let sub = '最後修改：' + dateStr;
+                        if (report.brandLabel && report.startDate && report.endDate) {
+                            sub = report.brandLabel + ' · ' + report.startDate + ' ~ ' + report.endDate + ' · ' + sub;
+                        }
+                        list.innerHTML += `
+                            <a href="${report.url}" ${target} class="group p-4 bg-white border border-slate-200 rounded-lg shadow-sm hover:shadow-md transition-all flex items-center justify-between hover:border-orange-300">
+                                <div class="flex items-center gap-4 overflow-hidden">
+                                    <div class="h-10 w-10 bg-slate-50 flex items-center justify-center rounded-full flex-shrink-0 group-hover:bg-orange-50 transition-colors">
+                                        <span class="material-symbols-outlined ${color}">${icon}</span>
+                                    </div>
+                                    <div class="truncate">
+                                        <div class="font-bold text-sm text-slate-800 truncate">${escapeHtml(report.name)}</div>
+                                        <div class="text-xs text-slate-500 mt-0.5 truncate">${escapeHtml(sub)}</div>
+                                    </div>
+                                </div>
+                                <span class="material-symbols-outlined text-slate-300 group-hover:text-[#FF5000] ml-4 transition-colors shrink-0">download</span>
+                            </a>`;
+                    });
+                } else {
+                    list.innerHTML = '<div class="text-center py-10 text-slate-500 font-bold">目前尚無歷史報告，請先至 Dashboard 產生。</div>';
+                }
+            } catch (e) {
+                loader.style.display = 'none';
+                list.innerHTML = '<div class="text-center py-10 text-red-500 font-bold">無法載入歷史報告，請稍後再試。</div>';
+            }
+        }
+
+        function selectBrand(brand) {
+            currentBrand = brand;
+            document.querySelectorAll('input[name="brand"]').forEach((el) => {
+                el.checked = el.value === brand;
+            });
+            document.getElementById('statusContainer').style.display = 'none';
+            document.getElementById('errorMsg').style.display = 'none';
+            const labels = document.querySelectorAll('#brandOptions label');
+            /* sync display name from selected radio */
+            const sel = document.querySelector('input[name="brand"]:checked');
+            if (sel) {
+                const nameEl = sel.closest('label').querySelector('.font-headline.font-bold');
+                if (nameEl) currentBrandDisplayName = nameEl.textContent;
+            }
+        }
+
+        function refreshLongRangeWarning() {
+            const s = document.getElementById('startDate').value;
+            const e = document.getElementById('endDate').value;
+            const warn = document.getElementById('longRangeWarning');
+            if (!s || !e) {
+                warn.classList.add('hidden');
+                return;
+            }
+            const days = (new Date(e) - new Date(s)) / (86400000);
+            warn.classList.toggle('hidden', days <= 90);
+        }
+
+        function setPreset(type, evt) {
+            const dEnd = new Date();
+            const dStart = new Date();
+            if (type === 'last30') dStart.setDate(dStart.getDate() - 30);
+            else if (type === 'lastQuarter') dStart.setMonth(dStart.getMonth() - 3);
+            else if (type === 'ytd') {
+                dStart.setMonth(0);
+                dStart.setDate(1);
+            }
+            document.getElementById('endDate').value = dEnd.toISOString().split('T')[0];
+            document.getElementById('startDate').value = dStart.toISOString().split('T')[0];
+            refreshLongRangeWarning();
+            document.querySelectorAll('button[onclick^="setPreset"]').forEach((btn) => {
+                btn.className = 'px-4 py-2 rounded-lg bg-surface-container text-xs font-bold text-on-surface-variant hover:bg-[#FF5000] hover:text-white transition-all active:scale-95';
+            });
+            if (evt && evt.currentTarget) {
+                evt.currentTarget.className = 'px-4 py-2 rounded-lg bg-[#FF5000] text-white text-xs font-bold shadow-md active:scale-95 transition-all';
+            }
+        }
+
+        document.getElementById('startDate').addEventListener('change', refreshLongRangeWarning);
+        document.getElementById('endDate').addEventListener('change', refreshLongRangeWarning);
+
+        setPreset('last30');
+        if (document.getElementById('btnLast30')) {
+            document.getElementById('btnLast30').className = 'px-4 py-2 rounded-lg bg-[#FF5000] text-white text-xs font-bold shadow-md active:scale-95 transition-all';
+        }
+
+        document.getElementById('generateBtn').addEventListener('click', async () => {
+            if (generateInFlight) return;
+            const startDate = document.getElementById('startDate').value;
+            const endDate = document.getElementById('endDate').value;
+            if (!startDate || !endDate) return alert('請選擇完整日期區間。');
+            if (new Date(startDate) > new Date(endDate)) return alert('起始日不可晚於結束日。');
+
+            generateInFlight = true;
+            const btn = document.getElementById('generateBtn');
+            const btnText = document.getElementById('btnText');
+            const loader = document.getElementById('loader');
+            const icon = document.getElementById('btnIcon');
+            const errorMsg = document.getElementById('errorMsg');
+            const errorMsgText = document.getElementById('errorMsgText');
+            const statusContainer = document.getElementById('statusContainer');
+            const jobElapsed = document.getElementById('jobElapsed');
+            const t0 = Date.now();
+            jobElapsed.textContent = '已進行 0 秒…';
+            if (jobElapsedTimer) clearInterval(jobElapsedTimer);
+            jobElapsedTimer = setInterval(() => {
+                const sec = Math.floor((Date.now() - t0) / 1000);
+                jobElapsed.textContent = '已進行 ' + sec + ' 秒，仍與 Facebook 同步資料中…';
+            }, 1000);
+
+            btn.disabled = true;
+            btnText.textContent = '產生中…';
+            icon.style.display = 'none';
+            loader.style.display = 'block';
+            errorMsg.style.display = 'none';
+            statusContainer.style.display = 'none';
+
+            const selectedSections = {
+                kpi: document.getElementById('chkKpi').checked,
+                topPost: document.getElementById('chkTopPost').checked,
+                content: document.getElementById('chkContent').checked,
+                posts: document.getElementById('chkPosts').checked,
+                insights: document.getElementById('chkInsights').checked,
+                comments: document.getElementById('chkComments').checked,
+                plan: document.getElementById('chkPlan').checked
+            };
+
+            try {
+                const response = await fetch('/api/generate', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ startDate, endDate, brand: currentBrand, selectedSections }),
+                });
+                let data;
+                try {
+                    data = await response.json();
+                } catch (parseErr) {
+                    throw new Error('伺服器回應異常，請稍後再試。');
+                }
+                if (data.success) {
+                    currentKpi = data.kpi;
+                    currentStartDate = startDate;
+                    currentEndDate = endDate;
+                    if (data.brandName) currentBrandDisplayName = data.brandName;
+
+                    document.getElementById('kpiPosts').textContent = data.kpi.totalPosts;
+                    document.getElementById('kpiReach').textContent = data.kpi.totalReach.toLocaleString();
+                    document.getElementById('kpiEngage').textContent = data.kpi.avgEngagement;
+
+                    lastReportUrl = data.reportUrl;
+                    lastExcelUrl = data.excelUrl || '';
+                    document.getElementById('linkHtml').href = data.reportUrl;
+                    const excelEl = document.getElementById('linkExcel');
+                    const copyEx = document.getElementById('copyExcelUrl');
+                    if (data.excelUrl) {
+                        excelEl.href = data.excelUrl;
+                        excelEl.style.display = 'flex';
+                        copyEx.style.display = 'flex';
+                    } else {
+                        excelEl.style.display = 'none';
+                        copyEx.style.display = 'none';
+                    }
+
+                    document.getElementById('successMeta').textContent =
+                        currentBrandDisplayName + ' · ' + startDate + ' ~ ' + endDate;
+                    statusContainer.style.display = 'block';
+                } else {
+                    errorMsgText.textContent = data.message || '產生失敗';
+                    errorMsg.style.display = 'block';
+                }
+            } catch (err) {
+                errorMsgText.textContent = err.message || '無法連線伺服器，請確認服務已啟動。';
+                errorMsg.style.display = 'block';
+            } finally {
+                clearInterval(jobElapsedTimer);
+                jobElapsedTimer = null;
+                jobElapsed.textContent = '';
+                generateInFlight = false;
+                btn.disabled = false;
+                btnText.textContent = '產生報告';
+                icon.style.display = 'inline-block';
+                loader.style.display = 'none';
+            }
+        });
+
+        document.getElementById('copyHtmlUrl').addEventListener('click', async () => {
+            if (!lastReportUrl) return;
+            try {
+                await navigator.clipboard.writeText(fullUrl(lastReportUrl));
+                alert('已複製 HTML 完整連結');
+            } catch (e) {
+                alert('複製失敗，請手動從「開啟 HTML」複製網址列。');
+            }
+        });
+
+        document.getElementById('copyExcelUrl').addEventListener('click', async () => {
+            if (!lastExcelUrl) return;
+            try {
+                await navigator.clipboard.writeText(fullUrl(lastExcelUrl));
+                alert('已複製 Excel 完整連結');
+            } catch (e) {
+                alert('複製失敗。');
+            }
+        });
+
+        document.getElementById('linkPptx').addEventListener('click', async (e) => {
+            e.preventDefault();
+            if (!currentKpi || !currentStartDate || !currentEndDate) {
+                alert('請先成功產生報告，再下載 PPTX。');
+                return;
+            }
+            const btn = e.currentTarget;
+            const originalText = btn.innerHTML;
+            btn.innerHTML = '<div class="loader !border-yellow-700 !border-t-yellow-900" style="display:block; width:16px; height:16px;"></div>';
+            btn.style.pointerEvents = 'none';
+            try {
+                const response = await fetch('/api/generate-pptx', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        startDate: currentStartDate,
+                        endDate: currentEndDate,
+                        brand: currentBrand,
+                        kpi: currentKpi,
+                    }),
+                });
+                const data = await response.json();
+                if (data.success) {
+                    const downloadLink = document.createElement('a');
+                    downloadLink.href = data.pptxUrl;
+                    downloadLink.download = '';
+                    document.body.appendChild(downloadLink);
+                    downloadLink.click();
+                    downloadLink.remove();
+                } else {
+                    alert('PPTX 產生失敗：' + (data.message || ''));
+                }
+            } catch (err) {
+                alert('伺服器無回應，產生失敗。');
+            } finally {
+                btn.innerHTML = originalText;
+                btn.style.pointerEvents = 'auto';
+            }
+        });
+
+        loadBrands();
+
+        // ── Trends Dashboard ───────────────────────────────────
+        let TREND_MONTHS = [];
+        let TREND_DATA = { 
+            fpg: { reach:[], engagement:[], prevReach:[], prevEng:[] }, 
+            ecoco: { reach:[], engagement:[], prevReach:[], prevEng:[] } 
+        };
+        let trendFilter = 'all';
+        let reachChartInst = null;
+        let engChartInst   = null;
+        let trendsInitialized = false;
+        let trendsLoading = false;
+        let currentMonthsCount = 6;
+
+        function tFmt(n) { return n.toLocaleString('zh-TW'); }
+        function tAvg(a) { if (!a.length) return '0.0'; return (a.reduce((s,v)=>s+v,0)/a.length).toFixed(1); }
+        function tSum(a) { return a.reduce((s,v)=>s+v,0); }
+        function calcDelta(currVal, prevVal) {
+            if (prevVal === 0) return currVal > 0 ? '↑ ∞' : '— ';
+            const pct = ((currVal - prevVal) / prevVal * 100).toFixed(1);
+            return (pct >= 0 ? '↑ ' : '↓ ') + Math.abs(pct) + '% vs 上一期';
+        }
+
+        function filterPlatform(p) {
+            trendFilter = p;
+            ['filterAll','filterFpg','filterEcoco'].forEach(id => {
+                document.getElementById(id).classList.remove('active');
+            });
+            document.getElementById(p==='all'?'filterAll':p==='fpg'?'filterFpg':'filterEcoco').classList.add('active');
+            const showFpg   = p !== 'ecoco';
+            const showEcoco = p !== 'fpg';
+            document.getElementById('kpiCardFpgReach').style.display  = showFpg   ? '' : 'none';
+            document.getElementById('kpiCardFpgEng').style.display    = showFpg   ? '' : 'none';
+            document.getElementById('kpiCardEcocoReach').style.display = showEcoco ? '' : 'none';
+            document.getElementById('kpiCardEcocoEng').style.display   = showEcoco ? '' : 'none';
+            if (reachChartInst) {
+                reachChartInst.data.datasets[0].hidden = !showFpg;
+                reachChartInst.data.datasets[1].hidden = !showEcoco;
+                reachChartInst.update();
+            }
+            if (engChartInst) {
+                engChartInst.data.datasets[0].hidden = !showFpg;
+                engChartInst.data.datasets[1].hidden = !showEcoco;
+                engChartInst.update();
+            }
+            renderTrendsTable(showFpg, showEcoco);
+        }
+
+        function renderTrendsTable(showFpg, showEcoco) {
+            const tbody = document.getElementById('trendsTableBody');
+            tbody.innerHTML = '';
+            TREND_MONTHS.forEach((m,i) => {
+                const fpgR = TREND_DATA.fpg.reach[i] || 0;
+                const fpgE = TREND_DATA.fpg.engagement[i] || 0;
+                const ecR  = TREND_DATA.ecoco.reach[i] || 0;
+                const ecE  = TREND_DATA.ecoco.engagement[i] || 0;
+                const dimF = !showFpg  ? 'opacity:0.25;' : '';
+                const dimE = !showEcoco ? 'opacity:0.25;' : '';
+                tbody.innerHTML += `<tr class="border-t border-orange-50 hover:bg-orange-50/30 transition-colors">
+                    <td class="px-5 py-3 font-bold text-on-surface">${m}</td>
+                    <td class="px-5 py-3 text-right font-mono" style="${dimF}">${tFmt(fpgR)}</td>
+                    <td class="px-5 py-3 text-right font-mono" style="${dimF}">${fpgE}%</td>
+                    <td class="px-5 py-3 text-right font-mono" style="${dimE}">${tFmt(ecR)}</td>
+                    <td class="px-5 py-3 text-right font-mono" style="${dimE}">${ecE}%</td>
+                </tr>`;
+            });
+        }
+
+        function populateKPIs() {
+            const fpgReach = tSum(TREND_DATA.fpg.reach);
+            const ecocoReach = tSum(TREND_DATA.ecoco.reach);
+            const fpgEng = parseFloat(tAvg(TREND_DATA.fpg.engagement));
+            const ecocoEng = parseFloat(tAvg(TREND_DATA.ecoco.engagement));
+
+            document.getElementById('kpiFpgReach').textContent    = tFmt(fpgReach);
+            document.getElementById('kpiEcocoReach').textContent  = tFmt(ecocoReach);
+            document.getElementById('kpiFpgEng').textContent      = fpgEng.toFixed(1) + '%';
+            document.getElementById('kpiEcocoEng').textContent    = ecocoEng.toFixed(1) + '%';
+
+            const fpgReachDelta = calcDelta(fpgReach, tSum(TREND_DATA.fpg.prevReach));
+            const ecocoReachDelta = calcDelta(ecocoReach, tSum(TREND_DATA.ecoco.prevReach));
+            const fpgEngDelta = calcDelta(fpgEng, parseFloat(tAvg(TREND_DATA.fpg.prevEng)));
+            const ecocoEngDelta = calcDelta(ecocoEng, parseFloat(tAvg(TREND_DATA.ecoco.prevEng)));
+
+            document.getElementById('kpiFpgReachDelta').textContent   = fpgReachDelta;
+            document.getElementById('kpiEcocoReachDelta').textContent = ecocoReachDelta;
+            document.getElementById('kpiFpgEngDelta').textContent     = fpgEngDelta;
+            document.getElementById('kpiEcocoEngDelta').textContent   = ecocoEngDelta;
+
+            // 設定 delta 膠囊標籤樣式
+            function setDeltaColor(elId, val) {
+                const el = document.getElementById(elId);
+                const base = "px-2 py-0.5 rounded-full text-[11px] font-bold shadow-sm ";
+                if (val.startsWith('↑')) el.className = base + 'bg-emerald-100 text-emerald-700 border border-emerald-200';
+                else if (val.startsWith('↓')) el.className = base + 'bg-red-100 text-red-700 border border-red-200';
+                else el.className = base + 'bg-slate-100 text-slate-500 border border-slate-200';
+            }
+            setDeltaColor('kpiFpgReachDelta', fpgReachDelta);
+            setDeltaColor('kpiEcocoReachDelta', ecocoReachDelta);
+            setDeltaColor('kpiFpgEngDelta', fpgEngDelta);
+            setDeltaColor('kpiEcocoEngDelta', ecocoEngDelta);
+        }
+
+        function buildCharts() {
+            const FPG_COLOR  = '#FF5000';
+            const ECO_COLOR  = '#059669';
+            const chartDefaults = {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { display: false } }
+            };
+
+            // 如果圖表已存在，更新資料即可
+            if (reachChartInst) {
+                reachChartInst.data.labels = TREND_MONTHS;
+                reachChartInst.data.datasets[0].data = TREND_DATA.fpg.reach;
+                reachChartInst.data.datasets[1].data = TREND_DATA.ecoco.reach;
+                reachChartInst.update();
+            } else {
+                reachChartInst = new Chart(
+                    document.getElementById('reachChart').getContext('2d'),
+                    {
+                        type: 'line',
+                        data: {
+                            labels: TREND_MONTHS,
+                            datasets: [
+                                { label:'台塑便利家', data: TREND_DATA.fpg.reach,
+                                  borderColor: FPG_COLOR, backgroundColor:'rgba(255,80,0,0.07)',
+                                  borderWidth:2.5, fill:true, tension:0.4,
+                                  pointBackgroundColor: FPG_COLOR, pointRadius:4, pointHoverRadius:6 },
+                                { label:'ECOCO社群',  data: TREND_DATA.ecoco.reach,
+                                  borderColor: ECO_COLOR, backgroundColor:'rgba(5,150,105,0.07)',
+                                  borderWidth:2.5, fill:true, tension:0.4,
+                                  pointBackgroundColor: ECO_COLOR, pointRadius:4, pointHoverRadius:6 }
+                            ]
+                        },
+                        options: {
+                            ...chartDefaults,
+                            plugins: { ...chartDefaults.plugins,
+                                tooltip: { callbacks: { label: c => ` ${c.dataset.label}: ${tFmt(c.parsed.y)}` } }
+                            },
+                            scales: {
+                                x: { grid:{display:false}, ticks:{font:{size:11}} },
+                                y: { grid:{color:'rgba(0,0,0,0.04)'}, ticks:{font:{size:11},
+                                     callback: v => v>=1000 ? (v/1000).toFixed(0)+'K' : v } }
+                            }
+                        }
+                    }
+                );
+            }
+
+            if (engChartInst) {
+                engChartInst.data.labels = TREND_MONTHS;
+                engChartInst.data.datasets[0].data = TREND_DATA.fpg.engagement;
+                engChartInst.data.datasets[1].data = TREND_DATA.ecoco.engagement;
+                engChartInst.update();
+            } else {
+                engChartInst = new Chart(
+                    document.getElementById('engagementChart').getContext('2d'),
+                    {
+                        type: 'bar',
+                        data: {
+                            labels: TREND_MONTHS,
+                            datasets: [
+                                { label:'台塑便利家', data: TREND_DATA.fpg.engagement,
+                                  backgroundColor:'rgba(255,80,0,0.78)', borderRadius:4, borderSkipped:false },
+                                { label:'ECOCO社群',  data: TREND_DATA.ecoco.engagement,
+                                  backgroundColor:'rgba(5,150,105,0.78)', borderRadius:4, borderSkipped:false }
+                            ]
+                        },
+                        options: {
+                            ...chartDefaults,
+                            plugins: { ...chartDefaults.plugins,
+                                tooltip: { callbacks: { label: c => ` ${c.dataset.label}: ${c.parsed.y}%` } }
+                            },
+                            scales: {
+                                x: { grid:{display:false}, ticks:{font:{size:11}} },
+                                y: { grid:{color:'rgba(0,0,0,0.04)'}, ticks:{font:{size:11},
+                                     callback: v => v+'%' } }
+                            }
+                        }
+                    }
+                );
+            }
+        }
+
+        async function initTrendsDashboard(months = null) {
+            if (months !== null) currentMonthsCount = months;
+            if (trendsLoading) return;
+            trendsLoading = true;
+
+            // 顯示載入中狀態
+            const kpiIds = ['kpiFpgReach','kpiEcocoReach','kpiFpgEng','kpiEcocoEng'];
+            const deltaIds = ['kpiFpgReachDelta','kpiEcocoReachDelta','kpiFpgEngDelta','kpiEcocoEngDelta'];
+            if (!trendsInitialized || months !== null) {
+                kpiIds.forEach(id => { document.getElementById(id).textContent = '載入中…'; });
+                deltaIds.forEach(id => { 
+                    document.getElementById(id).textContent = ''; 
+                    document.getElementById(id).className = 'hidden'; 
+                });
+            }
+
+            try {
+                const res = await fetch(`/api/trends?months=${currentMonthsCount}`);
+                const data = await res.json();
+
+                if (!data.success) {
+                    kpiIds.forEach(id => { document.getElementById(id).textContent = '錯誤'; });
+                    deltaIds.forEach(id => { 
+                        document.getElementById(id).textContent = data.message || '無法載入';
+                        document.getElementById(id).className = 'text-xs font-bold text-red-500';
+                    });
+                    trendsLoading = false;
+                    return;
+                }
+
+                // 更新全域資料
+                TREND_MONTHS = data.months || [];
+                if (data.brands.fpg) {
+                    TREND_DATA.fpg.reach = data.brands.fpg.reach || [];
+                    TREND_DATA.fpg.engagement = data.brands.fpg.engagement || [];
+                    TREND_DATA.fpg.prevReach = data.brands.fpg.previous?.reach || [];
+                    TREND_DATA.fpg.prevEng = data.brands.fpg.previous?.engagement || [];
+                }
+                if (data.brands.ecoco) {
+                    TREND_DATA.ecoco.reach = data.brands.ecoco.reach || [];
+                    TREND_DATA.ecoco.engagement = data.brands.ecoco.engagement || [];
+                    TREND_DATA.ecoco.prevReach = data.brands.ecoco.previous?.reach || [];
+                    TREND_DATA.ecoco.prevEng = data.brands.ecoco.previous?.engagement || [];
+                }
+
+                // 更新日期區間標示
+                if (TREND_MONTHS.length > 0) {
+                    const rangeText = `資料區間：${TREND_MONTHS[0]} — ${TREND_MONTHS[TREND_MONTHS.length-1]}`;
+                    const rangeEl = document.getElementById('trendDateRange');
+                    if (rangeEl) rangeEl.textContent = rangeText;
+                }
+
+                populateKPIs();
+                buildCharts();
+                renderTrendsTable(trendFilter !== 'ecoco', trendFilter !== 'fpg');
+                trendsInitialized = true;
+
+            } catch (err) {
+                console.error('[Trends] 載入失敗:', err);
+                kpiIds.forEach(id => { document.getElementById(id).textContent = '連線失敗'; });
+                deltaIds.forEach(id => { document.getElementById(id).textContent = '請檢查伺服器'; });
+            } finally {
+                trendsLoading = false;
+            }
+        }
+
+        // ── Compare Mode ───────────────────────────────────
+        let cmpBrand = 'all';
+        let cmpReachChartInst = null;
+        let cmpEngChartInst = null;
+        let cmpRunning = false;
+
+        function switchTrendMode(mode) {
+            document.getElementById('modeTrend').classList.toggle('active', mode === 'trend');
+            document.getElementById('modeCompare').classList.toggle('active', mode === 'compare');
+            document.getElementById('trendModePanel').style.display = mode === 'trend' ? '' : 'none';
+            document.getElementById('trendModeControls').style.display = mode === 'trend' ? '' : 'none';
+            document.getElementById('compareModePanel').style.display = mode === 'compare' ? '' : 'none';
+            if (mode === 'trend') {
+                document.getElementById('trendTitleSpan').textContent = 'Overview';
+                document.getElementById('trendSubtitle').textContent = '社群數據表現 · 台塑便利家 × ECOCO社群';
+                if (!trendsInitialized) initTrendsDashboard();
+            } else {
+                document.getElementById('trendTitleSpan').textContent = '比較模式';
+                document.getElementById('trendSubtitle').textContent = '選擇兩段日期區間，一次產生對比報告';
+                document.getElementById('trendDateRange').textContent = '';
+                if (!document.getElementById('cmpStartA').value) setCmpQuick('mom');
+            }
+        }
+
+        function setCmpBrand(btn, brand) {
+            cmpBrand = brand;
+            document.querySelectorAll('.cmp-brand-pill').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+        }
+
+        function setCmpQuick(type) {
+            const now = new Date();
+            let sA, eA, sB, eB;
+            if (type === 'mom') {
+                const pm = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+                sA = `${pm.getFullYear()}-${String(pm.getMonth()+1).padStart(2,'0')}-01`;
+                eA = new Date(pm.getFullYear(), pm.getMonth()+1, 0).toISOString().split('T')[0];
+                const cm = new Date(now.getFullYear(), now.getMonth(), 1);
+                sB = `${cm.getFullYear()}-${String(cm.getMonth()+1).padStart(2,'0')}-01`;
+                eB = now.toISOString().split('T')[0];
+            } else if (type === 'qoq') {
+                const cq = Math.floor(now.getMonth() / 3);
+                const pqStart = new Date(now.getFullYear(), (cq-1)*3, 1);
+                const pqEnd = new Date(now.getFullYear(), cq*3, 0);
+                const cqStart = new Date(now.getFullYear(), cq*3, 1);
+                sA = pqStart.toISOString().split('T')[0]; eA = pqEnd.toISOString().split('T')[0];
+                sB = cqStart.toISOString().split('T')[0]; eB = now.toISOString().split('T')[0];
+            } else if (type === 'yoy') {
+                const ly = now.getFullYear() - 1;
+                sA = `${ly}-${String(now.getMonth()+1).padStart(2,'0')}-01`;
+                eA = new Date(ly, now.getMonth()+1, 0).toISOString().split('T')[0];
+                sB = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-01`;
+                eB = now.toISOString().split('T')[0];
+            }
+            document.getElementById('cmpStartA').value = sA;
+            document.getElementById('cmpEndA').value = eA;
+            document.getElementById('cmpStartB').value = sB;
+            document.getElementById('cmpEndB').value = eB;
+        }
+
+        function fmtN(n) { return n >= 1000 ? (n/1000).toFixed(1).replace(/\.0$/,'') + 'K' : n.toLocaleString(); }
+
+        function renderCmpKpis(data) {
+            const metrics = [
+                { name:'總觸及人數', aVal:data.periodA.totalReach, bVal:data.periodB.totalReach, delta:data.delta.reach, bg:'#FF5000', fmt:fmtN },
+                { name:'平均互動率', aVal:data.periodA.avgEngagement, bVal:data.periodB.avgEngagement, delta:data.delta.engagement, bg:'#059669', fmt:v=>v.toFixed(1)+'%' },
+                { name:'貼文總數', aVal:data.periodA.totalPosts, bVal:data.periodB.totalPosts, delta:data.delta.posts, bg:'#d4a017', fmt:v=>v },
+                { name:'單貼文平均觸及', aVal:data.periodA.avgReachPerPost, bVal:data.periodB.avgReachPerPost, delta:data.delta.avgReachPerPost, bg:'#060E9F', fmt:fmtN },
+            ];
+            const grid = document.getElementById('cmpKpiGrid');
+            grid.innerHTML = metrics.map(m => {
+                const dCls = m.delta.direction === 'up' ? 'd-up' : m.delta.direction === 'down' ? 'd-down' : 'd-flat';
+                const dTxt = m.delta.direction === 'flat' ? '— 持平'
+                    : (m.delta.direction === 'up' ? '↑ ' : '↓ ') + Math.abs(m.delta.value).toFixed(1) + '%';
+                return `<div class="cmp-kpi-card">
+                    <div class="cmp-kpi-bg" style="background:${m.bg};"></div>
+                    <div class="cmp-kpi-name">${m.name}</div>
+                    <div class="cmp-kpi-pair">
+                        <div class="cmp-kpi-row"><span class="cmp-kpi-dot" style="background:#FF5000;"></span><span class="cmp-kpi-num">${m.fmt(m.aVal)}</span></div>
+                        <div class="cmp-kpi-sub">期間 A</div>
+                        <div class="cmp-kpi-row" style="margin-top:2px;"><span class="cmp-kpi-dot" style="background:transparent;border:1.5px dashed #185FA5;"></span><span class="cmp-kpi-num" style="color:#185FA5;">${m.fmt(m.bVal)}</span></div>
+                        <div class="cmp-kpi-sub">期間 B</div>
+                    </div>
+                    <hr class="cmp-kpi-divider">
+                    <div class="delta-row"><span class="delta-pill ${dCls}">${dTxt}</span><span class="delta-note">B vs A</span></div>
+                </div>`;
+            }).join('');
+        }
+
+        function renderCmpInsight(data) {
+            const el = document.getElementById('cmpInsight');
+            const txt = document.getElementById('cmpInsightText');
+            const parts = [];
+            const rd = data.delta.reach, ed = data.delta.engagement;
+            if (rd.direction === 'up') parts.push(`期間 B 的觸及數成長 +${rd.value.toFixed(1)}%`);
+            else if (rd.direction === 'down') parts.push(`期間 B 的觸及數下滑 ${rd.value.toFixed(1)}%`);
+            if (ed.direction === 'up') parts.push(`互動率上升 +${ed.value.toFixed(1)}%`);
+            else if (ed.direction === 'down') parts.push(`互動率下滑 ${ed.value.toFixed(1)}%`);
+            if (parts.length === 0) { el.style.display = 'none'; return; }
+            let insight = parts.join('，');
+            if (rd.direction === 'up' && ed.direction === 'down') insight += '。顯示內容觸及更廣泛但深度互動減少，建議在廣觸及貼文中加入互動誘因（留言抽獎、問答）以同步提升互動率。';
+            else if (rd.direction === 'up' && ed.direction === 'up') insight += '。觸及與互動雙雙成長，本期內容策略表現優異，建議持續此方向。';
+            else if (rd.direction === 'down') insight += '。建議檢視貼文發佈頻率與內容類型，嘗試加入更多視覺素材或互動型貼文。';
+            else insight += '。';
+            txt.textContent = insight;
+            el.style.display = 'flex';
+        }
+
+        function buildCmpCharts(data) {
+            const labels = data.weeklyBreakdown.labels;
+            const cDef = { responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}} };
+            const mkDs = (label, d, color, dashed) => ({
+                label, data:d, borderColor:color, backgroundColor: dashed ? 'rgba(24,95,165,0.06)' : 'rgba(255,80,0,0.06)',
+                borderWidth:2, fill:true, tension:0.4, pointBackgroundColor:color, pointRadius:4, pointHoverRadius:6,
+                ...(dashed ? {borderDash:[5,4]} : {})
+            });
+            if (cmpReachChartInst) { cmpReachChartInst.destroy(); cmpReachChartInst = null; }
+            if (cmpEngChartInst) { cmpEngChartInst.destroy(); cmpEngChartInst = null; }
+            cmpReachChartInst = new Chart(document.getElementById('cmpReachChart').getContext('2d'), {
+                type:'line', data:{ labels, datasets:[
+                    mkDs('期間A', data.weeklyBreakdown.periodA.reach, '#FF5000', false),
+                    mkDs('期間B', data.weeklyBreakdown.periodB.reach, '#185FA5', true),
+                ]}, options:{...cDef, scales:{ x:{grid:{display:false},ticks:{font:{size:11}}}, y:{grid:{color:'rgba(0,0,0,0.04)'},ticks:{font:{size:11},callback:v=>v>=1000?(v/1000).toFixed(0)+'K':v}} }}
+            });
+            cmpEngChartInst = new Chart(document.getElementById('cmpEngChart').getContext('2d'), {
+                type:'line', data:{ labels, datasets:[
+                    mkDs('期間A', data.weeklyBreakdown.periodA.engagement, '#FF5000', false),
+                    mkDs('期間B', data.weeklyBreakdown.periodB.engagement, '#185FA5', true),
+                ]}, options:{...cDef, scales:{ x:{grid:{display:false},ticks:{font:{size:11}}}, y:{grid:{color:'rgba(0,0,0,0.04)'},ticks:{font:{size:11},callback:v=>v.toFixed(1)+'%'}} }}
+            });
+        }
+
+        function renderCmpTopPosts(data) {
+            const tbody = document.getElementById('cmpTopPostsBody');
+            let html = '';
+            const render = (posts, label, cls) => posts.forEach((p,i) => {
+                const best = i === 0 ? 'background:#fffdf0;' : '';
+                const star = i === 0 ? '<span style="color:#d4a017;font-size:11px;margin-right:2px;">★</span>' : '';
+                const link = p.permalink ? `<a href="${p.permalink}" target="_blank" style="color:inherit;text-decoration:none;font-weight:700;">${star}${escapeHtml(p.title)}</a>` : `<span style="font-weight:700;">${star}${escapeHtml(p.title)}</span>`;
+                html += `<tr style="border-top:1px solid rgba(0,0,0,0.06);${best}">
+                    <td class="px-5 py-2"><span style="display:inline-block;font-size:10px;font-weight:700;padding:2px 9px;border-radius:99px;" class="${cls}">${label}</span></td>
+                    <td class="px-5 py-2 text-[12px]">${link}</td>
+                    <td class="px-5 py-2 text-right text-[12px] font-mono">${p.reach.toLocaleString()}</td>
+                    <td class="px-5 py-2 text-right text-[12px] font-mono">${p.engagementRate}%</td>
+                </tr>`;
+            });
+            render(data.periodA.topPosts || [], 'A', 'bg-orange-50 text-[#FF5000]');
+            render(data.periodB.topPosts || [], 'B', 'bg-blue-50 text-[#185FA5]');
+            tbody.innerHTML = html;
+        }
+
+        async function runCompare() {
+            if (cmpRunning) return;
+            const sA = document.getElementById('cmpStartA').value;
+            const eA = document.getElementById('cmpEndA').value;
+            const sB = document.getElementById('cmpStartB').value;
+            const eB = document.getElementById('cmpEndB').value;
+            if (!sA || !eA || !sB || !eB) return alert('請完整填入兩個期間的起訖日期');
+            if (new Date(sA) > new Date(eA) || new Date(sB) > new Date(eB)) return alert('起始日不可晚於結束日');
+            cmpRunning = true;
+            const btn = document.getElementById('cmpRunBtn');
+            btn.disabled = true; btn.innerHTML = '<div class="loader" style="display:block;width:16px;height:16px;border-color:rgba(255,255,255,0.3);border-top-color:#fff;"></div> 載入中…';
+            document.getElementById('cmpError').style.display = 'none';
+            document.getElementById('cmpResults').style.display = 'none';
+            document.getElementById('cmpLoading').style.display = 'block';
+            try {
+                const url = `/api/trends/compare?startA=${sA}&endA=${eA}&startB=${sB}&endB=${eB}&brand=${cmpBrand}`;
+                const res = await fetch(url);
+                const data = await res.json();
+                document.getElementById('cmpLoading').style.display = 'none';
+                if (!data.success) throw new Error(data.message || '比較失敗');
+                document.getElementById('trendDateRange').textContent = `期間 A：${sA} — ${eA}　|　期間 B：${sB} — ${eB}`;
+                renderCmpKpis(data);
+                renderCmpInsight(data);
+                buildCmpCharts(data);
+                renderCmpTopPosts(data);
+                document.getElementById('cmpResults').style.display = '';
+            } catch (err) {
+                document.getElementById('cmpLoading').style.display = 'none';
+                const errEl = document.getElementById('cmpError');
+                errEl.textContent = '❌ ' + (err.message || '無法連線伺服器');
+                errEl.style.display = 'block';
+            } finally {
+                cmpRunning = false; btn.disabled = false;
+                btn.innerHTML = '<span>▶</span> 產生比較報告';
+            }
+        }
+    </script>
+</body>
+</html>
