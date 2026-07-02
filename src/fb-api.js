@@ -8,7 +8,7 @@ class FacebookAPI {
   constructor(config) {
     this.pageId = config.pageId;
     this.accessToken = config.accessToken;
-    this.apiVersion = config.apiVersion || 'v21.0';
+    this.apiVersion = config.apiVersion || 'v25.0';
     this.baseUrl = `https://graph.facebook.com/${this.apiVersion}`;
 
     this.client = axios.create({
@@ -142,17 +142,19 @@ class FacebookAPI {
   }
 
   /**
-   * 取得單篇貼文的洞察數據（觸及人數）
+   * 取得單篇貼文的洞察數據（觀眾人數）
+   * 使用 post_total_media_view_unique 取代已停用的 post_impressions_unique
+   * 參考：Meta Graph API v25.0 變更紀錄（2026 年 6 月停用舊指標）
    * @param {string} postId - 貼文 ID
    */
   async getPostInsights(postId) {
     try {
       const data = await this.request(`/${postId}/insights`, {
-        metric: 'post_impressions_unique',
+        metric: 'post_total_media_view_unique',
       });
 
       if (data.data && data.data.length > 0) {
-        const metric = data.data.find(m => m.name === 'post_impressions_unique');
+        const metric = data.data.find(m => m.name === 'post_total_media_view_unique');
         if (metric && metric.values && metric.values.length > 0) {
           return metric.values[0].value;
         }
@@ -160,7 +162,7 @@ class FacebookAPI {
       return 0;
     } catch (error) {
       // 部分貼文可能無法取得 insights（如分享貼文）
-      console.log(`  ⚠️ 無法取得貼文 ${postId} 的觸及數據: ${error.message}`);
+      console.log(`  ⚠️ 無法取得貼文 ${postId} 的觀眾數據: ${error.message}`);
       return 0;
     }
   }
