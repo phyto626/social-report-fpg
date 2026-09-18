@@ -69,7 +69,7 @@ function filterComments(comments, brandUsernames = []) {
  * @param {string} geminiApiKey — API key
  * @returns {Promise<object>} AI 結構化分析結果
  */
-async function callGeminiAnalysis(validComments, brandName, geminiApiKey) {
+async function callGeminiAnalysis(validComments, brandName, geminiApiKey, retries = 3) {
   const MODEL = 'gemini-3.8-flash';
   const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:generateContent?key=${geminiApiKey}`;
 
@@ -103,36 +103,49 @@ async function callGeminiAnalysis(validComments, brandName, geminiApiKey) {
 以下為留言：
 ${commentBlock}`;
 
-  try {
-    const response = await axios.post(endpoint, {
-      contents: [{ parts: [{ text: prompt }] }],
-      generationConfig: {
-        temperature: 0.3,
-        maxOutputTokens: 2048,
-      },
-    }, {
-      headers: { 'Content-Type': 'application/json' },
-      timeout: 60000,
-    });
+  for (let attempt = 1; attempt <= retries; attempt++) {
+    try {
+      const response = await axios.post(endpoint, {
+        contents: [{ parts: [{ text: prompt }] }],
+        generationConfig: {
+          temperature: 0.3,
+          maxOutputTokens: 2048,
+        },
+      }, {
+        headers: { 'Content-Type': 'application/json' },
+        timeout: 60000,
+      });
 
-    const raw = response.data?.candidates?.[0]?.content?.parts?.[0]?.text || '';
+      const raw = response.data?.candidates?.[0]?.content?.parts?.[0]?.text || '';
 
-    // 嘗試解析 JSON（可能包裹在 ```json ... ``` 中）
-    const jsonMatch = raw.match(/\{[\s\S]*\}/);
-    if (!jsonMatch) {
-      console.error('[Gemini] 無法從回應中提取 JSON：', raw.substring(0, 300));
-      return null;
+      // 嘗試解析 JSON（可能包裹在 ```json ... ``` 中）
+      const jsonMatch = raw.match(/\{[\s\S]*\}/);
+      if (!jsonMatch) {
+        console.error('[Gemini] 無法從回應中提取 JSON：', raw.substring(0, 300));
+        return null;
+      }
+
+      const parsed = JSON.parse(jsonMatch[0]);
+      return parsed;
+    } catch (err) {
+      const status = err.response?.status;
+      const isRetryable = status === 503 || status === 429;
+
+      console.error(`[Gemini] API 呼叫失敗（第 ${attempt} 次）：`, err.message);
+      if (err.response?.data) {
+        console.error('[Gemini] 回應內容：', JSON.stringify(err.response.data).substring(0, 500));
+      }
+
+      if (isRetryable && attempt < retries) {
+        const waitSec = attempt * 3;
+        console.log(`[Gemini] 伺服器壅塞（${status}），${waitSec} 秒後自動重試...`);
+        await new Promise(resolve => setTimeout(resolve, waitSec * 1000));
+      } else {
+        return null;
+      }
     }
-
-    const parsed = JSON.parse(jsonMatch[0]);
-    return parsed;
-  } catch (err) {
-    console.error('[Gemini] API 呼叫失敗：', err.message);
-    if (err.response?.data) {
-      console.error('[Gemini] 回應內容：', JSON.stringify(err.response.data).substring(0, 500));
-    }
-    return null;
   }
+  return null;
 }
 
 // ───── 主流程 ─────
