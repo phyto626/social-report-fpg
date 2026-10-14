@@ -9,7 +9,7 @@
  */
 const axios = require('axios');
 
-const MODEL = 'gemini-3.6-flash';
+const MODEL = 'gemini-2.5-flash';
 
 // ───── 貼文格式化 ─────
 
@@ -37,7 +37,7 @@ function buildPostBlock(posts) {
  */
 function getFpgPrompt(highPosts, lowPosts) {
   const highBlock = buildPostBlock(highPosts);
-  const lowBlock  = buildPostBlock(lowPosts);
+  const lowBlock = buildPostBlock(lowPosts);
 
   return `你是一位台灣社群媒體策略顧問，專門分析 Facebook 貼文表現。
 
@@ -89,7 +89,7 @@ ${lowBlock}
  */
 function getEcocoPrompt(highPosts, lowPosts) {
   const highBlock = buildPostBlock(highPosts);
-  const lowBlock  = buildPostBlock(lowPosts);
+  const lowBlock = buildPostBlock(lowPosts);
 
   return `你是一位台灣社群媒體策略顧問，專門分析 Facebook 貼文表現。
 
@@ -218,13 +218,13 @@ async function analyzeInsights(posts, brandName, brandKey, options = {}) {
   }
 
   // 依互動率排序，取前 1/3 為高表現群
-  const sorted    = [...posts].sort((a, b) => b.engagementRate - a.engagementRate);
-  const topCount  = Math.max(1, Math.ceil(sorted.length / 3));
+  const sorted = [...posts].sort((a, b) => b.engagementRate - a.engagementRate);
+  const topCount = Math.max(1, Math.ceil(sorted.length / 3));
   const highPosts = sorted.slice(0, topCount);
-  const lowPosts  = sorted.slice(topCount);
+  const lowPosts = sorted.slice(topCount);
 
   const isEcoco = (brandKey || '').toLowerCase() === 'ecoco';
-  const prompt  = isEcoco
+  const prompt = isEcoco
     ? getEcocoPrompt(highPosts, lowPosts)
     : getFpgPrompt(highPosts, lowPosts);
 
