@@ -70,7 +70,7 @@ function filterComments(comments, brandUsernames = []) {
  * @returns {Promise<object>} AI 結構化分析結果
  */
 async function callGeminiAnalysis(validComments, brandName, geminiApiKey, retries = 3) {
-  const MODEL = 'gemini-2.5-flash';
+  const MODEL = 'gemini-3.8-flash';
   const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:generateContent?key=${geminiApiKey}`;
 
   // 準備留言文字（最多取前 200 則避免 token 過長）
