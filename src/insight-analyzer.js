@@ -9,7 +9,7 @@
  */
 const axios = require('axios');
 
-const MODEL = 'gemini-3.8-flash';
+const MODEL = 'gemini-3.6-flash';
 
 // ───── 貼文格式化 ─────
 
