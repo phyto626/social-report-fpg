@@ -109,7 +109,7 @@ ${commentBlock}`;
         contents: [{ parts: [{ text: prompt }] }],
         generationConfig: {
           temperature: 0.3,
-          maxOutputTokens: 2048,
+          maxOutputTokens: 4096,
         },
       }, {
         headers: { 'Content-Type': 'application/json' },
