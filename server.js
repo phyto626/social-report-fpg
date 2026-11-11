@@ -181,14 +181,6 @@ app.post('/api/generate', async (req, res) => {
       return res.json({ success: false, message: '該期間沒有貼文數據，無法生成報告。' });
     }
 
-    // 匯出 Excel
-    const exportExcelSetting = process.env.EXPORT_EXCEL !== 'false';
-    let excelName = '';
-    if (exportExcelSetting) {
-      const excelPath = await exportToExcel(rawData, outputDir);
-      excelName = path.basename(excelPath);
-    }
-
     // 數據分析與 HTML 生成
     const analyzer = new DataAnalyzer(rawData, brandKey);
     const analysisResult = analyzer.analyze();
@@ -197,6 +189,14 @@ app.post('/api/generate', async (req, res) => {
     analysisResult.prevPeriod = await buildPrevPeriodSummary(
       brandKey, brandConfig, fbApi, startDate, endDate, analysisResult.kpi
     );
+
+    // 匯出 Excel（在 prevPeriod 建立後才匯出，以便帶入上月觸及）
+    const exportExcelSetting = process.env.EXPORT_EXCEL !== 'false';
+    let excelName = '';
+    if (exportExcelSetting) {
+      const excelPath = await exportToExcel(rawData, outputDir, analysisResult.prevPeriod);
+      excelName = path.basename(excelPath);
+    }
     
     // 將完整分析結果存入對應 Key，以便後續產出簡報
     const cacheKey = `${brandKey}_${startDate}_${endDate}`;

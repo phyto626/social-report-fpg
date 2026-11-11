@@ -5,7 +5,7 @@
 const ExcelJS = require('exceljs');
 const path = require('path');
 
-async function exportToExcel(data, outputDir) {
+async function exportToExcel(data, outputDir, prevPeriod) {
   const workbook = new ExcelJS.Workbook();
   workbook.creator = 'FB Social Report Tool';
   workbook.created = new Date();
@@ -96,6 +96,14 @@ async function exportToExcel(data, outputDir) {
   wsKpi.addRow({ metric: '貼文發布總篇數', value: kpi.totalPosts });
   wsKpi.addRow({ metric: '粉專追蹤人數', value: kpi.followersCount });
   wsKpi.addRow({ metric: '累計總觸及人數', value: kpi.totalReach });
+
+  // 上一期觸及：有資料且可靠才填入數字，否則留空
+  const prevLabel = (prevPeriod && prevPeriod.label) ? `上月觸及人數（${prevPeriod.label}）` : '上月觸及人數';
+  const prevReachValue = (prevPeriod && prevPeriod.available && prevPeriod.reliable && prevPeriod.totalReach > 0)
+    ? prevPeriod.totalReach
+    : null;
+  wsKpi.addRow({ metric: prevLabel, value: prevReachValue });
+
   wsKpi.addRow({ metric: '總互動次數', value: kpi.totalEngagement });
   wsKpi.addRow({ metric: '平均互動次數', value: kpi.avgEngagement });
   wsKpi.addRow({ metric: '報告期間', value: `${data.year}年${data.month}月` });
