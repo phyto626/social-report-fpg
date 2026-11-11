@@ -10,6 +10,7 @@ const { exportToExcel } = require('./src/excel-export');
 const PptxBuilder = require('./src/pptx-builder');
 const { analyzeComments } = require('./src/comment-analyzer');
 const { analyzeInsights } = require('./src/insight-analyzer');
+const { getPreviousPeriod } = require('./src/period-utils');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -41,6 +42,46 @@ function loadAnalysisFromDisk(brandKey, startDate, endDate) {
   } catch (e) {
     console.error('[Cache] 讀取分析 JSON 失敗:', fp, e.message);
     return null;
+  }
+}
+
+
+/**
+ * 取得「上一期」觸及摘要（優先讀快取；沒有才呼叫 Meta API）
+ * 失敗不影響主報告，回傳 available:false
+ */
+async function buildPrevPeriodSummary(brandKey, brandConfig, fbApi, startDate, endDate, currKpi) {
+  const prev = getPreviousPeriod(startDate, endDate);
+  try {
+    let a = loadAnalysisFromDisk(brandKey, prev.startDate, prev.endDate);
+    if (!a || !a.kpi) {
+      console.log(`[Prev] ${brandConfig.name} ${prev.startDate}~${prev.endDate} → 從 Meta API 抓取上一期...`);
+      const raw = await fbApi.fetchAllData(prev.startDate, prev.endDate);
+      if (raw.pageInfo) raw.pageInfo.name = brandConfig.name;
+      a = new DataAnalyzer(raw, brandKey).analyze();
+      // 只有資料可靠才寫快取，避免把「API 抓失敗的 0」永久存起來
+      const zero = a.dataQuality?.zeroReachCount || 0;
+      if (a.kpi.totalPosts > 0 && zero / a.kpi.totalPosts <= 0.3) {
+        try {
+          fs.writeFileSync(analysisCacheFilePath(brandKey, prev.startDate, prev.endDate), JSON.stringify(a), 'utf-8');
+        } catch (e) { console.error('[Prev] 寫入快取失敗:', e.message); }
+      }
+    }
+    const k = a.kpi;
+    const zero = a.dataQuality?.zeroReachCount || 0;
+    const reliable = k.totalPosts > 0 && k.totalReach > 0 && zero / k.totalPosts <= 0.3;
+    return {
+      ...prev,
+      available: true,
+      reliable,
+      totalReach: k.totalReach,
+      totalPosts: k.totalPosts,
+      overallEngagementRate: k.overallEngagementRate,
+      reachDeltaPct: reliable ? ((currKpi.totalReach - k.totalReach) / k.totalReach) * 100 : null,
+    };
+  } catch (err) {
+    console.error('[Prev] 取得上一期失敗:', err.message);
+    return { ...prev, available: false, reliable: false, error: err.message };
   }
 }
 
@@ -151,6 +192,11 @@ app.post('/api/generate', async (req, res) => {
     // 數據分析與 HTML 生成
     const analyzer = new DataAnalyzer(rawData, brandKey);
     const analysisResult = analyzer.analyze();
+
+    // 上一期觸及（選整月 → 上個月；其他區間 → 前一個等長區間）
+    analysisResult.prevPeriod = await buildPrevPeriodSummary(
+      brandKey, brandConfig, fbApi, startDate, endDate, analysisResult.kpi
+    );
     
     // 將完整分析結果存入對應 Key，以便後續產出簡報
     const cacheKey = `${brandKey}_${startDate}_${endDate}`;
@@ -283,7 +329,7 @@ app.get('/api/trends', async (req, res) => {
       allMonths.push({
         label: `${d.getFullYear()}/${String(d.getMonth() + 1).padStart(2, '0')}`,
         start: `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-01`,
-        end: new Date(d.getFullYear(), d.getMonth() + 1, 0).toISOString().split('T')[0],
+        end: `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(new Date(d.getFullYear(), d.getMonth() + 1, 0).getDate()).padStart(2, '0')}`,
       });
     }
 

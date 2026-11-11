@@ -259,6 +259,11 @@ class ReportGenerator {
         margin: 8px 0;
       }
 
+      .kpi-sub { margin-top: 8px; font-size: 0.78rem; color: #4a5568; }
+      .kpi-sub-muted { color: #a0aec0; }
+      .kpi-delta.up { color: #2f855a; font-weight: 700; }
+      .kpi-delta.down { color: #c53030; font-weight: 700; }
+      .kpi-delta.flat { color: #718096; }
       .kpi-card .kpi-label {
         font-size: 0.9em;
         color: #718096;
@@ -917,12 +922,29 @@ class ReportGenerator {
   /**
    * 2. KPI 概覽
    */
+  /**
+   * 觸及卡片下方的「上一期」對照
+   */
+  generatePrevReachSub() {
+    const p = this.data.prevPeriod;
+    if (!p) return '';
+    const name = p.type === 'month' ? `${p.label}觸及` : `前一期觸及（${p.startDate}~${p.endDate}）`;
+    if (!p.available || !p.reliable) {
+      return `<div class="kpi-sub kpi-sub-muted">${name}：資料不足，無法比較</div>`;
+    }
+    const pct = p.reachDeltaPct;
+    const dir = pct > 0.5 ? 'up' : pct < -0.5 ? 'down' : 'flat';
+    const arrow = dir === 'up' ? '▲' : dir === 'down' ? '▼' : '—';
+    const txt = dir === 'flat' ? '持平' : `${arrow} ${Math.abs(pct).toFixed(1)}%`;
+    return `<div class="kpi-sub">${name} ${p.totalReach.toLocaleString()}　<span class="kpi-delta ${dir}">${txt}</span></div>`;
+  }
+
   generateKPI() {
     const { kpi } = this.data;
     const cards = [
       { icon: '📝', label: '貼文發布總篇數', value: kpi.totalPosts, color: this.c.primary },
       { icon: '👥', label: '粉專追蹤人數', value: kpi.followersCount.toLocaleString(), color: this.c.secondary },
-      { icon: '👁️', label: '累計總觸及人數', value: kpi.totalReach.toLocaleString(), color: this.c.primaryLight },
+      { icon: '👁️', label: '累計總觸及人數', value: kpi.totalReach.toLocaleString(), color: this.c.primaryLight, sub: this.generatePrevReachSub() },
       { icon: '💬', label: '平均互動次數', value: kpi.avgEngagement.toLocaleString(), color: this.c.accent },
     ];
 
@@ -935,6 +957,7 @@ class ReportGenerator {
           <div class="kpi-icon">${c.icon}</div>
           <div class="kpi-value" style="color: ${c.color};">${c.value}</div>
           <div class="kpi-label">${c.label}</div>
+          ${c.sub || ''}
         </div>
       `).join('')}
     </div>

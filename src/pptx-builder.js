@@ -17,6 +17,18 @@ function takeFirstSentences(text, n = 2) {
   return t;
 }
 
+
+// 上一期觸及對照文字（供 KPI 卡片使用）
+function prevReachText(p) {
+  if (!p) return '';
+  const name = p.type === 'month' ? `${p.label}觸及` : '前一期觸及';
+  if (!p.available || !p.reliable) return `${name}：資料不足`;
+  const pct = p.reachDeltaPct;
+  const arrow = pct > 0.5 ? '▲' : pct < -0.5 ? '▼' : '—';
+  const d = Math.abs(pct) <= 0.5 ? '持平' : `${arrow}${Math.abs(pct).toFixed(1)}%`;
+  return `${name} ${p.totalReach.toLocaleString()}（${d}）`;
+}
+
 class PptxBuilder {
   constructor(templatePath) {
     // 捨棄原本 docxtemplater 的 template 讀取，改採完全從無到有繪製
@@ -125,7 +137,7 @@ class PptxBuilder {
     // 4 KPI Cards
     const kpiData = [
       { label: "總貼文篇數", val: `${kpi.totalPosts || 0} 篇`, color: COLOR_PRIMARY },
-      { label: "總觸及人數", val: (kpi.totalReach || 0).toLocaleString(), color: COLOR_SECONDARY },
+      { label: "總觸及人數", val: (kpi.totalReach || 0).toLocaleString(), color: COLOR_SECONDARY, sub: prevReachText(data.prevPeriod) },
       { label: "平均互動次數", val: (kpi.avgEngagement || 0).toLocaleString(), color: COLOR_ACCENT },
       { label: "整體互動率", val: `${((kpi.overallEngagementRate || 0) * 100).toFixed(2)}%`, color: COLOR_PRIMARY }
     ];
@@ -141,7 +153,10 @@ class PptxBuilder {
       // Label
       slide2.addText(item.label, { x: cx, y: 1.2, w: cardW, h: 0.3, fontSize: 11, color: "666666", align: 'center', fontFace: 'Arial' });
       // Value
-      slide2.addText(item.val, { x: cx, y: 1.5, w: cardW, h: 0.6, fontSize: 24, bold: true, color: item.color, align: 'center', fontFace: 'Arial' });
+      slide2.addText(item.val, { x: cx, y: 1.45, w: cardW, h: 0.5, fontSize: 24, bold: true, color: item.color, align: 'center', fontFace: 'Arial' });
+      if (item.sub) {
+        slide2.addText(item.sub, { x: cx, y: 1.95, w: cardW, h: 0.3, fontSize: 9, color: "666666", align: 'center', fontFace: 'Arial' });
+      }
     });
 
     // Top Post Highlight
