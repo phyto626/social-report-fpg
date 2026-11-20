@@ -3,7 +3,6 @@ const express = require('express');
 const path = require('path');
 const fs = require('fs');
 const os = require('os');
-const crypto = require('crypto');
 
 const FacebookAPI = require('./src/fb-api');
 const DataAnalyzer = require('./src/data-analyzer');
@@ -20,32 +19,6 @@ const PORT = process.env.PORT || 3000;
 
 // 解析 JSON requests
 app.use(express.json());
-
-if (isVercel && process.env.VERCEL_ENV === 'production') {
-  app.use((req, res, next) => {
-    const username = process.env.APP_USERNAME;
-    const password = process.env.APP_PASSWORD;
-    if (!username || !password) {
-      return res.status(503).send('App access is not configured.');
-    }
-
-    const authorization = req.get('authorization') || '';
-    const supplied = authorization.startsWith('Basic ')
-      ? Buffer.from(authorization.slice(6), 'base64').toString('utf-8').split(':')
-      : [];
-    const suppliedUsername = supplied.shift() || '';
-    const suppliedPassword = supplied.join(':');
-    const matches = (value, expected) => {
-      const actualBuffer = Buffer.from(value);
-      const expectedBuffer = Buffer.from(expected);
-      return actualBuffer.length === expectedBuffer.length && crypto.timingSafeEqual(actualBuffer, expectedBuffer);
-    };
-
-    if (matches(suppliedUsername, username) && matches(suppliedPassword, password)) return next();
-    res.set('WWW-Authenticate', 'Basic realm="Social Report", charset="UTF-8"');
-    return res.sendStatus(401);
-  });
-}
 
 // 確保 output 目錄存在
 const outputDir = path.resolve(isVercel ? path.join(os.tmpdir(), 'social-report-output') : (process.env.OUTPUT_DIR || './output'));
