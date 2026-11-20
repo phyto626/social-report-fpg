@@ -21,7 +21,7 @@ const PORT = process.env.PORT || 3000;
 // 解析 JSON requests
 app.use(express.json());
 
-if (isVercel) {
+if (isVercel && process.env.VERCEL_ENV === 'production') {
   app.use((req, res, next) => {
     const username = process.env.APP_USERNAME;
     const password = process.env.APP_PASSWORD;
