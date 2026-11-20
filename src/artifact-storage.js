@@ -13,7 +13,7 @@ async function saveArtifact(outputDir, name, content, contentType) {
   if (isBlobEnabled) {
     const { put } = require('@vercel/blob');
     const blob = await put(`artifacts/${name}`, content, {
-      access: 'public',
+      access: 'private',
       addRandomSuffix: false,
       allowOverwrite: true,
       contentType,
@@ -29,13 +29,10 @@ async function saveArtifact(outputDir, name, content, contentType) {
 
 async function readArtifact(outputDir, name) {
   if (isBlobEnabled) {
-    const { list } = require('@vercel/blob');
-    const result = await list({ prefix: `artifacts/${name}`, limit: 1000 });
-    const blob = result.blobs.find(item => item.pathname === `artifacts/${name}`);
-    if (!blob) return null;
-    const response = await fetch(blob.url);
-    if (!response.ok) return null;
-    return Buffer.from(await response.arrayBuffer());
+    const { get } = require('@vercel/blob');
+    const result = await get(`artifacts/${name}`, { access: 'private' });
+    if (!result || result.statusCode !== 200) return null;
+    return Buffer.from(await new Response(result.stream).arrayBuffer());
   }
 
   try {
@@ -52,7 +49,7 @@ async function listArtifacts(outputDir) {
     const result = await list({ prefix: 'artifacts/', limit: 1000 });
     return result.blobs.map(blob => ({
       name: blob.pathname.slice('artifacts/'.length),
-      url: blob.url,
+      url: `/output/${encodeURIComponent(blob.pathname.slice('artifacts/'.length))}`,
       time: new Date(blob.uploadedAt).getTime(),
     }));
   }
@@ -64,4 +61,26 @@ async function listArtifacts(outputDir) {
   }));
 }
 
-module.exports = { isVercel, isBlobEnabled, saveArtifact, readArtifact, listArtifacts };
+async function readArtifactDetails(outputDir, name) {
+  if (!isBlobEnabled) {
+    const content = await readArtifact(outputDir, name);
+    return content ? { content, contentType: contentTypeFor(name) } : null;
+  }
+
+  const { get } = require('@vercel/blob');
+  const result = await get(`artifacts/${name}`, { access: 'private' });
+  if (!result || result.statusCode !== 200) return null;
+  return {
+    content: Buffer.from(await new Response(result.stream).arrayBuffer()),
+    contentType: result.blob.contentType,
+  };
+}
+
+function contentTypeFor(name) {
+  if (name.endsWith('.html')) return 'text/html; charset=utf-8';
+  if (name.endsWith('.xlsx')) return 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
+  if (name.endsWith('.pptx')) return 'application/vnd.openxmlformats-officedocument.presentationml.presentation';
+  return 'application/json; charset=utf-8';
+}
+
+module.exports = { isVercel, isBlobEnabled, saveArtifact, readArtifact, readArtifactDetails, listArtifacts };

@@ -181,12 +181,13 @@ FB_API_VERSION=v21.0
 
 ### Vercel 部署
 
-專案以 Vercel Functions 執行 Express API。報告、Excel、簡報與分析快取需要連結 **Public Vercel Blob** 儲存空間，才能跨函式請求保存；請在 Vercel 專案的 Storage 頁籤建立並連結 Blob。部署環境會使用 Vercel OIDC 認證 Blob，不需把 Blob 權杖放進程式碼。
+專案以 Vercel Functions 執行 Express API。報告、Excel、簡報與分析快取儲存在 **Private Vercel Blob**，並由應用程式驗證後提供下載。Vercel 部署必須設定應用程式帳號密碼；本機開發不受影響。
 
 在 Vercel 專案設定以下環境變數（Production 與 Preview）：
 
 | 變數 | 用途 |
 |------|------|
+| `APP_USERNAME`、`APP_PASSWORD` | 網頁與 API 的登入帳密（必填） |
 | `FPG_PAGE_ID`、`FPG_ACCESS_TOKEN` | 台塑便利家粉專與 Meta Page Access Token |
 | `ECOCO_PAGE_ID`、`ECOCO_ACCESS_TOKEN` | ECOCO 粉專與 Meta Page Access Token |
 | `FB_API_VERSION` | Meta Graph API 版本，例如 `v25.0` |

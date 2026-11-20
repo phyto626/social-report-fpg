@@ -3,6 +3,7 @@ const express = require('express');
 const path = require('path');
 const fs = require('fs');
 const os = require('os');
+const crypto = require('crypto');
 
 const FacebookAPI = require('./src/fb-api');
 const DataAnalyzer = require('./src/data-analyzer');
@@ -12,13 +13,39 @@ const PptxBuilder = require('./src/pptx-builder');
 const { analyzeComments } = require('./src/comment-analyzer');
 const { analyzeInsights } = require('./src/insight-analyzer');
 const { getPreviousPeriod } = require('./src/period-utils');
-const { isVercel, isBlobEnabled, saveArtifact, readArtifact, listArtifacts } = require('./src/artifact-storage');
+const { isVercel, isBlobEnabled, saveArtifact, readArtifact, readArtifactDetails, listArtifacts } = require('./src/artifact-storage');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
 // 解析 JSON requests
 app.use(express.json());
+
+if (isVercel) {
+  app.use((req, res, next) => {
+    const username = process.env.APP_USERNAME;
+    const password = process.env.APP_PASSWORD;
+    if (!username || !password) {
+      return res.status(503).send('App access is not configured.');
+    }
+
+    const authorization = req.get('authorization') || '';
+    const supplied = authorization.startsWith('Basic ')
+      ? Buffer.from(authorization.slice(6), 'base64').toString('utf-8').split(':')
+      : [];
+    const suppliedUsername = supplied.shift() || '';
+    const suppliedPassword = supplied.join(':');
+    const matches = (value, expected) => {
+      const actualBuffer = Buffer.from(value);
+      const expectedBuffer = Buffer.from(expected);
+      return actualBuffer.length === expectedBuffer.length && crypto.timingSafeEqual(actualBuffer, expectedBuffer);
+    };
+
+    if (matches(suppliedUsername, username) && matches(suppliedPassword, password)) return next();
+    res.set('WWW-Authenticate', 'Basic realm="Social Report", charset="UTF-8"');
+    return res.sendStatus(401);
+  });
+}
 
 // 確保 output 目錄存在
 const outputDir = path.resolve(isVercel ? path.join(os.tmpdir(), 'social-report-output') : (process.env.OUTPUT_DIR || './output'));
@@ -31,9 +58,12 @@ app.get('/output/:filename', async (req, res, next) => {
   if (!isBlobEnabled) return next();
   try {
     const name = path.basename(req.params.filename);
-    const artifact = (await listArtifacts(outputDir)).find(item => item.name === name);
+    const artifact = await readArtifactDetails(outputDir, name);
     if (!artifact) return res.sendStatus(404);
-    return res.redirect(artifact.url);
+    res.set('Content-Type', artifact.contentType);
+    res.set('X-Content-Type-Options', 'nosniff');
+    res.set('Cache-Control', 'private, no-store');
+    return res.send(artifact.content);
   } catch (error) {
     return next(error);
   }
@@ -607,7 +637,7 @@ app.get('/api/trends/compare', async (req, res) => {
 });
 
 if (isVercel && !isBlobEnabled) {
-  console.error('[Setup] Vercel Blob 未設定，請連結 Blob 儲存空間並設定 BLOB_READ_WRITE_TOKEN。');
+  console.error('[Setup] Vercel Blob 未連結，請連接私有 Blob 儲存空間。');
 }
 
 if (!isVercel) app.listen(PORT, () => {
