@@ -18,13 +18,13 @@ async function saveArtifact(outputDir, name, content, contentType) {
       allowOverwrite: true,
       contentType,
     });
-    return blob.url;
+    return `/api/output/${encodeURIComponent(name)}`;
   }
 
   const filePath = path.join(outputDir, name);
   await fs.mkdir(outputDir, { recursive: true });
   await fs.writeFile(filePath, content);
-  return `/output/${encodeURIComponent(name)}`;
+  return `/api/output/${encodeURIComponent(name)}`;
 }
 
 async function readArtifact(outputDir, name) {
@@ -49,7 +49,7 @@ async function listArtifacts(outputDir) {
     const result = await list({ prefix: 'artifacts/', limit: 1000 });
     return result.blobs.map(blob => ({
       name: blob.pathname.slice('artifacts/'.length),
-      url: `/output/${encodeURIComponent(blob.pathname.slice('artifacts/'.length))}`,
+      url: `/api/output/${encodeURIComponent(blob.pathname.slice('artifacts/'.length))}`,
       time: new Date(blob.uploadedAt).getTime(),
     }));
   }
@@ -57,7 +57,7 @@ async function listArtifacts(outputDir) {
   const files = await fs.readdir(outputDir, { withFileTypes: true });
   return Promise.all(files.filter(file => file.isFile()).map(async file => {
     const stats = await fs.stat(path.join(outputDir, file.name));
-    return { name: file.name, url: `/output/${encodeURIComponent(file.name)}`, time: stats.mtimeMs };
+    return { name: file.name, url: `/api/output/${encodeURIComponent(file.name)}`, time: stats.mtimeMs };
   }));
 }
 

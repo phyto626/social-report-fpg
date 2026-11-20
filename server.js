@@ -54,8 +54,7 @@ if (!fs.existsSync(outputDir)) {
 }
 
 // 供靜態讀取報告與前端檔案用
-app.get('/output/:filename', async (req, res, next) => {
-  if (!isBlobEnabled) return next();
+app.get('/api/output/:filename', async (req, res, next) => {
   try {
     const name = path.basename(req.params.filename);
     const artifact = await readArtifactDetails(outputDir, name);
