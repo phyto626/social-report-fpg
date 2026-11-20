@@ -11,6 +11,7 @@
     "cli": "node index.js"
   },
   "dependencies": {
+    "@vercel/blob": "^2.9.0",
     "axios": "^1.7.0",
     "docxtemplater": "^3.68.3",
     "dotenv": "^16.4.0",

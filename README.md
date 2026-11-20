@@ -179,6 +179,24 @@ FB_API_VERSION=v21.0
 
 ## ☁️ 雲端部署與維護 (Render + GitHub)
 
+### Vercel 部署
+
+專案以 Vercel Functions 執行 Express API。報告、Excel、簡報與分析快取需要連結 **Public Vercel Blob** 儲存空間，才能跨函式請求保存；請在 Vercel 專案的 Storage 頁籤建立並連結 Blob。部署環境會使用 Vercel OIDC 認證 Blob，不需把 Blob 權杖放進程式碼。
+
+在 Vercel 專案設定以下環境變數（Production 與 Preview）：
+
+| 變數 | 用途 |
+|------|------|
+| `FPG_PAGE_ID`、`FPG_ACCESS_TOKEN` | 台塑便利家粉專與 Meta Page Access Token |
+| `ECOCO_PAGE_ID`、`ECOCO_ACCESS_TOKEN` | ECOCO 粉專與 Meta Page Access Token |
+| `FB_API_VERSION` | Meta Graph API 版本，例如 `v25.0` |
+| `GEMINI_API_KEY` | 選填，啟用 AI 留言與內容分析 |
+| `EXPORT_EXCEL` | 選填，設為 `false` 可關閉 Excel 匯出 |
+
+部署完成後，Meta App 的粉專權限與 Page Access Token 必須仍有效，並具有 README「FB API 權限需求」列出的權限。此專案使用 Page Access Token 呼叫 Graph API，沒有 OAuth 登入或 callback 路由需要設定。
+
+`/api/generate`、趨勢與比較功能會即時呼叫 Meta。Vercel 函式最長執行時間受專案方案限制；大量貼文期間可能超時，請先以較短日期區間驗證。
+
 現在專案已經成功部署在 [Render](https://render.com/)，如果你需要修改網頁外觀或分析邏輯，請遵循以下步驟：
 
 ### 1. 修改與更新網頁內容

@@ -2,6 +2,7 @@ require('dotenv').config();
 const express = require('express');
 const path = require('path');
 const fs = require('fs');
+const os = require('os');
 
 const FacebookAPI = require('./src/fb-api');
 const DataAnalyzer = require('./src/data-analyzer');
@@ -11,6 +12,7 @@ const PptxBuilder = require('./src/pptx-builder');
 const { analyzeComments } = require('./src/comment-analyzer');
 const { analyzeInsights } = require('./src/insight-analyzer');
 const { getPreviousPeriod } = require('./src/period-utils');
+const { isVercel, isBlobEnabled, saveArtifact, readArtifact, listArtifacts } = require('./src/artifact-storage');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -19,12 +21,23 @@ const PORT = process.env.PORT || 3000;
 app.use(express.json());
 
 // 確保 output 目錄存在
-const outputDir = path.resolve(__dirname, process.env.OUTPUT_DIR || './output');
+const outputDir = path.resolve(isVercel ? path.join(os.tmpdir(), 'social-report-output') : (process.env.OUTPUT_DIR || './output'));
 if (!fs.existsSync(outputDir)) {
   fs.mkdirSync(outputDir, { recursive: true });
 }
 
 // 供靜態讀取報告與前端檔案用
+app.get('/output/:filename', async (req, res, next) => {
+  if (!isBlobEnabled) return next();
+  try {
+    const name = path.basename(req.params.filename);
+    const artifact = (await listArtifacts(outputDir)).find(item => item.name === name);
+    if (!artifact) return res.sendStatus(404);
+    return res.redirect(artifact.url);
+  } catch (error) {
+    return next(error);
+  }
+});
 app.use('/output', express.static(outputDir));
 app.use(express.static(path.join(__dirname, 'public')));
 
@@ -33,16 +46,20 @@ function analysisCacheFilePath(brandKey, startDate, endDate) {
   return path.join(outputDir, `${safeKey}_${startDate}_${endDate}_analysis.json`);
 }
 
-function loadAnalysisFromDisk(brandKey, startDate, endDate) {
+async function loadAnalysisFromDisk(brandKey, startDate, endDate) {
   const fp = analysisCacheFilePath(brandKey, startDate, endDate);
-  if (!fs.existsSync(fp)) return null;
   try {
-    const raw = fs.readFileSync(fp, 'utf-8');
-    return JSON.parse(raw);
+    const contents = await readArtifact(outputDir, path.basename(fp));
+    return contents ? JSON.parse(contents.toString('utf-8')) : null;
   } catch (e) {
     console.error('[Cache] 讀取分析 JSON 失敗:', fp, e.message);
     return null;
   }
+}
+
+async function saveAnalysisCache(brandKey, startDate, endDate, analysis) {
+  const name = path.basename(analysisCacheFilePath(brandKey, startDate, endDate));
+  await saveArtifact(outputDir, name, JSON.stringify(analysis), 'application/json');
 }
 
 
@@ -53,7 +70,7 @@ function loadAnalysisFromDisk(brandKey, startDate, endDate) {
 async function buildPrevPeriodSummary(brandKey, brandConfig, fbApi, startDate, endDate, currKpi) {
   const prev = getPreviousPeriod(startDate, endDate);
   try {
-    let a = loadAnalysisFromDisk(brandKey, prev.startDate, prev.endDate);
+    let a = await loadAnalysisFromDisk(brandKey, prev.startDate, prev.endDate);
     if (!a || !a.kpi) {
       console.log(`[Prev] ${brandConfig.name} ${prev.startDate}~${prev.endDate} → 從 Meta API 抓取上一期...`);
       const raw = await fbApi.fetchAllData(prev.startDate, prev.endDate);
@@ -63,7 +80,7 @@ async function buildPrevPeriodSummary(brandKey, brandConfig, fbApi, startDate, e
       const zero = a.dataQuality?.zeroReachCount || 0;
       if (a.kpi.totalPosts > 0 && zero / a.kpi.totalPosts <= 0.3) {
         try {
-          fs.writeFileSync(analysisCacheFilePath(brandKey, prev.startDate, prev.endDate), JSON.stringify(a), 'utf-8');
+          await saveAnalysisCache(brandKey, prev.startDate, prev.endDate, a);
         } catch (e) { console.error('[Prev] 寫入快取失敗:', e.message); }
       }
     }
@@ -116,27 +133,22 @@ function parseReportFilenameMeta(filename) {
 }
 
 // 取得歷史報告清單 API
-app.get('/api/reports', (req, res) => {
+app.get('/api/reports', async (req, res) => {
   try {
-    if (!fs.existsSync(outputDir)) {
-      return res.json({ reports: [] });
-    }
-    const files = fs.readdirSync(outputDir);
+    const files = await listArtifacts(outputDir);
     const reports = files
+      .map(({ name, url, time }) => ({ name, url, time }))
       .filter(f => {
-        if (f.endsWith('_analysis.json')) return false;
-        return f.endsWith('.html') || f.endsWith('.xlsx') || f.endsWith('.pptx');
+        if (f.name.endsWith('_analysis.json')) return false;
+        return f.name.endsWith('.html') || f.name.endsWith('.xlsx') || f.name.endsWith('.pptx');
       })
       .map(f => {
-        const stats = fs.statSync(path.join(outputDir, f));
         let type = 'html';
-        if (f.endsWith('.xlsx')) type = 'excel';
-        else if (f.endsWith('.pptx')) type = 'pptx';
-        const meta = parseReportFilenameMeta(f);
+        if (f.name.endsWith('.xlsx')) type = 'excel';
+        else if (f.name.endsWith('.pptx')) type = 'pptx';
+        const meta = parseReportFilenameMeta(f.name);
         return {
-          name: f,
-          url: `/output/${encodeURIComponent(f)}`,
-          time: stats.mtimeMs,
+          ...f,
           type,
           ...(meta || {}),
         };
@@ -232,11 +244,7 @@ app.post('/api/generate', async (req, res) => {
     }
 
     try {
-      fs.writeFileSync(
-        analysisCacheFilePath(brandKey, startDate, endDate),
-        JSON.stringify(analysisResult),
-        'utf-8'
-      );
+      await saveAnalysisCache(brandKey, startDate, endDate, analysisResult);
     } catch (e) {
       console.error('[Web API] 寫入分析快取檔失敗:', e.message);
     }
@@ -246,16 +254,17 @@ app.post('/api/generate', async (req, res) => {
 
     const brandName = brandConfig.name;
     const reportFileName = `${brandName}_${startDate}_to_${endDate}_社群成果分析報告.html`;
-    const reportPath = path.join(outputDir, reportFileName);
-
-    fs.writeFileSync(reportPath, html, 'utf-8');
+    const reportUrl = await saveArtifact(outputDir, reportFileName, html, 'text/html; charset=utf-8');
+    const excelUrl = excelName
+      ? await saveArtifact(outputDir, excelName, await fs.promises.readFile(path.join(outputDir, excelName)), 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+      : null;
     
     console.log(`[Web API] 報告生成成功：${reportFileName}`);
 
     res.json({
       success: true,
-      reportUrl: `/output/${encodeURIComponent(reportFileName)}`,
-      excelUrl: excelName ? `/output/${encodeURIComponent(excelName)}` : null,
+      reportUrl,
+      excelUrl,
       kpi: analysisResult.kpi,
       brandName,
     });
@@ -286,7 +295,7 @@ app.post('/api/generate-pptx', async (req, res) => {
     const cacheKey = `${brandKey}_${startDate}_${endDate}`;
     let analysisResult = reportDataCache[cacheKey];
     if (!analysisResult) {
-      analysisResult = loadAnalysisFromDisk(brandKey, startDate, endDate);
+      analysisResult = await loadAnalysisFromDisk(brandKey, startDate, endDate);
       if (analysisResult) {
         reportDataCache[cacheKey] = analysisResult;
       }
@@ -303,10 +312,11 @@ app.post('/api/generate-pptx', async (req, res) => {
 
     const builder = new PptxBuilder();
     await builder.generate(analysisResult, outputPath);
+    const pptxUrl = await saveArtifact(outputDir, pptxName, await fs.promises.readFile(outputPath), 'application/vnd.openxmlformats-officedocument.presentationml.presentation');
 
     res.json({
       success: true,
-      pptxUrl: `/output/${encodeURIComponent(pptxName)}`
+      pptxUrl
     });
 
   } catch (err) {
@@ -365,7 +375,7 @@ app.get('/api/trends', async (req, res) => {
 
       for (const m of allMonths) {
         // 先檢查磁碟快取
-        const cached = loadAnalysisFromDisk(bKey, m.start, m.end);
+        const cached = await loadAnalysisFromDisk(bKey, m.start, m.end);
         if (cached && cached.kpi) {
           reachArr.push(cached.kpi.totalReach || 0);
           const rate = cached.kpi.totalReach > 0
@@ -387,11 +397,7 @@ app.get('/api/trends', async (req, res) => {
 
           // 寫入快取供下次使用
           try {
-            fs.writeFileSync(
-              analysisCacheFilePath(bKey, m.start, m.end),
-              JSON.stringify(analysis),
-              'utf-8'
-            );
+            await saveAnalysisCache(bKey, m.start, m.end, analysis);
           } catch (e) {
             console.error('[Trends] 寫入快取失敗:', e.message);
           }
@@ -495,7 +501,7 @@ app.get('/api/trends/compare', async (req, res) => {
 
       for (const [bKey, bCfg] of brandsToFetch) {
         // 先檢查快取
-        const cached = loadAnalysisFromDisk(bKey, start, end);
+        const cached = await loadAnalysisFromDisk(bKey, start, end);
         if (cached && cached.kpi) {
           totalReach += cached.kpi.totalReach || 0;
           totalEngagement += cached.kpi.totalEngagement || 0;
@@ -520,11 +526,7 @@ app.get('/api/trends/compare', async (req, res) => {
 
         // 寫入快取
         try {
-          fs.writeFileSync(
-            analysisCacheFilePath(bKey, start, end),
-            JSON.stringify(analysis),
-            'utf-8'
-          );
+          await saveAnalysisCache(bKey, start, end, analysis);
         } catch (e) {
           console.error('[Compare] 寫入快取失敗:', e.message);
         }
@@ -604,7 +606,11 @@ app.get('/api/trends/compare', async (req, res) => {
   }
 });
 
-app.listen(PORT, () => {
+if (isVercel && !isBlobEnabled) {
+  console.error('[Setup] Vercel Blob 未設定，請連結 Blob 儲存空間並設定 BLOB_READ_WRITE_TOKEN。');
+}
+
+if (!isVercel) app.listen(PORT, () => {
   console.log('='.repeat(50));
   console.log(`🌐 Web Server 啟動成功！`);
   console.log(`🚀 請在瀏覽器開啟: http://localhost:${PORT}`);
@@ -616,3 +622,5 @@ app.listen(PORT, () => {
   });
   console.log('='.repeat(50));
 });
+
+module.exports = app;
